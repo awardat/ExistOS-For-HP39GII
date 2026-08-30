@@ -109,7 +109,7 @@ ustl::string get_searchitem(ustl::string &replace)
   replace = "";
   ustl::string search;
   handle_f5();
-  int res = inputline(lang ? "EXIT ou chaine vide: annulation" : "EXIT or empty string: cancel", lang ? "Chercher:" : "Search:", search, false);
+  int res = inputline(lang ? "EXIT 或空字符串: 取消" : "EXIT or empty string: cancel", lang ? "Chercher:" : "Search:", search, false);
   if (search.empty() || res == KEY_CTRL_EXIT)
     return "";
   replace = "";
@@ -241,7 +241,7 @@ void erase_script()
 {
   char filename[MAX_FILENAME_SIZE + 1];
   int res = fileBrowser(filename, (char *)"*.py", (char *)"Scripts");
-  if (res && do_confirm(lang ? "Vraiment effacer" : "Really erase?"))
+  if (res && do_confirm(lang ? "真的要清除吗？" : "Really erase?"))
   {
     unsigned short pFile[MAX_FILENAME_SIZE + 1];
     // create file in data folder (assumes data folder already exists)
@@ -400,7 +400,7 @@ void save_session()
   {
     ustl::string tmp(session_filename);
     tmp += lang ? " a ete modifie!" : " was modified!";
-    if (giac::confirm(tmp.c_str(), lang ? "F1: sauvegarder, F6: tant pis" : "F1: save, F6: discard changes") == KEY_CTRL_F1)
+    if (giac::confirm(tmp.c_str(), lang ? "F1: 保存, F6: 放弃" : "F1: save, F6: discard changes") == KEY_CTRL_F1)
     {
       save(session_filename);
       console_changed = 0;
@@ -682,7 +682,7 @@ giac::gen eqw(const giac::gen &ge, bool editable)
       int keyflag = Setup_GetEntry(0x14);
       if (keyflag == 0)
         handle_f5();
-      if (inputline(lang ? "Stocker la selection dans" : "Save selection in", lang ? "Nom de variable: " : "Variable name: ", varname, false) && !varname.empty() && isalpha(varname[0]))
+      if (inputline(lang ? "将选择存储到" : "Save selection in", lang ? "Nom de variable: " : "Variable name: ", varname, false) && !varname.empty() && isalpha(varname[0]))
       {
         giac::gen g(varname, contextptr);
         giac::gen ge(eval(g, 1, contextptr));
@@ -970,7 +970,7 @@ giac::gen eqw(const giac::gen &ge, bool editable)
     {
       if (!edited)
         return geq;
-      if (confirm(lang ? "Vraiment abandonner?" : "Really leave", lang ? "F1: annul,  F6: confirmer" : "F1: cancel,  F6: confirm") == KEY_CTRL_F6)
+      if (confirm(lang ? "真的要放弃吗？" : "Really leave", lang ? "F1: annul,  F6: confirmer" : "F1: cancel,  F6: confirm") == KEY_CTRL_F6)
         return undef;
     }
     bool doit = eqdata.dx >= LCD_WIDTH_PX;
@@ -1458,19 +1458,19 @@ void displaygraph(const giac::gen & ge){
       smallmenuitems[7].text = (char *) ("Zoom in +");
       smallmenuitems[8].text = (char *) ("Zoom out -");
       smallmenuitems[9].text = (char *) ("Y-Zoom out (-)");
-      smallmenuitems[10].text = (char*) ((lang==1)?"Voir axes":"Show axes");
+      smallmenuitems[10].text = (char*) ((lang)?"显示坐标轴":"Show axes");
       smallmenuitems[10].type = MENUITEM_CHECKBOX;
       smallmenuitems[10].value = gr.show_axes;
-      smallmenuitems[11].text = (char*) ((lang==1)?"Voir tangent (F3)":"Show tangent (F3)");
+      smallmenuitems[11].text = (char*) ((lang==2)?"显示切线 (F3)":"Show tangent (F3)");
       smallmenuitems[11].type = MENUITEM_CHECKBOX;
       smallmenuitems[11].value = (gr.tracemode & 2)!=0;
-      smallmenuitems[12].text = (char*) ((lang==1)?"Voir normal (F4)":"Show normal (F4)");
+      smallmenuitems[12].text = (char*) ((lang==2)?"显示法线 (F4)":"Show normal (F4)");
       smallmenuitems[12].type = MENUITEM_CHECKBOX;
       smallmenuitems[12].value = (gr.tracemode & 4)!=0;
-      smallmenuitems[13].text = (char*) ((lang==1)?"Voir cercle (F5)":"Show circle (F5)");
+      smallmenuitems[13].text = (char*) ((lang==2)?"显示圆 (F5)":"Show circle (F5)");
       smallmenuitems[13].type = MENUITEM_CHECKBOX;
       smallmenuitems[13].value = (gr.tracemode & 8)!=0;
-      smallmenuitems[14].text = (char*)(lang?"Quitter":"Quit");
+      smallmenuitems[14].text = (char*)(lang?"退出":"Quit");
       int sres = doMenu(&smallmenu);
       if(sres == MENU_RETURN_SELECTION) {
 	const char * ptr=0;
@@ -1728,7 +1728,7 @@ void run(const char *s, int do_logo_graph_eqw)
   if (giac::freeze)
   {
     giac::freeze = false;
-    // DefineStatusMessage((char*)lang?"Taper sur une touche":"Screen freezed. Press any key.", 1, 0, 0);
+    // DefineStatusMessage((char*)lang?"按任意键":"Screen freezed. Press any key.", 1, 0, 0);
     // DisplayStatusArea();
     // int keyflag = GetSetupSetting( (unsigned int)0x14);
     unsigned int key;

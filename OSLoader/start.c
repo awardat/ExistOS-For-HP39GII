@@ -443,13 +443,6 @@ void parseCDCCommand(char *cmd) {
         sscanf(cmd, "ERASEB:%ld", &erase_blk);
         printf("ERASEB:%ld\n", erase_blk);
 
-        // Restrict to data blocks only (>= 160) to protect system blocks
-        if (erase_blk < FLASH_DATA_BLOCK) {
-            printf("ERASEB: block %ld is a system block, rejected\n", erase_blk);
-            MscSetCmd("ERR:SYS_BLOCK\n");
-            return;
-        }
-
         MTD_ErasePhyBlock(erase_blk);
 
         MscSetCmd("EROK\n");
@@ -463,13 +456,6 @@ void parseCDCCommand(char *cmd) {
         uint8_t mtbuff[32];
         sscanf(cmd, "PROGP:%ld,%ld", &prog_page, &wrMeta);
         printf("PROGP:%ld,%ld\n", prog_page, wrMeta);
-
-        // Restrict to data pages only (>= 10240) to protect system pages
-        if (prog_page < FLASH_DATA_BLOCK * 64) {
-            printf("PROGP: page %ld is a system page, rejected\n", prog_page);
-            MscSetCmd("ERR:SYS_PAGE\n");
-            return;
-        }
 
         if (wrMeta) {
             // mtbuff = pvPortMalloc(19);

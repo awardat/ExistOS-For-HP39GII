@@ -334,9 +334,9 @@ int check_parse(const ustl::vector<textElement> &v, int python)
       pos = 0;
     }
     if (pos >= 0)
-      sprintf(status, giac::lang ? "Erreur ligne %i a %s" : "Error line %i at %s", lineerr, tok.c_str());
+      sprintf(status, giac::lang ? "错误行 %i 在 %s" : "Error line %i at %s", lineerr, tok.c_str());
     else
-      sprintf(status, giac::lang ? "Erreur ligne %i %s" : "Error line %i %s", lineerr, (pos == -2 ? (giac::lang ? ", : manquant ?" : ", missing :?") : ""));
+      sprintf(status, giac::lang ? "错误行 %i %s" : "Error line %i %s", lineerr, (pos == -2 ? (giac::lang ? ", : manquant ?" : ", missing :?") : ""));
     warning(status);
   }
   else
@@ -347,7 +347,7 @@ int check_parse(const ustl::vector<textElement> &v, int python)
     ctrl_c = false;
     giac::kbd_interrupted = interrupted = false;
     check_do_graph(g); // define the function
-    warning(giac::lang ? "Syntaxe correcte" : "Parse OK");
+    warning(giac::lang ? "语法正确" : "Parse OK");
   }
   return lineerr;
 }
@@ -697,13 +697,13 @@ int check_leave(textArea *text)
       tmp = tmp.substr(7, tmp.size() - 7);
       if (strcmp(tmp.c_str(), "temp.py") == 0)
       {
-        if (giac::confirm(giac::lang ? "Les modifs seront perdues" : "Changes will be lost", giac::lang ? "F1: annuler, F6: tant pis" : "F1: cancel, F6: confirm") == KEY_CTRL_F1)
+        if (giac::confirm(giac::lang ? "Les modifs seront perdues" : "Changes will be lost", giac::lang ? "F1: 取消, F6: 确认" : "F1: cancel, F6: confirm") == KEY_CTRL_F1)
           return 2;
         else
           return 0;
       }
       tmp += giac::lang ? " a ete modifie!" : " was modified!";
-      if (giac::confirm(tmp.c_str(), giac::lang ? "F1: sauvegarder, F6: tant pis" : "F1: save, F6: discard changes") == KEY_CTRL_F1)
+      if (giac::confirm(tmp.c_str(), giac::lang ? "F1: 保存, F6: 放弃" : "F1: save, F6: discard changes") == KEY_CTRL_F1)
       {
         save_script(text->filename.c_str(), merge_area(text->elements));
         text->changed = false;
@@ -983,10 +983,10 @@ void warn_python(int mode, bool autochange)
     if (autochange)
       giac::confirm(giac::lang ? "Passage en syntaxe Python." : "Setting Python syntax source.", giac::lang ? "avec ^=**, F1/F6: ok" : "with ^=**, F1/F6:ok");
     else
-      giac::confirm(giac::lang ? "Syntaxe Python avec ^==**," : "Python syntax with ^==**,", giac::lang ? "python_compat(2): xor. F1: ok" : "python_compat(2): xor. F1: ok");
+      giac::confirm(giac::lang ? "Syntaxe Python avec ^==**," : "Python syntax with ^==**,", giac::lang ? "python_compat(2): xor. F1: 确定" : "python_compat(2): xor. F1: 确定");
   if (mode == 2)
   {
-    giac::confirm(giac::lang ? "Syntaxe Python avec ^==xor" : "Python syntax with ^==xor", giac::lang ? "python_compat(1): **. F1: ok" : "python_compat(1): **. F1: ok");
+    giac::confirm(giac::lang ? "Syntaxe Python avec ^==xor" : "Python syntax with ^==xor", giac::lang ? "python_compat(1): **. F1: 确定" : "python_compat(1): **. F1: 确定");
   }
 }
 
@@ -1867,22 +1867,22 @@ int doTextArea(textArea *text)
         smallmenu.height = 8; //!!!!!
         smallmenu.scrollbar = 0;
         // smallmenu.title = "KhiCAS";
-        smallmenuitems[0].text = (char *)(giac::lang ? "Tester syntaxe" : "Check syntax");
-        smallmenuitems[1].text = (char *)(giac::lang ? "Sauvegarder" : "Save");
-        smallmenuitems[2].text = (char *)(giac::lang ? "Sauvegarder comme" : "Save as");
-        smallmenuitems[3].text = (char *)(giac::lang ? "Inserer" : "Insert");
-        smallmenuitems[4].text = (char *)(giac::lang ? "Effacer" : "Clear");
-        smallmenuitems[5].text = (char *)(giac::lang ? "Chercher,remplacer" : "Search, replace");
-        smallmenuitems[6].text = (char *)(giac::lang ? "Aller a la ligne" : "Goto line");
+        smallmenuitems[0].text = (char *)(giac::lang ? "检查语法" : "Check syntax");
+        smallmenuitems[1].text = (char *)(giac::lang ? "保存" : "Save");
+        smallmenuitems[2].text = (char *)(giac::lang ? "另存为" : "Save as");
+        smallmenuitems[3].text = (char *)(giac::lang ? "插入" : "Insert");
+        smallmenuitems[4].text = (char *)(giac::lang ? "清除" : "Clear");
+        smallmenuitems[5].text = (char *)(giac::lang ? "查找替换" : "Search, replace");
+        smallmenuitems[6].text = (char *)(giac::lang ? "跳转行" : "Goto line");
         smallmenuitems[7].type = MENUITEM_CHECKBOX;
         smallmenuitems[7].text = (char *)"Python";
         smallmenuitems[7].value = text->python;
         smallmenuitems[8].type = MENUITEM_CHECKBOX;
         smallmenuitems[8].text = (char *)"Petite fonte";
         smallmenuitems[8].value = text->minimini;
-        smallmenuitems[9].text = (char *)(giac::lang ? "Quitter" : "Quit");
+        smallmenuitems[9].text = (char *)(giac::lang ? "退出" : "Quit");
         smallmenuitems[10].text = (char *)"Help";
-        smallmenuitems[11].text = (char *)"A propos";
+        smallmenuitems[11].text = (char *)"关于";
         int sres = doMenu(&smallmenu);
         show_status(text, search, replace);
         if (sres == MENU_RETURN_SELECTION)
