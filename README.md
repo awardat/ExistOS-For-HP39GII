@@ -1,4 +1,16 @@
-# [ExistOS-For-HP39GII](https://github.com/Repeerc/LibreCalc-For-HP39GII)
+# ExistOS-For-HP39GII (Fork)
+
+> **本项目由 [awardcat](https://github.com/awardcat) 基于 [ExistOS-Team/ExistOS-For-HP39GII](https://github.com/ExistOS-Team/ExistOS-For-HP39GII) Fork 开发。**
+
+本 Fork 使用 Vibe Coding 方式开发，通过 AI 辅助完成代码审核、Bug 修复、需求管理等工作。主要改进方向：
+
+- 全量代码审核与安全加固
+- KhiCAS 中文化
+- 持续的 Bug 修复与质量提升
+
+如有问题或建议，欢迎 [Issues](https://github.com/awardcat/ExistOS-For-HP39GII/issues)。
+
+---
 
 [English readme](./README_en.md)
 
@@ -29,7 +41,7 @@
 | **[KhiCAS 基本使用](#khicas-的基本使用)** | [基本计算](#基本计算) | [示例 1: 绘图](#示例1-绘图) |
 | | [示例 2: 不定积分](#示例2-不定积分) | [示例 3: 定积分](#示例3-定积分) |
 | | [示例 4: 编程绘制 Logistic 方程映射 Feigenbaum 分岔图](#示例4-编程绘制-logistic-方程映射-feigenbaum-分岔图) | |
-| **[实验性功能](#实验性功能说明)** | [充电功能（未完全测试）](#充电功能未完全测试) | [Emu48 39/48 Saturn 模拟器](#emu48-3948-saturn模拟器) |
+| **[实验性功能](#实验性功能说明)** | [充电功能（未完全测试）](#充电功能未完全测试) | |
 | **[如何卸载并刷回原生系统](#系统卸载并刷回原生系统)** | **[本项目贡献者](#贡献者)** | **[开源许可证](#许可协议)** |
 
 | | 开发者指引 | |
@@ -69,8 +81,6 @@
 ### 实验性功能
 
 - [x] USB 输入镍氢电池充电功能
-- [x] Saturn 模拟器运行 hp39g 固件
-- [ ] Saturn 模拟器运行 hp48g 固件
 
 目前工作进展：如上。关于具体用户界面 GUI 等还在讨论中，如有宝贵意见可于 Issues 提出。
 
@@ -307,7 +317,7 @@ Windows 系统下可以查看设备管理器是否出现一个名为 “USB 输�
 
 ![Sys1](Image/3.png)
 
-目前系统预置应用如下，KhiCAS 用于进行代数计算，Emu48 目前为实验应用，用于模拟 hp39g/48g 系计算器系统（目前实现了对 39g 的基本模拟），将固件文件放入计算器后即可启动，[←][→][↑][↓]键选择，[ENTER]键确定，F1~F3 切换选项卡。
+目前系统预置应用为 KhiCAS，用于进行代数计算、绘图、编程等数学功能，[←][→][↑][↓]键选择，[ENTER]键确定，F1~F3 切换选项卡。
 
 ![Sys1](Image/4.png)
 
@@ -500,20 +510,6 @@ def f():
 以下是使用一节标称 400mAh 1.2V AAAA 电池测试放电时绘制的系统状况曲线（放电时间：2 小时）：
 
 ![Sys1](Image/43.png)
-
-### Emu48 39/48 Saturn 模拟器
-
-该功能可以通过运行 Saturn 虚拟机的方式运行 HP39/48 系列计算器的固件，目前仅完成了 hp 39g 固件的加载，退出和数据保存功能还未完成，且未进行相关优化，速度较慢。
-
-使用方法：将 HP 39g 计算器的固件 rom.g39 (1MB) 放置到计算器存储空间的根目录下，在系统应用主界面点击 Emu48 后即可使用，故载入速度较慢，请耐心等待。
-
-重启：`ON + F6`
-
-关机：`ON + F3`
-
-![Sys1](Image/44.png)
-
-![Sys1](Image/45.png)
 
 ## 系统卸载并刷回原生系统
 

@@ -106,6 +106,7 @@ void printTaskList() {
     printf("PWD_BATTCHRG:%d\n", HW_POWER_CHARGE.B.PWD_BATTCHRG);
     printf("RTC:%ld\n", rtc_get_seconds());
 
+    mem_cr = 0;
     for (int i = 0; i < 16; i++) {
         mem_cr += g_mem_comp_rate[i];
     }
@@ -213,7 +214,8 @@ void System(void *par) {
     for (int i = 120; i <= 150; ++i)
         DisplayFillBox(i - 2, 84, i, 92, 72);
 
-    if (((*bootAddr != 0xEF5AE0EF) && (*(bootAddr + 1) != 0xFECDAFDE)) || (isInterrupted = portIsKeyDown(KEY_F3))) {
+    isInterrupted = portIsKeyDown(KEY_F3);
+    if (((*bootAddr != 0xEF5AE0EF) && (*(bootAddr + 1) != 0xFECDAFDE)) || isInterrupted) {
         slowDownEnable(false);
         // DisplayClean();
         // DisplayPutStr(0, 16 * 0, "========[Exist OS Loader]======", 0, 255, 16);
@@ -334,7 +336,9 @@ void VM_Unconscious(TaskHandle_t task, char *res, uint32_t address) {
         DisplayFillBox(8, 24, 248, 120, 208);
 
         if (res != NULL) {
-            DisplayPutStr(240 - 8 * strlen(res), 5, strcat(res, " "), 208, 0, 16);
+            char res_buf[64];
+            snprintf(res_buf, sizeof(res_buf), "%s ", res);
+            DisplayPutStr(240 - 8 * strlen(res_buf), 5, res_buf, 208, 0, 16);
         }
 
         DisplayPutStr(24, 16 * 2 - 8, "[ON+F5] > Maintenance Menu", 96, 208, 16);
@@ -439,6 +443,13 @@ void parseCDCCommand(char *cmd) {
         sscanf(cmd, "ERASEB:%ld", &erase_blk);
         printf("ERASEB:%ld\n", erase_blk);
 
+        // Restrict to data blocks only (>= 160) to protect system blocks
+        if (erase_blk < FLASH_DATA_BLOCK) {
+            printf("ERASEB: block %ld is a system block, rejected\n", erase_blk);
+            MscSetCmd("ERR:SYS_BLOCK\n");
+            return;
+        }
+
         MTD_ErasePhyBlock(erase_blk);
 
         MscSetCmd("EROK\n");
@@ -452,6 +463,13 @@ void parseCDCCommand(char *cmd) {
         uint8_t mtbuff[32];
         sscanf(cmd, "PROGP:%ld,%ld", &prog_page, &wrMeta);
         printf("PROGP:%ld,%ld\n", prog_page, wrMeta);
+
+        // Restrict to data pages only (>= 10240) to protect system pages
+        if (prog_page < FLASH_DATA_BLOCK * 64) {
+            printf("PROGP: page %ld is a system page, rejected\n", prog_page);
+            MscSetCmd("ERR:SYS_PAGE\n");
+            return;
+        }
 
         if (wrMeta) {
             // mtbuff = pvPortMalloc(19);
@@ -575,8 +593,8 @@ void tud_cdc_rx_cb(uint8_t itf) {
 
     if (g_CDC_TransTo == CDC_PATH_LOADER) {
         nRead = tud_cdc_available();
-        if (nRead < sizeof(cdc_path_loader_buffer)) {
-            tud_cdc_read(cdc_path_loader_buffer, sizeof(cdc_path_loader_buffer));
+        if (nRead > 0 && nRead < (int32_t)sizeof(cdc_path_loader_buffer)) {
+            tud_cdc_read(cdc_path_loader_buffer, nRead);
             cdc_path_loader_buffer[nRead] = 0;
             printf("cmd:%s\n", cdc_path_loader_buffer);
 
@@ -958,7 +976,7 @@ void TaskUSBLog(void *_) {
 
                 } else if (log_j > log_i) {
                     if (SYS_LOG_BUFSIZE - log_j <= ava) {
-                        tud_cdc_write(&log_buf[log_j], SYS_LOG_BUFSIZE - log_j + 1);
+                        tud_cdc_write(&log_buf[log_j], SYS_LOG_BUFSIZE - log_j);
                         tud_cdc_write_flush();
                         log_j = 0;
                     } else {

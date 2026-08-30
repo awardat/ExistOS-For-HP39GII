@@ -228,6 +228,7 @@ void *memory_load(char *adresse)
   {
     memory_error("load()", "ReadFile()", x);
     Bfile_CloseFile(handle);
+    free(p);
     free(adr);
     return NULL;
   }

@@ -187,7 +187,7 @@ void main() {
     SwapMemorySize = ll_mem_swap_size();
     TotalAllocatableSize = OnChipMemorySize + SwapMemorySize;
 
-    xTaskCreate(vTask1, "PrintTask", 400, NULL, configMAX_PRIORITIES - 1, NULL);
+    xTaskCreate(vTask1, "PrintTask", 1024, NULL, configMAX_PRIORITIES - 1, NULL);
     xTaskCreate(main_thread, "System", 400, NULL, configMAX_PRIORITIES - 3, NULL);
 
     vTaskStartScheduler();

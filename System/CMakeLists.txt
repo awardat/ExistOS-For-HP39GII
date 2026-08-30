@@ -44,7 +44,7 @@ list(APPEND SYS_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/core/getentropy.c)
 #add_subdirectory(gb)
 #add_subdirectory(KLib)
 add_subdirectory(KLib/tjpgdec)
-#add_subdirectory(emu48)
+#add_subdirectory(emu48)  // removed: Saturn emulator not applicable to HP39GII (ARM)
 add_subdirectory(applications/user/khicas)
 
 add_executable(sys.elf ${SYS_SRCS})
@@ -78,8 +78,8 @@ target_compile_options(sys.elf PRIVATE -mtune=arm926ej-s -mcpu=arm926ej-s -mlitt
 
 target_link_libraries(sys.elf -lm -lc -lrdimon -lgcc -lstdc++ -nostartfiles
 tjpgd
-#gb 
-#emu48
+#gb
+#emu48  // removed
 #lvgl
 ${CMAKE_SOURCE_DIR}/Libs/libkcasgui.libcpp
 #${CMAKE_SOURCE_DIR}/Libs/libmpy.libc

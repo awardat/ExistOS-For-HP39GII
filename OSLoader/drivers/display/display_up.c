@@ -112,10 +112,16 @@ void DisplayPutChar(uint32_t x, uint32_t y, char c, uint8_t fg, uint8_t bg, uint
 bool DisplayPutStr(uint32_t x, uint32_t y, char *s, uint8_t fg, uint8_t bg, uint8_t fontSize) {
     DisplayOpaQueue_t opa;
     uint32_t *pars = pvPortMalloc(6 * sizeof(uint32_t));
-    char *str = pvPortMalloc(strlen(s));
-    strcpy(str, s);
-    if (!pars)
+    char *str = pvPortMalloc(strlen(s) + 1);
+    if (!pars) {
+        if (str) vPortFree(str);
         return false;
+    }
+    if (!str) {
+        vPortFree(pars);
+        return false;
+    }
+    strcpy(str, s);
 
     pars[0] = x;
     pars[1] = y;

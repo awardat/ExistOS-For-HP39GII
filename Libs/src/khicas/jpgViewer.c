@@ -238,7 +238,7 @@ jpg_decode_start:
     if (!vrambuf)
       vrambuf=(uint8_t*)malloc(128*256);
 
-    memset(vrambuf, 0xFF, sizeof(vrambuf));
+    memset(vrambuf, 0xFF, 128 * 256);
 
     jr = jd_decomp(&jdecobj, tjpg_out_func, scale);
 

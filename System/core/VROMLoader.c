@@ -34,6 +34,7 @@ static inline int VROMMapCheck(uint32_t memAddress, uint32_t mapSize) {
             break;
         }
     }
+    return 0;
 }
 
 int VROMLoaderCreateFileMap(FIL *f, uint32_t inFileStart, uint32_t memAddress, uint32_t mapSize) {
@@ -139,5 +140,7 @@ int VROMIRQLoad(uint32_t vaddr) {
     if (map) {
         f_lseek(map->map_f, vaddr - map->map_vm_addr + map->map_file_start);
         f_read(map->map_f, (uint8_t *)vaddr, MEM_PAGE_SIZE, &br);
+        return 0;
     }
+    return -1;
 }

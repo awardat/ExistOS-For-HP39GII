@@ -219,7 +219,7 @@ public:
         char buffer[256];
 
         va_start(aptr, format);
-        ret = vsprintf(buffer, format, aptr);
+        ret = vsnprintf(buffer, sizeof(buffer), format, aptr);
         va_end(aptr);
 
         for (int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
@@ -333,6 +333,7 @@ public:
                 return ret;
             }
         }
+        return 0;
     }
 
     void refresh(bool focus) {
@@ -423,7 +424,7 @@ public:
         this->disp = disp;
         memset(this->funcKey, 0, sizeof(this->funcKey));
         if (title) {
-            this->title = (char *)pvPortMalloc(strlen(title));
+            this->title = (char *)pvPortMalloc(strlen(title) + 1);
             strcpy(this->title, title);
             this->content_x0 = x0 + 1;
             this->content_y0 = y0 + WIN_DEFAULT_FONTSIZE - 3;
@@ -590,6 +591,16 @@ public:
     }
 
     void setText(const char *_text) {
+        size_t new_len = strlen(_text);
+        size_t old_cap = this->text ? strlen(this->text) : 0;
+        if (new_len > old_cap) {
+            char *new_text = (char *)realloc(this->text, new_len + 1);
+            if (new_text) {
+                this->text = new_text;
+            } else {
+                return; // OOM: keep old text
+            }
+        }
         strcpy(this->text, _text);
         this->text_x0 = this->x0 + (this->width - (strlen(this->text) * 8)) / 2;
         this->text_y0 = this->y0 + this->height / 2;
@@ -1039,14 +1050,13 @@ struct SimpShell {
                 cx = 0;
                 this->scroll(0);
             } else if (s[0] == '\b') {
-                cx--;
-                if (cx < 0) {
-                    cx = CONSW - 1;
-                    cy--;
-                    if (cy < 0) {
-                        cy = 0;
-                        cx = 0;
+                if (cx == 0) {
+                    if (cy > 0) {
+                        cy--;
+                        cx = CONSW - 1;
                     }
+                } else {
+                    cx--;
                 }
                 lin[cy].col[cx] = 0;
             } else {

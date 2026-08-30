@@ -279,7 +279,7 @@ void mjpegPlayer(void *par) {
     }
     if (!vrambuf)
       vrambuf=(uint8_t*)malloc(128*256);
-    memset(vrambuf,0,sizeof(vrambuf));
+    memset(vrambuf, 0, 128 * 256);
     uint32_t keys, key, kpress;
     do {
         if (!pause) {

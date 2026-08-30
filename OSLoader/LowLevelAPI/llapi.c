@@ -74,6 +74,11 @@ void vm_save_context() {/*
         INFO("Context has been saved!\n");
     }*/
 
+    if (context_ptr + 17 > sizeof(vm_saved_context) / sizeof(uint32_t)) {
+        INFO("vm_save_context: overflow, depth=%lu\n", (unsigned long)(context_ptr / 17));
+        return;
+    }
+
     isSaved = true;
 
     uint32_t *pRegFram = (uint32_t *)((volatile uint32_t *)vm_sys)[1];
@@ -329,13 +334,11 @@ void __attribute__((target("thumb"))) LLAPI_Task_thumb_entry() {
 
             case LL_SWI_GET_CONTEXT: {
                 uint32_t *to_addr = (uint32_t *)currentCall.para0;
-                /*
-                                uint32_t moved[17];
-                                moved[16] = vm_saved_context[0];
-                                memcpy(&moved[0], &vm_saved_context[1], 16 * 4);
-                                memcpy(to_addr, moved, sizeof(vm_saved_context));
-                */
-                //memcpy(to_addr, (uint32_t *)vm_saved_context, sizeof(vm_saved_context));
+
+                if (!vmMgr_checkAddressValid(currentCall.para0, PERM_W)) {
+                    INFO("FAIL TO GET CONTEXT: MEM CAN NOT WRITE!\n");
+                    break;
+                }
 
                 get_saved_context(to_addr);
                 LLAPI_INFO("GET_CONTEXT:%08x\n", to_addr);

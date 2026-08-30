@@ -1,6 +1,18 @@
  ___This English readme may not be up to date with the [Chinese version](./README.md).___
 
-# [ExistOS-For-HP39GII](https://github.com/Repeerc/LibreCalc-For-HP39GII)
+# ExistOS-For-HP39GII (Fork)
+
+> **This project is a fork by [awardcat](https://github.com/awardcat) from [ExistOS-Team/ExistOS-For-HP39GII](https://github.com/ExistOS-Team/ExistOS-For-HP39GII).**
+
+This fork is developed using Vibe Coding with AI-assisted code review, bug fixes, and requirement management. Key improvements:
+
+- Comprehensive code audit and security hardening
+- KhiCAS Chinese localization
+- Ongoing bug fixes and quality improvements
+
+Issues and suggestions: [GitHub Issues](https://github.com/awardcat/ExistOS-For-HP39GII/issues).
+
+---
 
 An open source HP39GII firmware project
 
@@ -29,7 +41,7 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 | **[Basic Usage of KhiCAS](#basic-usage-of-khicas)** | [Basic Calculations](#basic-calculations) | [Example 1: Plotting](#example-1-plotting) |
 | | [Example 2: Indefinite Integrals](#example-2-indefinite-integrals) | [Example 3: Definite Integrals](#example-3-definite-integrals) | 
 | | [Example 4: Programming to draw Feigenbaum bifurcation diagrams mapped with Logistic equations](#example-4-programming-to-draw-feigenbaum-bifurcation-diagrams-mapped-with-logistic-equations) | |
-| **[Experimental Features](#about-experimental-features) | [Charging](#charging-not-fully-tested) | [Emu48 39/48 Emulator](#emu48-3948-saturn-emulator) |
+| **[Experimental Features](#about-experimental-features) | [Charging](#charging-not-fully-tested) | |
 | **[Uninstalling and Flashing Back](#uninstalling-existos-and-flashing-back-to-the-hp-firmware)** | **[Contributors](#contributors)** | **[License](#license)** |
 
 | | Developer Guide | |
@@ -69,8 +81,6 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 ### Experimental features
 
 - [x] Charging Ni-Mh batteries in the compartment via USB power
-- [x] Running hp39g firmware with Saturn emulator
-- [ ] Running hp48g firmware with Saturn emulator
 
 Current development status is as described above. User interface etc. are still under discussion. You may open an issue to give your opinion.
 
@@ -499,20 +509,6 @@ The following system status graph was drawn charging one AAAA battery rated 400m
 The following system status graph was drawn discharging one AAAA battery rated 400mAh 1.2V for 2 hours.
 
 ![Sys1](Image/43.png)
-
-### Emu48 39/48 Saturn Emulator
-
-This application runs the firmware of HP39/48 calculators by running a Saturn emulator. Right now it only supports loading the HP 39g firmware, leaving quitting the emulator and saving user data unfinished. Optimizations are also not applied yet, so expect a slow speed.
-
-Usage: Put `rom.g39` (1MB) to the root directory of the calculator's internal storage, then start `Emu48` from the main menu.
-
-Reboot: `ON + F6`
-
-Shut down: `ON + F3`
-
-![Sys1](Image/44.png)
-
-![Sys1](Image/45.png)
 
 ## Uninstalling ExistOS and Flashing Back to the HP Firmware
 

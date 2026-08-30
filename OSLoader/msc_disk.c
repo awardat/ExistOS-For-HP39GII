@@ -381,10 +381,11 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *
     switch (g_MSC_Configuration) {
     case MSC_CONF_OSLOADER_EDB:
 
-        if (lba == 40) {
+        if (lba == 40 && bufsize > 0) {
             buffer[bufsize - 1] = 0;
-            if ((strlen((const char *)buffer) - 1) > 0) {
-                buffer[(uint32_t)((strlen((const char *)buffer) - 1))] = 0;
+            size_t cmd_len = strnlen((const char *)buffer, bufsize);
+            if (cmd_len > 0) {
+                buffer[cmd_len - 1] = 0;
             }
             parseCDCCommand((char *)buffer);
         }

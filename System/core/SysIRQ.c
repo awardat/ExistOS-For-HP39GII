@@ -50,14 +50,13 @@ volatile void IRQ_ISR(uint32_t IRQNum, uint32_t par1, uint32_t par2, uint32_t pa
         }
         break;
     case LL_IRQ_KEYBOARD:
-        printf("Key:%d, %d\n", par1, par2);
         g_key = par1;
         g_ket_press = par2;
         break;
 
     case LL_IRQ_MMU:
         VROMIRQLoad(par1);
-        //printf("MMU Fault:%08x\n", par1);
+        break;
 
     default:
         break;

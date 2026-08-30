@@ -1,2 +1,2 @@
 #pragma once
-#define BUILD_STAMP "Dev build v1.1.8"
+#define BUILD_STAMP "build 126"

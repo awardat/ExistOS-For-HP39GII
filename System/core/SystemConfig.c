@@ -12,7 +12,7 @@ static SystemConfig g_config = {0};
 // 简单的JSON解析辅助函数
 static int find_json_value(const char* json, const char* key, char* value, int max_len) {
     char search_key[64];
-    sprintf(search_key, "\"%s\":", key);
+    snprintf(search_key, sizeof(search_key), "\"%s\":", key);
     
     char* key_pos = strstr(json, search_key);
     if (!key_pos) return -1;
@@ -87,13 +87,13 @@ void config_load(void) {
     
     UINT bytes_read;
     res = f_read(&file, buffer, 1023, &bytes_read);
-    buffer[bytes_read] = '\0';
     f_close(&file);
-    
+
     if (res != FR_OK) {
         free(buffer);
         return;
     }
+    buffer[bytes_read] = '\0';
     
     // 解析JSON
     char value[32];

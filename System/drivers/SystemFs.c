@@ -146,7 +146,7 @@ void SystemFSInit() {
     lfs_cfg.block_count = ll_flash_get_pages();
 
 mount_flash:
-    
+
     err = lfs_mount(&lfs, &lfs_cfg);
 
     if (err) {
@@ -159,16 +159,19 @@ mount_flash:
             lv_obj_set_size(spinner, 50, 50);
             lv_obj_center(spinner);
 
-            lfs_format(&lfs, &lfs_cfg);
-            lfs_mount(&lfs, &lfs_cfg);
+            int fmt_err = lfs_format(&lfs, &lfs_cfg);
+            if (fmt_err == 0) {
+                err = lfs_mount(&lfs, &lfs_cfg);
+            }
 
-            if (err) {
+            if (fmt_err == 0 && err == 0) {
                 SystemUIMsgBox("Format " FS_FLASH_PATH " Succeeded.", "Format", 0);
             } else {
                 SystemUIMsgBox("Format " FS_FLASH_PATH " Failed.", "Format", 0);
             }
+        } else {
+            goto mount_flash;
         }
-        goto mount_flash;
 
     }
 
