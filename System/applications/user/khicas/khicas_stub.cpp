@@ -1005,8 +1005,16 @@ void Cursor_SetFlashOn(char flash_style) {
 
 int MB_ElementCount(const char *buf) // like strlen but for the graphical length of multibyte strings
 {
-    // printf("MB_ElementCount:%08x\n",buf);
-    return strlen(buf); // FIXME for UTF8
+    int n = 0;
+    while (*buf) {
+      if (((unsigned char)*buf >= 0x81 && (unsigned char)*buf <= 0xFE) && buf[1]) {
+        buf += 2;
+      } else {
+        buf++;
+      }
+      n++;
+    }
+    return n;
 }
 
 void SetQuitHandler(void (*callback)(void)) {

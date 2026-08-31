@@ -16667,7 +16667,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #endif
 	  // confirmation, duree (>=0 French indicative, else not indicative)
 	  double duration=exam_mode?absint(exam_duration):0;
-	  string msg=(lang)?"\xbf\xbc\xca\xd4\xca\xb1\xb3\xa4 h.min\xa3\xac0 \xce\xaa\xca\xb1\xd6\xd3":"Exam duration in h.min (0: end by pluging)";
+	  string msg=(lang)?"\xbf\xbc\xca\xd4\xca\xb1\xb3\xa4 h.min\xa3\xac" "0 \xce\xaa\xca\xb1\xd6\xd3":"Exam duration in h.min (0: end by pluging)";
 	  msg += print_duration(duration);
 	  if (inputdouble(msg.c_str(),duration,contextptr)){
 	    bool indicative=lang?duration>=0:duration<=0;
@@ -16689,7 +16689,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      msg += print_duration(d);
 	    }
 	    else
-	      msg="Mode examen.";
+	      msg=(lang)?"\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xa1\xa3":"Exam mode.";
 	    if (indicative)
 	      msg += lang?"\x20\xb7\xd6\xd6\xa7\xbd\xe1\xca\xf8":" Exit by pluging";
 	    if (confirm(msg.c_str(),(lang?"\x21\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xcf\xc2\x20\x58\x63\x61\x73\x20\xd7\xe8\xc8\xfb\x21\x20\xbb\xd8\xb3\xb5\xc8\xb7\xc8\xcf\x2c\x20\x45\x53\x43\x20\xc8\xa1\xcf\xfb":"!Trapped in Xcas in exam mode! enter OK, esc cancel."))==KEY_CTRL_F1){
@@ -16787,7 +16787,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	if (smallmenu.selection == 15){
 	  if (exam_mode)
 	    leave_exam_mode(contextptr);
-	  break;
+	  return;
 	}
 	if (smallmenu.selection >= 10) {
 	  textArea text;
@@ -18730,7 +18730,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #else
 	  smallmenuitems[0].text = (char*)"Applications (shift doc)";
 #endif
-	  string sess=(lang)?"Enregistrer ":"Save ";
+	  string sess=(lang)?"\xb1\xa3\xb4\xe6 ":"Save ";
 	  sess += session_filename;
 	  smallmenuitems[1].text = (char *) (sess.c_str());
 	  smallmenuitems[2].text = (char *) ((lang)?"\xc1\xed\xb4\xe6\xce\xaa":"Save session as");
