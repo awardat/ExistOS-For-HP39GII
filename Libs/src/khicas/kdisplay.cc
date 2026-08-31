@@ -98,6 +98,16 @@ const int xwaspy_shift=33; // must be between 32 and 63, reflect in xcas.js and 
 //giac::context * contextptr=0;
 int clip_ymin=0;
 int lang=1;
+
+// Save/load language setting
+void save_lang_setting() {
+    FILE *f = fopen("/khi_lang.dat", "wb");
+    if (f) { fwrite(&lang, sizeof(int), 1, f); fclose(f); }
+}
+void load_lang_setting() {
+    FILE *f = fopen("/khi_lang.dat", "rb");
+    if (f) { int saved=0; if (fread(&saved, sizeof(int), 1, f)==1) { if (saved==0||saved==1) lang=saved; } fclose(f); }
+}
 short int nspirelua=0;
 bool warn_nr=true; 
 bool xthetat=false;
@@ -236,7 +246,7 @@ namespace giac {
       if (row<0) row=5; else if (row>5) row=0;
       // display table
       drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
-      os_draw_string_medium(0,0,_BLACK,_WHITE,lang==2?"选择字符":"Select char");
+      os_draw_string_medium(0,0,_BLACK,_WHITE,lang?"\xd1\xa1\xd4\xf1\xd7\xd6\xb7\xfb":"Select char");
 #ifdef HP39
       int dy=12;
       for (int r=0;r<6;++r){
@@ -264,7 +274,7 @@ namespace giac {
       os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)s.c_str());
 #else      
       os_draw_string(0,160,_BLACK,_WHITE,s.c_str());
-      os_draw_string(0,180,_BLACK,_WHITE,lang==2?"EXE: 复制字符":"EXE: copy char");
+      os_draw_string(0,180,_BLACK,_WHITE,lang?"\x45\x58\x45\x3a\x20\xb8\xb4\xd6\xc6\xd7\xd6\xb7\xfb":"EXE: copy char");
 #endif
       // interaction
       int key=getkey(1);
@@ -307,7 +317,7 @@ namespace giac {
 #endif
     clip_pasted=false;
     if (status){
-      DefineStatusMessage((char*)((lang)?"已复制到剪贴板。":"Selection copied to clipboard"), 1, 0, 0);
+      DefineStatusMessage((char*)((lang)?"\xd2\xd1\xb8\xb4\xd6\xc6\xb5\xbd\xbc\xf4\xcc\xf9\xb0\xe5\xa1\xa3":"Selection copied to clipboard"), 1, 0, 0);
       DisplayStatusArea();
     }
   }
@@ -355,9 +365,9 @@ namespace giac {
   
   bool do_confirm(const char * s){
 #ifdef NSPIRE_NEWLIB
-    return confirm(s,((lang==2)?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel"))==KEY_CTRL_F1;
+    return confirm(s,((lang)?"enter: \xca\xc7,  esc: \xc8\xa1\xcf\xfb":"enter: yes,   esc: cancel"))==KEY_CTRL_F1;
 #else
-    return confirm(s,((lang==2)?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel"))==KEY_CTRL_F1;
+    return confirm(s,((lang)?"OK: \xca\xc7,  Back: \xc8\xa1\xcf\xfb":"OK: yes,   Back: cancel"))==KEY_CTRL_F1;
 #endif
   }
   
@@ -381,18 +391,18 @@ namespace giac {
   
   bool confirm_overwrite(){
 #ifdef NSPIRE_NEWLIB
-    return do_confirm((lang==2)?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel")==KEY_CTRL_F1;
+    return do_confirm((lang)?"enter: \xca\xc7,  esc: \xc8\xa1\xcf\xfb":"enter: yes,   esc: cancel")==KEY_CTRL_F1;
 #else
-    return do_confirm((lang==2)?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel")==KEY_CTRL_F1;
+    return do_confirm((lang)?"OK: \xca\xc7,  Back: \xc8\xa1\xcf\xfb":"OK: yes,   Back: cancel")==KEY_CTRL_F1;
 #endif
   }
   
   void invalid_varname(){
-    confirm((lang==2)?"变量名无效":"Invalid variable name",
+    confirm((lang)?"\xb1\xe4\xc1\xbf\xc3\xfb\xce\xde\xd0\xa7":"Invalid variable name",
 #ifdef NSPIRE_NEWLIB
-	    (lang==2)?"回车: 确定":"回车: 确定"
+	    (lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8":"\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8"
 #else
-	    (lang==2)?"OK: 确定":"OK: 确定"
+	    (lang)?"\x4f\x4b\x3a\x20\xc8\xb7\xb6\xa8":"\x4f\x4b\x3a\x20\xc8\xb7\xb6\xa8"
 #endif
 	    );
   }
@@ -415,7 +425,16 @@ namespace giac {
 #endif
 
   int MB_ElementCount(const char * s){
-    return strlen(s); // FIXME for UTF8
+    int n = 0;
+    while (*s) {
+      if (((unsigned char)*s >= 0x81 && (unsigned char)*s <= 0xFE) && s[1]) {
+        s += 2;
+      } else {
+        s++;
+      }
+      n++;
+    }
+    return n;
   }
 
   void PrintXY(int x,int y,const char * s,int mode,int c=giac::_BLACK,int bg=giac::_WHITE){
@@ -528,9 +547,10 @@ namespace giac {
               strncat(menuitem, menu->items[curitem].text, 250);
             }
             if(menu->items[curitem].type != MENUITEM_SEPARATOR) {
-              //make sure we have a string big enough to have background when item is selected:          
+              //make sure we have a string big enough to have background when item is selected:
               // MB_ElementCount is used instead of strlen because multibyte chars count as two with strlen, while graphically they are just one char, making fillerRequired become wrong
-              int fillerRequired = menu->width - MB_ElementCount(menu->items[curitem].text) - (menu->type == MENUTYPE_MULTISELECT ? 2 : 3);
+              int mbe = MB_ElementCount(menu->items[curitem].text);
+              int fillerRequired = menu->width - mbe - (menu->type == MENUTYPE_MULTISELECT ? 2 : 3);
               for(int i = 0; i < fillerRequired; i++)
                 strcat(menuitem, " ");
               dbgprintf("menu %i %i\n",curitem,C10*menu->width);
@@ -735,7 +755,7 @@ namespace giac {
       case KEY_CTRL_RIGHT:
 	if(menu->type != MENUTYPE_MULTISELECT) return KEY_BOOK; // break;
 	// else fallthrough
-      case KEY_CTRL_EXE: case KEY_CTRL_OK: case KEY_CHAR_CR:
+      case KEY_CTRL_EXE: case KEY_CTRL_OK: case KEY_CHAR_CR: case 76: // 76 = HP39GII ENTER key
 	if(menu->numitems>0) return key==KEY_CTRL_OK?MENU_RETURN_SELECTION:key;
 	break;
       case KEY_CTRL_LEFT:
@@ -883,7 +903,7 @@ namespace giac {
 #define CAT_CATEGORY_LOGO 23 // should be the last one
 #define XCAS_ONLY 0x80000000
   void init_locale(){
-    lang=1;
+    // lang is set by ExistOS config, don't override
   }
 
   const catalogFunc completeCatfr[] = { // list of all functions (including some not in any category)
@@ -926,7 +946,7 @@ namespace giac {
     {"_C", 0, "Charge electrique en Coulomb", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_Ci", 0, "Radioactivite: Curie", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_F", 0, "Farad", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
-    {"_F_", 0, "constante de Faraday (charge globale d'une mole de charges élémentaires).", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_F_", 0, "constante de Faraday (charge globale d'une mole de charges \xa8\xa6l\xa8\xa6mentaires).", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
     {"_G_", 0, "constante de gravitation universelle. Force=_G_*m1*m2/r^2", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
     {"_H", 0, "Henry", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_Hz", 0, "Hertz", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
@@ -1111,7 +1131,7 @@ namespace giac {
     {"hyperbole(F1,F2,M)", 0, "Hyperbole donnee par 2 foyers et un point", "-2-i,2+i,1", 0, CAT_CATEGORY_2D},
     {"iabcuv(a,b,c)", 0, "Cherche 2 entiers u,v tels que a*u+b*v=c","23,13,15", 0, CAT_CATEGORY_ARIT | XCAS_ONLY},
     {"ichinrem([a,m],[b,n])", 0,"Restes chinois entiers de a mod m et b mod n.", "[3,13],[2,7]", 0, CAT_CATEGORY_ARIT | XCAS_ONLY},
-    {"icosahedron(A,B,C)", 0, "Icosaedre de centre A, de sommet B où le plan ABC contient le sommet le plus proche (parmi les 5) de B", "[0,0,0],[sqrt(5),0,0],[1,2,0]", 0, CAT_CATEGORY_3D},
+    {"icosahedron(A,B,C)", 0, "Icosaedre de centre A, de sommet B o\xa8\xb4 le plan ABC contient le sommet le plus proche (parmi les 5) de B", "[0,0,0],[sqrt(5),0,0],[1,2,0]", 0, CAT_CATEGORY_3D},
     {"idivis(n)", 0, "Liste des diviseurs d'un entier n.", "10", 0, CAT_CATEGORY_ARIT},
     {"idn(n)", 0, "matrice identite n * n", "4", 0, CAT_CATEGORY_MATRIX},
     {"iegcd(a,b)", 0, "Determine les entiers u,v,d tels que a*u+b*v=d=gcd(a,b)","23,13", 0, CAT_CATEGORY_ARIT},
@@ -1160,7 +1180,7 @@ namespace giac {
     {"matpow(A,n)", 0, "Renvoie A^n, la matrice A la puissance n", "[[1,2],[3,4]],n","#assume(n>=1);matpow([[0,2],[0,4]],n)", CAT_CATEGORY_MATRIX | XCAS_ONLY},
     {"matrix(l,c,func)", 0, "Matrice de terme general donne.", "2,3,(j,k)->j^k", 0, CAT_CATEGORY_MATRIX},
     {"mean(l)", 0, "Moyenne arithmetique liste l", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
-    {"median(l)", 0, "中线", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"median(l)", 0, "\xd6\xd0\xcf\xdf", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"mediane(A,B,C)", 0, "Mediane du triangle ABC issue de A", "1,i,2+i", 0,CAT_CATEGORY_2D},
     {"mediatrice(A,B)", 0, "Mediatrice du segment AB", "1,i", 0,CAT_CATEGORY_2D},
     {"milieu(A,B)", 0, "Milieu de AB", "1,i", 0,CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8)},
@@ -1191,7 +1211,7 @@ namespace giac {
     {"plotpolar(r,theta)", 0, "Graphe en polaire.","cos(3*x),x,0,pi", "1/(1+cos(x)),x=0..pi,xstep=0.05", CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plotseq(f(x),x=[u0,m,M],n)", 0, "Trace f(x) sur [m,M] et n termes de la suite recurrente u_{n+1}=f(u_n) de 1er terme u0.","sqrt(2+x),x=[6,0,7],5", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plus_point", "plus_point", "Option d'affichage", "#display=blue+plus_point", 0, CAT_CATEGORY_PROGCMD  | XCAS_ONLY},
-    {"point(x,y[,z])", 0, "点", "1,2", "1,2,3", CAT_CATEGORY_PLOT | (CAT_CATEGORY_2D << 8) |  (CAT_CATEGORY_3D << 16) | XCAS_ONLY},
+    {"point(x,y[,z])", 0, "\xb5\xe3", "1,2", "1,2,3", CAT_CATEGORY_PLOT | (CAT_CATEGORY_2D << 8) |  (CAT_CATEGORY_3D << 16) | XCAS_ONLY},
     {"polygone(list)", 0, "Polygone ferme donne par la liste de ses sommets.", "1-i,2+i,3,3-2i", 0, CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
     {"polygonscatterplot(Xlist,Ylist)", 0, "Nuage de points relies.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"polyhedron(A,B,C,D,...)", 0, "Polyedre convexe dont les sommets sont parmi A,B,C,D,...", "[0,0,0],[0,5,0],[0,0,5],[1,2,6]", 0, CAT_CATEGORY_3D},
@@ -1244,7 +1264,7 @@ namespace giac {
     {"rsolve(equation,u(n),[init])", 0, "Expression d'une suite donnee par une recurrence.","u(n+1)=2*u(n)+3,u(n),u(0)=1", "([u(n+1)=3*v(n)+u(n),v(n+1)=v(n)+u(n)],[u(n),v(n)],[u(0)=1,v(0)=2]", CAT_CATEGORY_SOLVE | XCAS_ONLY},
     {"saute n", "saute ", "La tortue fait un saut de n pas, par defaut n=10", "#saute 30", 0, CAT_CATEGORY_LOGO},
     {"scatterplot(Xlist,Ylist)", 0, "Nuage de points (scatter en Python)", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS| (CAT_CATEGORY_PLOT<<8)},
-    {"segment(A,B)", 0, "线段", "1,2+i", "[1,2,1],[-1,3,2]", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
+    {"segment(A,B)", 0, "\xcf\xdf\xb6\xce", "1,2+i", "[1,2,1],[-1,3,2]", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
     {"seq(expr,var,a,b[,pas])", 0, "Liste de terme general donne.","j^2,j,1,10", "j^2,j,1,10,2", CAT_CATEGORY_LIST | XCAS_ONLY},
     {"si (test Xcas)", "si  alors  sinon  fsi;", "Test.", "#f(x):=si x>0 alors x; sinon -x; fsi;", 0, CAT_CATEGORY_PROG | XCAS_ONLY},
     {"sign(x)", 0, "Renvoie -1 si x est negatif, 0 si x est nul et 1 si x est positif.", 0, 0, CAT_CATEGORY_REAL | XCAS_ONLY},
@@ -1262,7 +1282,7 @@ namespace giac {
     {"sub(u,v)", 0, "En Python, soustrait des listes ou listes de listes u et v comme des vecteurs ou matrices.","[1,2,3],[0,1,3]", "[[1,2]],[[3,4]]", CAT_CATEGORY_LINALG},
     {"subst(a,b=c)", 0, "Remplace b par c dans a. Raccourci a(b=c). Pour faire plusieurs remplacements, saisir subst(expr,[b1,b2...],[c1,c2...])", "x^2,x=3", "x+y^2,[x,y],[1,2]", CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
     {"sum(f,k,m,M)", 0, "Somme de l'expression f dependant de k pour k variant de m a M. Exemple sum(k^2,k,1,n)=>*. Raccourci ALPHA F3", "k,k,1,n", "k^2,k", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
-    {"svd(A)", 0, "Singular Value Decomposition, renvoie U orthogonale, S vecteur des valeurs singulières, Q orthogonale tels que A=U*diag(S)*tran(Q).", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
+    {"svd(A)", 0, "Singular Value Decomposition, renvoie U orthogonale, S vecteur des valeurs singuli\xa8\xa8res, Q orthogonale tels que A=U*diag(S)*tran(Q).", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
     {"tabvar(f,[x=a..b])", 0, "Tableau de variations de l'expression f, avec arguments optionnels la variable x dans l'intervalle a..b.", "sqrt(x^2+x+1)", "[cos(2t),sin(3t)],t", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
     {"tantque (boucle Xcas)", "tantque  faire  ftantque;", "Boucle indefinie.", "#j:=13; tantque j!=1 faire j:=ifte(even(j),j/2,3j+1); print(j); ftantque;", 0, CAT_CATEGORY_PROG | XCAS_ONLY},
     {"taylor(f,x=a,n,[polynom])", 0, "Developpement de Taylor de l'expression f en x=a a l'ordre n, ajouter le parametre polynom pour enlever le terme de reste.","sin(x),x=0,5", "sin(x),x=0,5,polynom", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
@@ -1585,7 +1605,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"plotpolar(r,theta)", 0, "Polar plot.","cos(3*x),x,0,pi", "1/(1+cos(x)),x=0..pi,xstep=0.05", CAT_CATEGORY_PLOT},
   {"plotseq(f(x),x=[u0,m,M],n)", 0, "Plot f(x) on [m,M] and n terms of the sequence defined by u_{n+1}=f(u_n) and u0.","sqrt(2+x),x=[6,0,7],5", 0, CAT_CATEGORY_PLOT},
   {"plus_point", "plus_point", "Display option", "#display=blue+plus_point", 0, CAT_CATEGORY_PROGCMD},
-  {"point(x,y[,z])", 0, "点", "1,2", "1,2,3", CAT_CATEGORY_PLOT | (CAT_CATEGORY_2D << 8)},
+  {"point(x,y[,z])", 0, "\xb5\xe3", "1,2", "1,2,3", CAT_CATEGORY_PLOT | (CAT_CATEGORY_2D << 8)},
   {"polygon(list)", 0, "Closed polygon given by a list of vertices.", "1-i,2+i,3,3-2i", 0, CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) },
   {"polygonscatterplot(Xlist,Ylist)", 0, "Plot points and polygonal line.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
   {"polyhedron(A,B,C,D,...)", 0, "Convex polyhedron of vertices in A,B,C,D,...", "[0,0,0],[0,5,0],[0,0,5],[1,2,6]", 0, CAT_CATEGORY_3D},
@@ -1632,7 +1652,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"rsolve(equation,u(n),[init])", 0, "Solve a recurrence relation.","u(n+1)=2*u(n)+3,u(n),u(0)=1", "([u(n+1)=3*v(n)+u(n),v(n+1)=v(n)+u(n)],[u(n),v(n)],[u(0)=1,v(0)=2]", CAT_CATEGORY_SOLVE},
   {"saute n", "saute ", "Turtle jumps n steps, by default n=10", "#saute 30", 0, CAT_CATEGORY_LOGO},
   {"scatterplot(Xlist,Ylist)", 0, "Draws points", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
-  {"segment(A,B)", 0, "线段", "1,2+i", "[1,2,1],[-1,3,2]", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
+  {"segment(A,B)", 0, "\xcf\xdf\xb6\xce", "1,2+i", "[1,2,1],[-1,3,2]", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
   {"seq(expr,var,a,b)", 0, "Generates a list from an expression.","j^2,j,1,10", 0, CAT_CATEGORY_PROGCMD},
   //{"si", "si  alors  sinon  fsi;", "Test.", "#f(x):=si x>0 alors x; sinon -x; fsi;// valeur absolue", 0, CAT_CATEGORY_PROG},
   {"sign(x)", 0, "Returns -1 if x is negative, 0 if x is zero and 1 if x is positive.", 0, 0, CAT_CATEGORY_REAL|XCAS_ONLY},
@@ -1677,7 +1697,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"~", "~", "Complement", "#~7", 0, CAT_CATEGORY_PROGCMD},
 };
 
-  const char aide_khicas_string[]="Aide Khicas";
+  const char aide_khicas_string[]="KhiCAS Help";
 #ifdef NUMWORKS
   const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-ans: completion\nshift-*: factor\nshift-+: normal\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: complexes\nshift-9:arithmetique entiere\nshift-0: probas\nshift-.: reels\nshift-10^: polynomes\nvar: liste des variables\nans: figure tortue (editeur)\n\nshift-x^y (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-6: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nshift-cut: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nalpha-droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nEXE: evaluer la selection\nshift-6: valeur approchee\nBackspace: supprime l'operateur racine de la selection\n\nEditeur de scripts\nEXE: passage a la ligne\nshift-CUT: documentation\nshift COPY (ou shift et deplacement curseur simultanement): marque le debut de la selection, deplacer le curseur vers la fin puis Backspace pour effacer ou shift-COPY pour copier sans effacer. shift-PASTE pour coller.\nHome-6 recherche seule: entrer un mot puis EXE puis EXE. Taper EXE pour l'occurence suivante, Back pour annuler.\nHome-6 remplacer: entrer un mot puis EXE puis le remplacement et EXE. Taper EXE ou Back pour remplacer ou non et passer a l'occurence suivante, AC pour annuler\nOK: tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
   const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift ans: completion\nshift-*: factor\nshift-+: normal\nshift-1 to 6: cf. screen bottom\nshift-7: matrices\nshift-8: complexes\nshift-9:arithmetic\nshift-0: proba\nshift-.: reals\nshift-10^: polynomials\nvar: variables list\nans: turtle screen (editor)\n\nshift-x^y (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-6: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nshift-cut: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nEXE: eval selection\nshift-6: approx value\nBackspace: suppress selection's rootnode operator\n\nScript Editor\nEXE: newline\nshift-CUT: documentation\nshift-COPY: marks selection begin, move the cursor to the end, then hit Backspace to erase or shift-COPY to copy (no erase). shift-PASTE to paste.\nHome-6 search: enter a word then EXE then again EXE. Type EXE for next occurence, Back to cancel.\nHome-6 replace: enter a word then EXE then replacement word then EXE. Type EXE or Back to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
@@ -1695,7 +1715,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   std::string insert_string(int index){
     std::string s;
-    const catalogFunc * completeCat=(lang==2)?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=(lang)?completeCatfr:completeCaten;
     if (completeCat[index].insert)
       s=completeCat[index].insert;
     else {
@@ -1733,37 +1753,37 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   int showCatalog(char* insertText,int preselect,int menupos,GIAC_CONTEXT) {
     // returns 0 on failure (user exit) and 1 on success (user chose a option)
     MenuItem menuitems[CAT_CATEGORY_LOGO+1];
-    menuitems[CAT_CATEGORY_ALL].text = (char*)((lang)?"全部":"All");
-    menuitems[CAT_CATEGORY_ALGEBRA].text = (char*)((lang)?"代数":"Algebra");
-    menuitems[CAT_CATEGORY_LINALG].text = (char*)((lang)?"线性代数":"Linear algebra");
-    menuitems[CAT_CATEGORY_CALCULUS].text = (char*)((lang)?"微积分":"Calculus");
+    menuitems[CAT_CATEGORY_ALL].text = (char*)((lang)?"\xc8\xab\xb2\xbf":"All");
+    menuitems[CAT_CATEGORY_ALGEBRA].text = (char*)((lang)?"\xb4\xfa\xca\xfd":"Algebra");
+    menuitems[CAT_CATEGORY_LINALG].text = (char*)((lang)?"\xcf\xdf\xd0\xd4\xb4\xfa\xca\xfd":"Linear algebra");
+    menuitems[CAT_CATEGORY_CALCULUS].text = (char*)((lang)?"\xce\xa2\xbb\xfd\xb7\xd6":"Calculus");
     menuitems[CAT_CATEGORY_ARIT].text = (char*)"Arithmetic, crypto";
     menuitems[CAT_CATEGORY_COMPLEXNUM].text = (char*)"Complexes";
-    menuitems[CAT_CATEGORY_PLOT].text = (char*)((lang)?"曲线":"Curves");
-    menuitems[CAT_CATEGORY_POLYNOMIAL].text = (char*)((lang)?"多项式":"Polynomials");
-    menuitems[CAT_CATEGORY_PROBA].text = (char*)((lang)?"概率":"Probabilities");
-    menuitems[CAT_CATEGORY_PROGCMD].text = (char*)((lang)?"程序命令 (0)":"Program cmds (0)");
-    menuitems[CAT_CATEGORY_REAL].text = (char*)((lang==2)?"实数 (e^)":"Reals");
-    menuitems[CAT_CATEGORY_SOLVE].text = (char*)((lang==2)?"求解 (ln)":"Solve (ln)");
-    menuitems[CAT_CATEGORY_STATS].text = (char*)((lang==2)?"统计 (log)":"Statistics (log)");
-    menuitems[CAT_CATEGORY_TRIG].text = (char*)((lang==2)?"三角函数 (i)":"Trigonometry (i)");
+    menuitems[CAT_CATEGORY_PLOT].text = (char*)((lang)?"\xc7\xfa\xcf\xdf":"Curves");
+    menuitems[CAT_CATEGORY_POLYNOMIAL].text = (char*)((lang)?"\xb6\xe0\xcf\xee\xca\xbd":"Polynomials");
+    menuitems[CAT_CATEGORY_PROBA].text = (char*)((lang)?"\xb8\xc5\xc2\xca":"Probabilities");
+    menuitems[CAT_CATEGORY_PROGCMD].text = (char*)((lang)?"\xb3\xcc\xd0\xf2\xc3\xfc\xc1\xee\x20\x28\x30\x29":"Program cmds (0)");
+    menuitems[CAT_CATEGORY_REAL].text = (char*)((lang)?"\xca\xb5\xca\xfd\x20\x28\x65\x5e\x29":"Reals");
+    menuitems[CAT_CATEGORY_SOLVE].text = (char*)((lang)?"\xc7\xf3\xbd\xe2\x20\x28\x6c\x6e\x29":"Solve (ln)");
+    menuitems[CAT_CATEGORY_STATS].text = (char*)((lang)?"\xcd\xb3\xbc\xc6\x20\x28\x6c\x6f\x67\x29":"Statistics (log)");
+    menuitems[CAT_CATEGORY_TRIG].text = (char*)((lang)?"\xc8\xfd\xbd\xc7\xba\xaf\xca\xfd\x20\x28\x69\x29":"Trigonometry (i)");
     menuitems[CAT_CATEGORY_OPTIONS].text = (char*)"Options (,)";
-    menuitems[CAT_CATEGORY_LIST].text = (char*)((lang==2)?"列表 (x^y)":"Lists (x^y)");
+    menuitems[CAT_CATEGORY_LIST].text = (char*)((lang)?"\xc1\xd0\xb1\xed\x20\x28\x78\x5e\x79\x29":"Lists (x^y)");
     menuitems[CAT_CATEGORY_MATRIX].text = (char*)"Matrices (sin)";
-    menuitems[CAT_CATEGORY_PROG].text = (char*)((lang)?"程序 (cos)":"Programs");
-    menuitems[CAT_CATEGORY_SOFUS].text = (char*)((lang)?"修改变量 (tan)":"Change variables (tan)");
-    menuitems[CAT_CATEGORY_PHYS].text = (char*)((lang==2)?"物理常数 (pi)":"Physics constants (pi)");
-    menuitems[CAT_CATEGORY_UNIT].text = (char*)((lang==2)?"物理单位 (sqrt)":"Units (sqrt)");
-    menuitems[CAT_CATEGORY_2D].text = (char*)((lang==2)?"几何 (x^2)":"Geometry (x^2)");
-    menuitems[CAT_CATEGORY_3D].text = (char*)((lang==2)?"3D (()":"3D (()");
-    menuitems[CAT_CATEGORY_LOGO].text = (char*)((lang==2)?"海龟 ())":"Turtle ())");
+    menuitems[CAT_CATEGORY_PROG].text = (char*)((lang)?"\xb3\xcc\xd0\xf2\x20\x28\x63\x6f\x73\x29":"Programs");
+    menuitems[CAT_CATEGORY_SOFUS].text = (char*)((lang)?"\xd0\xde\xb8\xc4\xb1\xe4\xc1\xbf\x20\x28\x74\x61\x6e\x29":"Change variables (tan)");
+    menuitems[CAT_CATEGORY_PHYS].text = (char*)((lang)?"\xce\xef\xc0\xed\xb3\xa3\xca\xfd\x20\x28\x70\x69\x29":"Physics constants (pi)");
+    menuitems[CAT_CATEGORY_UNIT].text = (char*)((lang)?"\xce\xef\xc0\xed\xb5\xa5\xce\xbb\x20\x28\x73\x71\x72\x74\x29":"Units (sqrt)");
+    menuitems[CAT_CATEGORY_2D].text = (char*)((lang)?"\xbc\xb8\xba\xce\x20\x28\x78\x5e\x32\x29":"Geometry (x^2)");
+    menuitems[CAT_CATEGORY_3D].text = (char*)((lang)?"3D (()":"3D (()");
+    menuitems[CAT_CATEGORY_LOGO].text = (char*)((lang)?"\xba\xa3\xb9\xea\x20\x28\x29\x29":"Turtle ())");
   
     Menu menu;
     menu.items=menuitems;
     menu.numitems=sizeof(menuitems)/sizeof(MenuItem);
     menu.height=MENUHEIGHT;
     menu.scrollout=1;
-    menu.title = (char*)((lang==2)?"命令列表":"Commands list");
+    menu.title = (char*)((lang)?"\xc3\xfc\xc1\xee\xc1\xd0\xb1\xed":"Commands list");
     //puts("catalog 1");
     while(1) {
       if (preselect)
@@ -1846,14 +1866,14 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     l=strlen(cmdname);
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
-    int nfunc=(lang==2)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
+    int nfunc=(lang)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
 #if defined NSPIRE_NEWLIB || defined NUMWORKS // should match static_help[] in help.cc
     int iii=nfunc; // no search in completeCat, directly in static_help.h
     //if (xcas_python_eval) iii=0;
 #else
     int iii=0;
 #endif
-    const catalogFunc * completeCat=(lang==2)?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=(lang)?completeCatfr:completeCaten;
     for (;iii<nfunc;++iii){
       if (xcas_python_eval>0 && (completeCat[iii].category & XCAS_ONLY) )
 	continue;
@@ -1873,8 +1893,10 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     string cf="";
     char fbuf[1024];
     if (iii==nfunc){
-      if (!has_static_help(cmdname,exec?(lang==0?-2:-lang):lang,fhowto,fsyntax,fexamples,frelated)){
-	if (warn) confirm("Pas d'aide disponible pour",cmdname,true);
+      // help system: 1=French, 2=English. Our lang: 0=EN, 1=CN. Map CN→EN for help.
+      int help_lang = (lang == 1) ? 2 : lang;
+      if (!has_static_help(cmdname,exec?(lang==0?-2:-help_lang):help_lang,fhowto,fsyntax,fexamples,frelated)){
+	if (warn) confirm(lang ? "\xC3\xBB\xD3\xD0\xB0\xEF\xD6\xA7\xD0\xC5\xCF\xA2:" : "No help available for",cmdname,true);
 	return "";
       }
       cf=frelated;
@@ -1917,7 +1939,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       xcas::textArea text;
       text.editable=false;
       text.clipline=-1;
-      text.title = (char*)((lang)?"命令帮助":"Help on command");
+      text.title = (char*)((lang)?"\xc3\xfc\xc1\xee\xb0\xef\xd6\xfa":"Help on command");
       text.allowF1=true;
       text.python=false;
       std::vector<xcas::textElement> & elem=text.elements;
@@ -1927,7 +1949,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       elem[1].lineSpacing = 0;
       if (fsyntax){
 	elem[1].newLine = 1;
-	elem[1].s=(lang==2?"语法：":"Syntax: ")+elem[0].s+"("+(strlen(fsyntax)?fsyntax:"arg")+")";
+	elem[1].s=(lang?"\xd3\xef\xb7\xa8\xa3\xba":"Syntax: ")+elem[0].s+"("+(strlen(fsyntax)?fsyntax:"arg")+")";
       }
       else {
 	elem[1].newLine = 0;
@@ -2054,13 +2076,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   // 0 on exit, 1 on success
   int doCatalogMenu(char* insertText, const char* title, int category,GIAC_CONTEXT) {
-    const catalogFunc * completeCat=(lang==2)?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=(lang)?completeCatfr:completeCaten;
     for (;;){
       int allcmds=builtin_lexer_functions_end()-builtin_lexer_functions_begin();
       int allopts=lexer_tab_int_values_end-lexer_tab_int_values_begin;
       bool isall=category==CAT_CATEGORY_ALL;
       bool isopt=category==CAT_CATEGORY_OPTIONS;
-      const int CAT_COMPLETE_COUNT=((lang==2)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN);
+      const int CAT_COMPLETE_COUNT=((lang)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN);
       int nitems = isall? allcmds:(isopt?allopts:CAT_COMPLETE_COUNT);
 #ifdef MENUITEM_MALLOC
       int memsize=sizeof(MenuItem)*nitems;
@@ -2152,7 +2174,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #endif
 	int sres = 0;
 	if (curmi==0){
-	  do_confirm(lang==2?"命令仅在 Xcas 模式下可用":"Commands only in Xcas mode");
+	  do_confirm(lang?"\xc3\xfc\xc1\xee\xbd\xf6\xd4\xda\x20\x58\x63\x61\x73\x20\xc4\xa3\xca\xbd\xcf\xc2\xbf\xc9\xd3\xc3":"Commands only in Xcas mode");
 	  sres=MENU_RETURN_EXIT;
 	}
 	else
@@ -2174,14 +2196,14 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  xcas::textArea text;
 	  text.editable=false;
 	  text.clipline=-1;
-	  text.title = (char*)((lang)?"命令帮助":"Help on command");
+	  text.title = (char*)((lang)?"\xc3\xfc\xc1\xee\xb0\xef\xd6\xfa":"Help on command");
 	  text.allowF1=true;
 	  text.python=python_compat(contextptr);
 	  std::vector<xcas::textElement> & elem=text.elements;
 	  elem = std::vector<xcas::textElement> (example2?4:3);
 	  elem[0].s = index<allcmds?completeCat[index].name:menuitems[menu.selection-1].text;
 	  if (index<allcmds && (completeCat[index].category & XCAS_ONLY) )
-	    elem[0].s += lang==2?" （仅 Xcas）":" (Xcas only)";
+	    elem[0].s += lang?"\x20\xa3\xa8\xbd\xf6\x20\x58\x63\x61\x73\xa3\xa9":" (Xcas only)";
 	  elem[0].newLine = 0;
 	  //elem[0].color = COLOR_BLUE;
 	  elem[1].newLine = 1;
@@ -2192,9 +2214,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	    elem[1].s = completeCat[index].desc;
 	  else {
 	    int token=menuitems[menu.selection-1].token;
-	    elem[1].s="Desole, pas d'aide disponible...";
-	    const char *fcmdname=menuitems[menu.selection-1].text,* fhowto=0,*fsyntax=0,*fexamples=0,*frelated=0;
-	    if (has_static_help(fcmdname,lang,fhowto,fsyntax,fexamples,frelated)){
+	    elem[1].s= lang ? "\xce\xde\xb0\xef\xd6\xfa\xd0\xc5\xcf\xa2\x2e\x2e\x2e" : "No help available...";
+	    const char *fcmdname=menuitems[menu.selection-1].text,* fhowto=0,* fsyntax=0,*fexamples=0,*frelated=0;
+	    if (has_static_help(fcmdname,(lang==1)?2:lang,fhowto,fsyntax,fexamples,frelated)){
 	      elem[1].s=fhowto;
 	      example=fexamples;
 	    }
@@ -2288,7 +2310,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  }
 	  else {
 	    const char *fcmdname=menuitems[menu.selection-1].text,* fhowto=0,*fsyntax=0,*fexamples=0,*frelated=0;
-	    if (has_static_help(fcmdname,lang,fhowto,fsyntax,fexamples,frelated)){
+	    if (has_static_help(fcmdname,(lang==1)?2:lang,fhowto,fsyntax,fexamples,frelated)){
 	      example=fexamples;
 	    }
 	  }
@@ -2501,7 +2523,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     if (g.type!=_VECT
 	//|| g._VECTptr->empty()
 	){
-      confirm((lang==2)?"没有变量。创建变量示例":"No variables. Examples to create",(lang)?"a=1 或 f(x):=sin(x^2)":"a=1 or f(x):=sin(x^2)",true);
+      confirm((lang)?"\xc3\xbb\xd3\xd0\xb1\xe4\xc1\xbf\xa1\xa3\xb4\xb4\xbd\xa8\xb1\xe4\xc1\xbf\xca\xbe\xc0\xfd":"No variables. Examples to create",(lang)?"\x61\x3d\x31\x20\xbb\xf2\x20\x66\x28\x78\x29\x3a\x3d\x73\x69\x6e\x28\x78\x5e\x32\x29":"a=1 or f(x):=sin(x^2)",true);
       return undef;
     }
     vecteur & v=*g._VECTptr;
@@ -2728,7 +2750,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       s1=print_INT_(di);
     else
       s1=print_DOUBLE_(d,3);
-    inputline(msg1,((lang)?"新值？ ":"New value? "),s1,false,65,contextptr);
+    inputline(msg1,((lang)?"\xd0\xc2\xd6\xb5\xa3\xbf ":"New value? "),s1,false,65,contextptr);
     return stringtodouble(s1,d);
   }
   
@@ -2739,7 +2761,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       s1=print_INT_(di);
     else
       s1=print_DOUBLE_(d,3);
-    inputline(msg1,((lang)?"新值？ ":"New value? "),s1,false,ypos,contextptr);
+    inputline(msg1,((lang)?"\xd0\xc2\xd6\xb5\xa3\xbf ":"New value? "),s1,false,ypos,contextptr);
     return stringtodouble(s1,d);
   }
   
@@ -8599,7 +8621,7 @@ namespace xcas {
     nparams=0; // reset number of parameters (shown from left upper)
     if (hp) history_plot(contextptr).clear();
     if (is3d){
-      if (lang==2)
+      if (lang)
 	statuslinemsg("Toolbox: aide");
       else
 	statuslinemsg("Toolbox: help");
@@ -9648,7 +9670,7 @@ namespace xcas {
     gen sol(undef);
     if (operation==1 || operation==8){
       double d=tracemode_mark;
-      if (!inputdouble(lang==2?"参数值？":"Parameter value",d,contextptr))
+      if (!inputdouble(lang?"\xb2\xce\xca\xfd\xd6\xb5\xa3\xbf":"Parameter value",d,contextptr))
 	return;
       if (operation==8)
 	tracemode_mark=d;
@@ -9768,20 +9790,20 @@ namespace xcas {
       if (operation==2){ // root near curt
 	sol=newton(y,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
 	if (sol.type==_DOUBLE_){
-	  confirm(lang==2?"根在":"Root at",sol.print(contextptr).c_str());
+	  confirm(lang?"\xb8\xf9\xd4\xda":"Root at",sol.print(contextptr).c_str());
 	  sto(sol,gen("Zero",contextptr),contextptr);
 	}
       }
       if (operation==4){ // horizontal tangent near curt
 	sol=newton(y1,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
 	if (sol.type==_DOUBLE_){
-	  confirm(lang==2?"y'=0, 极值/奇点在":"y'=0, extremum/singular pt at",sol.print(contextptr).c_str());
+	  confirm(lang?"y'=0, \xbc\xab\xd6\xb5/\xc6\xe6\xb5\xe3\xd4\xda":"y'=0, extremum/singular pt at",sol.print(contextptr).c_str());
 	  sto(sol,gen("Extremum",contextptr),contextptr);
 	}
       }
       if (operation==5){ // vertical tangent near curt
 	if (x1==1)
-	  do_confirm(lang==2?"参数曲线工具！":"Tool for parametric curves!");
+	  do_confirm(lang?"\xb2\xce\xca\xfd\xc7\xfa\xcf\xdf\xb9\xa4\xbe\xdf\xa3\xa1":"Tool for parametric curves!");
 	else {
 	  sol=newton(x1,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
 	  if (sol.type==_DOUBLE_){
@@ -9841,7 +9863,7 @@ namespace xcas {
 	if (v.size()==2)
 	  curve_infos1=_equation(G_orig,contextptr).print(contextptr);
 	else if (v.size()==4)
-	  curve_infos1="三角形";
+	  curve_infos1="\xc8\xfd\xbd\xc7\xd0\xce";
 	else curve_infos1="Polygon";
 	curve_infos2=G.print(contextptr);
       }
@@ -10654,23 +10676,23 @@ namespace xcas {
 	string s1=s+print_INT_(i);
 	tmp=gen(s1,contextptr);
 	if (tmp.type==_IDNT){
-	  confirm(lang==2?"保存名已保留":"Unable to use reserved name",((lang==2?"已使用名称 ":"Name used ")+s1).c_str());
+	  confirm(lang?"\xb1\xa3\xb4\xe6\xc3\xfb\xd2\xd1\xb1\xa3\xc1\xf4":"Unable to use reserved name",((lang?"\xd2\xd1\xca\xb9\xd3\xc3\xc3\xfb\xb3\xc6 ":"Name used ")+s1).c_str());
 	  sto(makevecteur(at_pnt,string2gen(merge_area(text->elements),false)),tmp,contextptr);
 	  return;
 	}
       }
     }
-    confirm(lang==2?"保存名已保留":"Unable to use reserved name",lang==2?"无法保存":"Unable to save");
+    confirm(lang?"\xb1\xa3\xb4\xe6\xc3\xfb\xd2\xd1\xb1\xa3\xc1\xf4":"Unable to use reserved name",lang?"\xce\xde\xb7\xa8\xb1\xa3\xb4\xe6":"Unable to save");
   }
 
   void geohelp(GIAC_CONTEXT){
     textArea text;
     text.editable=false;
     text.clipline=-1;
-    text.title = (char*)((lang)?"帮助":"Help");
+    text.title = (char*)((lang)?"\xb0\xef\xd6\xfa":"Help");
     text.allowF1=false;
     text.python=false;
-    add(&text,lang==2?
+    add(&text,lang?
 	"x,n,t ou tab: etude courbe\nshift-2: info courbe\nshift-3: tangente, pente\nshift-4: normale\nshift-5: cercle osculateur\nshift-7: infos courbe on/off\nhaut/bas/droit/gauche: deplace pointeur ou change point de vue\nalpha-haut/bas/droit/gauche: modifie fenetre\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nF4: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
 	"x,n,t or tab: curve study\nshift-2: curve info\nshift-3: tangent, slope\nshift-4: normal\nshift-5: osculating circle\nshift-7: curve infos on/off\nup/down/right/left: move pointer or modify viewpoint\nalpha-up/down/right/left: move window\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nF4: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
     int exec=doTextArea(&text,contextptr);
@@ -10712,7 +10734,7 @@ namespace xcas {
 	std::string s1; double d;
 	if (paramenu.selection==2){
 	  handle_f5();
-	  if (inputline(menu_name,(lang)?"新值？":"New value?",s1,false)==KEY_CTRL_EXE && s1.size()>0 && isalpha(s1[0])){
+	  if (inputline(menu_name,(lang)?"\xd0\xc2\xd6\xb5\xa3\xbf":"New value?",s1,false)==KEY_CTRL_EXE && s1.size()>0 && isalpha(s1[0])){
 	    if (s1.size()>10)
 	      s1=s1.substr(0,10);
 	    strcpy(menu_name,("name "+s1).c_str());
@@ -10791,25 +10813,25 @@ namespace xcas {
       init_tracemode();
     const char *
       tab[]={
-	     lang==2?"对象信息 (shift-2)":"Object infos (shift-2)",  // 0
+	     lang?"\xb6\xd4\xcf\xf3\xd0\xc5\xcf\xa2 (shift-2)":"Object infos (shift-2)",  // 0
 #ifdef NUMWORKS
-	     lang==2?"退出探索模式 (x,n,t)":"Quit study mode (x,n,t)",
+	     lang?"\xcd\xcb\xb3\xf6\xcc\xbd\xcb\xf7\xc4\xa3\xca\xbd (x,n,t)":"Quit study mode (x,n,t)",
 #else
-	     lang==2?"退出探索模式 (tab)":"Quit study mode (tab)",
+	     lang?"\xcd\xcb\xb3\xf6\xcc\xbd\xcb\xf7\xc4\xa3\xca\xbd (tab)":"Quit study mode (tab)",
 #endif
-	     lang==2?"输入 t 或 x":"Set t or x", // 1
-	     lang==2?"y=0，根":"y=0, root",
+	     lang?"\xca\xe4\xc8\xeb t \xbb\xf2 x":"Set t or x", // 1
+	     lang?"y=0\xa3\xac\xb8\xf9":"y=0, root",
 	     "Intersection", // 3
 	     "y'=0, extremum",
-	     lang==2?"x'=0（参数）":"x'=0 (parametric)", // 5
+	     lang?"x'=0\xa3\xa8\xb2\xce\xca\xfd\xa3\xa9":"x'=0 (parametric)", // 5
 	     "Inflexion",
-	     lang==2?"标记位置":"Mark position",
-	     lang==2?"输入 t 或 x，标记":"Set t or x, mark", // 8
-	     lang==2?"面积":"Area",
-	     lang==2?"弧长":"Arc length", // 10
+	     lang?"\xb1\xea\xbc\xc7\xce\xbb\xd6\xc3":"Mark position",
+	     lang?"\xca\xe4\xc8\xeb t \xbb\xf2 x\xa3\xac\xb1\xea\xbc\xc7":"Set t or x, mark", // 8
+	     lang?"\xc3\xe6\xbb\xfd":"Area",
+	     lang?"\xbb\xa1\xb3\xa4":"Arc length", // 10
 	     0};
     const int s=sizeof(tab)/sizeof(char *);
-    int choix=select_item(tab,lang==2?"曲线分析":"Curve study",true);
+    int choix=select_item(tab,lang?"\xc7\xfa\xcf\xdf\xb7\xd6\xce\xf6":"Curve study",true);
     if (choix<0 || choix>s)
       return;
     if (choix==1)
@@ -10928,7 +10950,7 @@ namespace xcas {
 	if (key==KEY_CTRL_F8 )
 	  set_mode(0,0,0,"");
 	if (key==KEY_CTRL_F9 )
-	  set_mode(at_point,at_point,1,"点");
+	  set_mode(at_point,at_point,1,"\xb5\xe3");
 	if (key==KEY_CTRL_F10)
 	  set_mode(at_segment,is3d?at_sphere:at_cercle,2,"Center,Point");
 	if (key==KEY_CTRL_F11)
@@ -10999,20 +11021,20 @@ namespace xcas {
 	tracemode=0;
 	const char *
 	  tab[]={
-		 lang==2?"坐标系模式":"Frame mode", // 0
-		 lang==2?"指针":"Pointer",
-		 lang==2?"点":"点", // 2
-		 is3d?"球体":"Circle",
-		 lang==2?"三角形":"三角形", // 4
-		 lang==2?"点":"点",
-		 lang==2?"直线和平面":"Lines, planes", // 6
-		 lang==2?"多边形、多面体":"Polygon, polyhedron",
-		 lang==2?"圆、二次曲线、球":"Circle, conic, sphere", // 8
-		 lang==2?"曲线和曲面":"Curve, surface", // 9
-		 lang==2?"光标":"Cursor", // 10
-		 lang==2?"变换":"Transforms",
-		 lang==2?"测量":"测量", // 12
-		 lang==2?"清除轨迹":"Clear trace", // -1
+		 lang?"\xd7\xf8\xb1\xea\xcf\xb5\xc4\xa3\xca\xbd":"Frame mode", // 0
+		 lang?"\xd6\xb8\xd5\xeb":"Pointer",
+		 lang?"\xb5\xe3":"\xb5\xe3", // 2
+		 is3d?"\xc7\xf2\xcc\xe5":"Circle",
+		 lang?"\xc8\xfd\xbd\xc7\xd0\xce":"\xc8\xfd\xbd\xc7\xd0\xce", // 4
+		 lang?"\xb5\xe3":"\xb5\xe3",
+		 lang?"\xd6\xb1\xcf\xdf\xba\xcd\xc6\xbd\xc3\xe6":"Lines, planes", // 6
+		 lang?"\xb6\xe0\xb1\xdf\xd0\xce\xa1\xa2\xb6\xe0\xc3\xe6\xcc\xe5":"Polygon, polyhedron",
+		 lang?"\xd4\xb2\xa1\xa2\xb6\xfe\xb4\xce\xc7\xfa\xcf\xdf\xa1\xa2\xc7\xf2":"Circle, conic, sphere", // 8
+		 lang?"\xc7\xfa\xcf\xdf\xba\xcd\xc7\xfa\xc3\xe6":"Curve, surface", // 9
+		 lang?"\xb9\xe2\xb1\xea":"Cursor", // 10
+		 lang?"\xb1\xe4\xbb\xbb":"Transforms",
+		 lang?"\xb2\xe2\xc1\xbf":"\xb2\xe2\xc1\xbf", // 12
+		 lang?"\xc7\xe5\xb3\xfd\xb9\xec\xbc\xa3":"Clear trace", // -1
 		 0};
 	const int s=sizeof(tab)/sizeof(char *);
 	int choix=select_item(tab,"Mode",true);
@@ -11027,7 +11049,7 @@ namespace xcas {
 	  gen ftmp[]={0,0,at_point,at_segment,at_segment};
 	  gen ffinal[]={0,0,at_point,is3d?at_sphere:at_cercle,at_triangle};
 	  int mode[]={255,0,1,2,3};
-	  const char * help[]={"","","点","Center,Point","Point1,Point2,Point3"};
+	  const char * help[]={"","","\xb5\xe3","Center,Point","Point1,Point2,Point3"};
 	  set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
 	  continue;
 	}
@@ -11035,22 +11057,22 @@ namespace xcas {
 	if (choix==5){ // Points
 	  const char *
 	    tab[]={
-		   lang==2?"点":"点",
-		   lang==2?"中点":"Middle point",
-		   lang==2?"圆心":"Center",
-		   lang==2?"唯一交点":"Single intersection",
-		   lang==2?"交点列表":"List of intersections",
-		   lang==2?"元素":"元素",
+		   lang?"\xb5\xe3":"\xb5\xe3",
+		   lang?"\xd6\xd0\xb5\xe3":"Middle point",
+		   lang?"\xd4\xb2\xd0\xc4":"Center",
+		   lang?"\xce\xa8\xd2\xbb\xbd\xbb\xb5\xe3":"Single intersection",
+		   lang?"\xbd\xbb\xb5\xe3\xc1\xd0\xb1\xed":"List of intersections",
+		   lang?"\xd4\xaa\xcb\xd8":"\xd4\xaa\xcb\xd8",
 		   0};
 	  const int s=sizeof(tab)/sizeof(char *);
-	  int choix=select_item(tab,"点",true);
+	  int choix=select_item(tab,"\xb5\xe3",true);
 	  if (choix<0 || choix>s)
 	    continue;
 	  gen ftmp[]={at_point,at_segment,at_centre,at_inter_unique,at_inter,at_element};
 	  gen ffinal[]={at_point,at_milieu,at_centre,at_inter_unique,at_inter,at_element};
 	  int mode[]={1,2,1,2,2,1};
 	  const char * help[]={
-			       "点",
+			       "\xb5\xe3",
 			       "Point1,Point2",
 			       "Circle",
 			       "Line1,Line2",
@@ -11063,17 +11085,17 @@ namespace xcas {
 	if (choix==6){ // Droites
 	  const char *
 	    tab[]={
-		   lang==2?"线段":"线段", 
-		   lang==2?"向量":"Vector",
-		   lang==2?"射线":"Halfline",
-		   lang==2?"直线":"Line",
-		   lang==2?"平面":"Plane",
-		   lang==2?"平行线":"Parallel",
-		   lang==2?"垂线":"Perpendicular",
-		   lang==2?"中垂线":"Perpen_bisector",
-		   lang==2?"角平分线":"Bisector",
-		   lang==2?"中线":"Median line",
-		   lang==2?"切线":"Tangent",
+		   lang?"\xcf\xdf\xb6\xce":"\xcf\xdf\xb6\xce", 
+		   lang?"\xcf\xf2\xc1\xbf":"Vector",
+		   lang?"\xc9\xe4\xcf\xdf":"Halfline",
+		   lang?"\xd6\xb1\xcf\xdf":"Line",
+		   lang?"\xc6\xbd\xc3\xe6":"Plane",
+		   lang?"\xc6\xbd\xd0\xd0\xcf\xdf":"Parallel",
+		   lang?"\xb4\xb9\xcf\xdf":"Perpendicular",
+		   lang?"\xd6\xd0\xb4\xb9\xcf\xdf":"Perpen_bisector",
+		   lang?"\xbd\xc7\xc6\xbd\xb7\xd6\xcf\xdf":"Bisector",
+		   lang?"\xd6\xd0\xcf\xdf":"Median line",
+		   lang?"\xc7\xd0\xcf\xdf":"Tangent",
 		   0};
 	  const int s=sizeof(tab)/sizeof(char *);
 	  int choix=select_item(tab,"Droites, segments...",true);
@@ -11101,17 +11123,17 @@ namespace xcas {
 	if (choix==7){ // Polygons
 	  const char *
 	    tab[]={
-		   lang==2?"三角形":"三角形",
-		   lang==2?"等边三角形":"Equilateral triangle",
-		   lang==2?"正方形":"Square",
-		   lang==2?"四边形":"Quadrilateral",
-		   lang==2?"多边形":"Polygon",
-		   lang==2?"四面体（棱锥）":"Tetrahedron (Pyramid)",
-		   lang==2?"正四面体":"Regular tetrahedron",
-		   lang==2?"立方体":"立方体",
-		   lang==2?"八面体":"Octahedron",
-		   lang==2?"十二面体":"Dodecahedron",
-		   lang==2?"二十面体":"Icosahedron",
+		   lang?"\xc8\xfd\xbd\xc7\xd0\xce":"\xc8\xfd\xbd\xc7\xd0\xce",
+		   lang?"\xb5\xc8\xb1\xdf\xc8\xfd\xbd\xc7\xd0\xce":"Equilateral triangle",
+		   lang?"\xd5\xfd\xb7\xbd\xd0\xce":"Square",
+		   lang?"\xcb\xc4\xb1\xdf\xd0\xce":"Quadrilateral",
+		   lang?"\xb6\xe0\xb1\xdf\xd0\xce":"Polygon",
+		   lang?"\xcb\xc4\xc3\xe6\xcc\xe5\xa3\xa8\xc0\xe2\xd7\xb6\xa3\xa9":"Tetrahedron (Pyramid)",
+		   lang?"\xd5\xfd\xcb\xc4\xc3\xe6\xcc\xe5":"Regular tetrahedron",
+		   lang?"\xc1\xa2\xb7\xbd\xcc\xe5":"\xc1\xa2\xb7\xbd\xcc\xe5",
+		   lang?"\xb0\xcb\xc3\xe6\xcc\xe5":"Octahedron",
+		   lang?"\xca\xae\xb6\xfe\xc3\xe6\xcc\xe5":"Dodecahedron",
+		   lang?"\xb6\xfe\xca\xae\xc3\xe6\xcc\xe5":"Icosahedron",
 		   0};
 	  const int s=sizeof(tab)/sizeof(char *);
 	  int choix=select_item(tab,"Droites, segments...",true);
@@ -11123,7 +11145,7 @@ namespace xcas {
 	  int m=mode[choix];
 	  if (choix==4){
 	    double d=5;
-	    if (inputdouble(lang==2?"顶点数？":"Number of vertices?",d,contextptr) && d==int(d) && d>=3 && d<20){
+	    if (inputdouble(lang?"\xb6\xa5\xb5\xe3\xca\xfd\xa3\xbf":"Number of vertices?",d,contextptr) && d==int(d) && d>=3 && d<20){
 	      m=d;
 	    }
 	    else continue;
@@ -11147,13 +11169,13 @@ namespace xcas {
 	if (choix==8){ // Conics
 	  const char *
 	    tab[]={
-		   lang==2?"圆":"circle",
-		   lang==2?"外接":"circumcircle",
-		   lang==2?"内切":"incircle",
-		   lang==2?"椭圆":"椭圆",
-		   lang==2?"双曲线":"hyperbola",
-		   lang==2?"抛物线":"parabola",
-		   lang==2?"球":"球",
+		   lang?"\xd4\xb2":"circle",
+		   lang?"\xcd\xe2\xbd\xd3":"circumcircle",
+		   lang?"\xc4\xda\xc7\xd0":"incircle",
+		   lang?"\xcd\xd6\xd4\xb2":"\xcd\xd6\xd4\xb2",
+		   lang?"\xcb\xab\xc7\xfa\xcf\xdf":"hyperbola",
+		   lang?"\xc5\xd7\xce\xef\xcf\xdf":"parabola",
+		   lang?"\xc7\xf2":"\xc7\xf2",
 		   0};
 	  const int s=sizeof(tab)/sizeof(char *);
 	  int choix=select_item(tab,"Conic",true);
@@ -11177,12 +11199,12 @@ namespace xcas {
 	if (choix==9){ // Curves
 	  const char *
 	    tab[]={
-		   lang==2?"函数 plot(sin(x))":"Function plot(sin(x))",
-		   lang==2?"参数 plotparam([x^2,x^3])":"参数 plotparam([x^2,x^3])",
-		   lang==2?"极坐标 plotpolar(x)":"Polar plotpolar(x)",
-		   lang==2?"隐函数 plot(x^2+y^4=6)":"隐函数 plot(x^2+y^4=6)",
-		   lang==2?"切线场":"Plotfield",
-		   lang==2?"微分方程解":"Diff. equa. solution",
+		   lang?"\xba\xaf\xca\xfd plot(sin(x))":"Function plot(sin(x))",
+		   lang?"\xb2\xce\xca\xfd plotparam([x^2,x^3])":"\xb2\xce\xca\xfd plotparam([x^2,x^3])",
+		   lang?"\xbc\xab\xd7\xf8\xb1\xea plotpolar(x)":"Polar plotpolar(x)",
+		   lang?"\xd2\xfe\xba\xaf\xca\xfd plot(x^2+y^4=6)":"\xd2\xfe\xba\xaf\xca\xfd plot(x^2+y^4=6)",
+		   lang?"\xc7\xd0\xcf\xdf\xb3\xa1":"Plotfield",
+		   lang?"\xce\xa2\xb7\xd6\xb7\xbd\xb3\xcc\xbd\xe2":"Diff. equa. solution",
 		   0};
 	  const int s=sizeof(tab)/sizeof(char *);
 	  int choix=select_item(tab,"Courbe",true);
@@ -11206,7 +11228,7 @@ namespace xcas {
 	      break;
 	  }
 	  if (param==0){
-	    confirm(lang==2?"没有更多可用变量。":"No more free variable available",lang==2?"Essayez purge(a) ou purge(b) ou ...":"Try purge(a) or purge(b) or ...");
+	    confirm(lang?"\xc3\xbb\xd3\xd0\xb8\xfc\xb6\xe0\xbf\xc9\xd3\xc3\xb1\xe4\xc1\xbf\xa1\xa3":"No more free variable available",lang?"Essayez purge(a) ou purge(b) ou ...":"Try purge(a) or purge(b) or ...");
 	    continue;
 	  }
 	  string mycmd=inputparam(param.print()[0],0,contextptr);
@@ -11222,14 +11244,14 @@ namespace xcas {
 	if (choix==11){ // Transforms
 	  const char *
 	    tab[]={
-		   lang==2?"对称":"reflexion",
-		   lang==2?"旋转":"旋转",
-		   lang==2?"平移":"平移",
-		   lang==2?"投影":"投影",
-		   lang==2?"位似":"homothety",
-		   lang==2?"相似":"similarity",
-		   // lang==2?"":"",
-		   // lang==2?"":"",
+		   lang?"\xb6\xd4\xb3\xc6":"reflexion",
+		   lang?"\xd0\xfd\xd7\xaa":"\xd0\xfd\xd7\xaa",
+		   lang?"\xc6\xbd\xd2\xc6":"\xc6\xbd\xd2\xc6",
+		   lang?"\xcd\xb6\xd3\xb0":"\xcd\xb6\xd3\xb0",
+		   lang?"\xce\xbb\xcb\xc6":"homothety",
+		   lang?"\xcf\xe0\xcb\xc6":"similarity",
+		   // lang?"":"",
+		   // lang?"":"",
 		   0};
 	  const int s=sizeof(tab)/sizeof(char *);
 	  int choix=select_item(tab,"Transform",true);
@@ -11252,19 +11274,19 @@ namespace xcas {
 	if (choix==12){ // Mesures
 	  const char *
 	    tab[]={
-		   lang==2?"距离":"距离",
-		   lang==2?"角度":"角度",
-		   lang==2?"面积":"area",
-		   lang==2?"周长":"perimeter",
-		   lang==2?"斜率":"slope",
-		   lang==2?"仅距离":"distance raw",
-		   lang==2?"仅角度":"angle raw",
-		   lang==2?"仅面积":"area raw",
-		   lang==2?"仅周长":"perimeter raw",
-		   lang==2?"仅斜率":"slope raw",
+		   lang?"\xbe\xe0\xc0\xeb":"\xbe\xe0\xc0\xeb",
+		   lang?"\xbd\xc7\xb6\xc8":"\xbd\xc7\xb6\xc8",
+		   lang?"\xc3\xe6\xbb\xfd":"area",
+		   lang?"\xd6\xdc\xb3\xa4":"perimeter",
+		   lang?"\xd0\xb1\xc2\xca":"slope",
+		   lang?"\xbd\xf6\xbe\xe0\xc0\xeb":"distance raw",
+		   lang?"\xbd\xf6\xbd\xc7\xb6\xc8":"angle raw",
+		   lang?"\xbd\xf6\xc3\xe6\xbb\xfd":"area raw",
+		   lang?"\xbd\xf6\xd6\xdc\xb3\xa4":"perimeter raw",
+		   lang?"\xbd\xf6\xd0\xb1\xc2\xca":"slope raw",
 		   0};
 	  const int s=sizeof(tab)/sizeof(char *);
-	  int choix=select_item(tab,"测量",true);
+	  int choix=select_item(tab,"\xb2\xe2\xc1\xbf",true);
 	  if (choix<0 || choix>s)
 	    continue;
 	  gen ftmp[]={at_segment,at_triangle,at_areaat,at_perimeterat,at_slopeat,at_segment,at_triangle,at_areaatraw,at_perimeteratraw,at_slopeatraw};
@@ -11313,11 +11335,11 @@ namespace xcas {
 	  s="depth 3d "+print_DOUBLE_(gr.current_depth,contextptr);
 	  strcpy(menu_depth,s.c_str());
 	  //smallmenu.title = "KhiCAS";
-	  smallmenuitems[0].text = (char *) ((lang)?"帮助":"Help");
+	  smallmenuitems[0].text = (char *) ((lang)?"\xb0\xef\xd6\xfa":"Help");
 #ifdef NUMWORKS
-	  smallmenuitems[1].text = (char*) ((lang)?"曲线分析 (x,n,t)":"Curve study (x,n,t)");
+	  smallmenuitems[1].text = (char*) ((lang)?"\xc7\xfa\xcf\xdf\xb7\xd6\xce\xf6 (x,n,t)":"Curve study (x,n,t)");
 #else
-	  smallmenuitems[1].text = (char*) ((lang)?"曲线分析 (tab)":"Curve study (tab)");
+	  smallmenuitems[1].text = (char*) ((lang)?"\xc7\xfa\xcf\xdf\xb7\xd6\xce\xf6 (tab)":"Curve study (tab)");
 #endif
 	  smallmenuitems[2].text = (char *) menu_xmin;
 	  smallmenuitems[3].text = (char *) menu_xmax;
@@ -11326,27 +11348,27 @@ namespace xcas {
 	  smallmenuitems[6].text = (char *) menu_zmin;
 	  smallmenuitems[7].text = (char *) menu_zmax;
 	  smallmenuitems[8].text = (char *) menu_depth;
-	  smallmenuitems[9].text = (char*) (lang==2?"保存图形":"Save figure");
-	  smallmenuitems[10].text = (char*) (lang==2?"另存为":"Save as");
-	  smallmenuitems[11].text = (char*)((lang)?"退出":"Quit");
+	  smallmenuitems[9].text = (char*) (lang?"\xb1\xa3\xb4\xe6\xcd\xbc\xd0\xce":"Save figure");
+	  smallmenuitems[10].text = (char*) (lang?"\xc1\xed\xb4\xe6\xce\xaa":"Save as");
+	  smallmenuitems[11].text = (char*)((lang)?"\xcd\xcb\xb3\xf6":"Quit");
 	  smallmenuitems[12].text = (char*) "Orthonormalize /";
 	  smallmenuitems[13].text = (char*) "Autoscale *";
 	  smallmenuitems[14].text = (char *) ("Zoom in +");
 	  smallmenuitems[15].text = (char *) ("Zoom out -");
 	  smallmenuitems[16].text = (char *) ("Y-Zoom out (-)");
-	  smallmenuitems[17].text = (char*) ((lang)?"显示坐标轴":"Show axes");
+	  smallmenuitems[17].text = (char*) ((lang)?"\xcf\xd4\xca\xbe\xd7\xf8\xb1\xea\xd6\xe1":"Show axes");
 	  smallmenuitems[17].type = MENUITEM_CHECKBOX;
 	  smallmenuitems[17].value = gr.show_axes;
-	  smallmenuitems[18].text = (char*) ((lang==2)?"显示切线 (F3)":"Show tangent (F3)");
+	  smallmenuitems[18].text = (char*) ((lang)?"\xcf\xd4\xca\xbe\xc7\xd0\xcf\xdf (F3)":"Show tangent (F3)");
 	  smallmenuitems[18].type = MENUITEM_CHECKBOX;
 	  smallmenuitems[18].value = (gr.tracemode & 2)!=0;
-	  smallmenuitems[19].text = (char*) ((lang==2)?"显示法线 (F4)":"Show normal (F4)");
+	  smallmenuitems[19].text = (char*) ((lang)?"\xcf\xd4\xca\xbe\xb7\xa8\xcf\xdf (F4)":"Show normal (F4)");
 	  smallmenuitems[19].type = MENUITEM_CHECKBOX;
 	  smallmenuitems[19].value = (gr.tracemode & 4)!=0;
-	  smallmenuitems[20].text = (char*) ((lang==2)?"显示圆 (F5)":"Show circle (F5)");
+	  smallmenuitems[20].text = (char*) ((lang)?"\xcf\xd4\xca\xbe\xd4\xb2 (F5)":"Show circle (F5)");
 	  smallmenuitems[20].type = MENUITEM_CHECKBOX;
 	  smallmenuitems[20].value = (gr.tracemode & 8)!=0;
-	  smallmenuitems[21].text = (char*) ((lang)?"清除几何痕迹":"Clear geometry traces");
+	  smallmenuitems[21].text = (char*) ((lang)?"\xc7\xe5\xb3\xfd\xbc\xb8\xba\xce\xba\xdb\xbc\xa3":"Clear geometry traces");
 	  drawRectangle(0,180,LCD_WIDTH_PX,60,_BLACK);
 	  int sres = doMenu(&smallmenu);
 	  if (sres == MENU_RETURN_EXIT)
@@ -11975,9 +11997,9 @@ namespace xcas {
 #if 1
       if (firstrun==2){
 #ifdef NSPIRE_NEWLIB
-	DefineStatusMessage((char*)((lang==2)?"ctrl enter: eval, esc: quitte, ":"ctrl enter: eval, esc: exit"), 1, 0, 0);
+	DefineStatusMessage((char*)((lang)?"ctrl enter: eval, esc: quitte, ":"ctrl enter: eval, esc: exit"), 1, 0, 0);
 #else
-	DefineStatusMessage((char*)((lang==2)?"EXE: quitte, resultat dans last":"EXE: quit, result stored in last"), 1, 0, 0);
+	DefineStatusMessage((char*)((lang)?"EXE: quitte, resultat dans last":"EXE: quit, result stored in last"), 1, 0, 0);
 #endif
 	DisplayStatusArea();
 	firstrun=1;
@@ -12046,7 +12068,7 @@ namespace xcas {
 	os_hide_graph();
 	if (edited && xcas::do_select(eq.data,true,value) && value.type==_EQW){
 	  //cout << "ok " << value._EQWptr->g << endl;
-	  DefineStatusMessage(((lang==2)?"resultat stocke dans last":"result stored in last"), 1, 0, 0);
+	  DefineStatusMessage(((lang)?"resultat stocke dans last":"result stored in last"), 1, 0, 0);
 	  //DisplayStatusArea();
 	  giac::sto(value._EQWptr->g,giac::gen("last",contextptr),contextptr);
 	  return value._EQWptr->g;
@@ -12061,9 +12083,9 @@ namespace xcas {
 	}
 	if (confirm(
 #ifdef NSPIRE_NEWLIB
-		    (lang==2)?"真的要放弃吗？":"Really leave",(lang==2)?"esc: editeur,  enter: confirmer":"esc: editor,  enter: confirm"
+		    (lang)?"\xd5\xe6\xb5\xc4\xd2\xaa\xb7\xc5\xc6\xfa\xc2\xf0\xa3\xbf":"Really leave",(lang)?"esc: editeur,  enter: confirmer":"esc: editor,  enter: confirm"
 #else
-		    (lang==2)?"真的要放弃吗？":"Really leave",(lang==2)?"Back: editeur,  OK: confirmer":"Back: editor,  OK: confirm"
+		    (lang)?"\xd5\xe6\xb5\xc4\xd2\xaa\xb7\xc5\xc6\xfa\xc2\xf0\xa3\xbf":"Really leave",(lang)?"Back: editeur,  OK: confirmer":"Back: editor,  OK: confirm"
 #endif
 		    )==KEY_CTRL_F1){
 	  os_hide_graph();
@@ -12158,7 +12180,7 @@ namespace xcas {
 	if (keyflag==0)
 	  handle_f5();
 	std::string varname;
-	if (inputline(((lang==2)?"将选择存储到":"Save selection in",(lang==2)?"Nom de variable: ":"Variable name: "),0,varname,false,65,contextptr) && !varname.empty() && isalpha(varname[0])){
+	if (inputline(((lang)?"\xbd\xab\xd1\xa1\xd4\xf1\xb4\xe6\xb4\xa2\xb5\xbd":"Save selection in",(lang)?"Nom de variable: ":"Variable name: "),0,varname,false,65,contextptr) && !varname.empty() && isalpha(varname[0])){
 	  giac::gen g(varname,contextptr);
 	  giac::gen ge(protecteval(g,1,contextptr));
 	  if (g.type!=_IDNT){
@@ -12275,7 +12297,7 @@ namespace xcas {
       if (0 && key==KEY_CTRL_EXE){
 	if (xcas::do_select(eq.data,true,value) && value.type==_EQW){
 	  //cout << "ok " << value._EQWptr->g << endl;
-	  DefineStatusMessage(((lang==2)?"resultat stocke dans last":"result stored in last"), 1, 0, 0);
+	  DefineStatusMessage(((lang)?"resultat stocke dans last":"result stored in last"), 1, 0, 0);
 	  //DisplayStatusArea();
 	  giac::sto(value._EQWptr->g,giac::gen("last",contextptr),contextptr);
 	  return value._EQWptr->g;
@@ -12624,7 +12646,7 @@ namespace xcas {
     python_compat(4|p,contextptr);
     if (edptr)
       edptr->python=1;
-    if (do_confirm((lang==2)?"清除 Xcas 变量？":"Clear Xcas variables?"))
+    if (do_confirm((lang)?"\xc7\xe5\xb3\xfd\x20\x58\x63\x61\x73\x20\xb1\xe4\xc1\xbf\xa3\xbf":"Clear Xcas variables?"))
       do_restart(contextptr);
     *logptr(contextptr) << "Micropython interpreter\n";
     Console_FMenu_Init(contextptr);
@@ -12636,7 +12658,7 @@ namespace xcas {
     python_compat(-1,contextptr);
     if (edptr)
       edptr->python=-1;
-    if (0 && do_confirm((lang==2)?"清除 Xcas 变量？":"Clear Xcas variables?"))
+    if (0 && do_confirm((lang)?"\xc7\xe5\xb3\xfd Xcas \xb1\xe4\xc1\xbf\xa3\xbf":"Clear Xcas variables?"))
       do_restart(contextptr);
     *logptr(contextptr) << "QuickJS interpreter\n";
     Console_FMenu_Init(contextptr);
@@ -12682,11 +12704,11 @@ namespace xcas {
       if (!kbd_interrupted){
 	// clear turtle, display msg
 	clear_turtle_history(contextptr);
-	int res=confirm((lang==2)?"内存已满！请清理":"Memory full. Purge",
+	int res=confirm((lang)?"\xc4\xda\xb4\xe6\xd2\xd1\xc2\xfa\xa3\xa1\xc7\xeb\xc7\xe5\xc0\xed":"Memory full. Purge",
 #ifdef NSPIRE_NEWLIB
-			(lang==2)?"回车: 变量, ESC: 全部。":"enter: variables, esc: all",
+			(lang)?"\xbb\xd8\xb3\xb5: \xb1\xe4\xc1\xbf, ESC: \xc8\xab\xb2\xbf\xa1\xa3":"enter: variables, esc: all",
 #else
-			(lang==2)?"EXE variable, Back: tout.":"EXE variables, Back: all",
+			(lang)?"EXE variable, Back: tout.":"EXE variables, Back: all",
 #endif
 			false);
 	if (res==KEY_CTRL_F1 && select_var(contextptr).type==_IDNT){
@@ -12968,7 +12990,7 @@ namespace xcas {
     int nkeys=rsa_check("/exammode/usr/ndless/shakeys.tns",maxkeys,hash);
     if (nkeys<=0)
       nkeys=rsa_check("/documents/ndless/shakeys.tns",maxkeys,hash);
-    if (lang==2)
+    if (lang)
       *logptr(contextptr) << "Il y a " << nkeys << " empreintes cryptees de fichiers autorises\n";
     else
       *logptr(contextptr) << "Found " << nkeys << " valid crypted keys of secure files\n";
@@ -12981,13 +13003,13 @@ namespace xcas {
       *logptr(contextptr) << "}\n";
     }
 #endif
-    *logptr(contextptr) << (lang==2?"测试并删除未授权文件\n":"Checking and clearing non secure files\n");
+    *logptr(contextptr) << (lang?"\xb2\xe2\xca\xd4\xb2\xa2\xc9\xbe\xb3\xfd\xce\xb4\xca\xda\xc8\xa8\xce\xc4\xbc\xfe\n":"Checking and clearing non secure files\n");
     nspire_clear_data("/exammode/usr",nkeys,hash,contextptr);
-    *logptr(contextptr) << (lang==2?"未授权文件已删除\n":"Filesystem checked.\n");
+    *logptr(contextptr) << (lang?"\xce\xb4\xca\xda\xc8\xa8\xce\xc4\xbc\xfe\xd2\xd1\xc9\xbe\xb3\xfd\n":"Filesystem checked.\n");
     if (copy)
       nspire_copy_data(nkeys,hash,contextptr);
     else
-      *logptr(contextptr) << (lang==2?"执行 doc doc 重启考试模式\n":"Press doc doc to restart exam mode\n");
+      *logptr(contextptr) << (lang?"\xd6\xb4\xd0\xd0 doc doc \xd6\xd8\xc6\xf4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\n":"Press doc doc to restart exam mode\n");
   }
 #endif
 
@@ -13154,55 +13176,55 @@ namespace xcas {
 
   void warn_python(int mode,bool autochange){
     if (mode==-1){
-      confirm((lang==2)?"Interpreteur Javascript":"Javascript interpreter",
+      confirm((lang)?"Interpreteur Javascript":"Javascript interpreter",
 #ifdef NSPIRE_NEWLIB
-	      (lang==2)?"回车: 确定":"回车: 确定"
+	      (lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8":"\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8"
 #else
-	      (lang==2)?"OK: 确定":"OK: 确定"
+	      (lang)?"\x4f\x4b\x3a\x20\xc8\xb7\xb6\xa8":"\x4f\x4b\x3a\x20\xc8\xb7\xb6\xa8"
 #endif	      
 	      );
       return;
     }
     if (mode==0)
-      confirm(autochange?((lang)?"检测到 Xcas 语法源代码。":"Xcas syntax source code detected."):((lang)?"Xcas 语法。":"Xcas syntax."),
+      confirm(autochange?((lang)?"\xbc\xec\xb2\xe2\xb5\xbd\x20\x58\x63\x61\x73\x20\xd3\xef\xb7\xa8\xd4\xb4\xb4\xfa\xc2\xeb\xa1\xa3":"Xcas syntax source code detected."):((lang)?"\x58\x63\x61\x73\x20\xd3\xef\xb7\xa8\xa1\xa3":"Xcas syntax."),
 #ifdef NSPIRE_NEWLIB
-	      "回车: 确定"
+	      "\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8"
 #else
-	      "OK: 确定"
+	      "\x4f\x4b\x3a\x20\xc8\xb7\xb6\xa8"
 #endif
 	      );
     if (mode==1)
       if (autochange)
-	confirm((lang==2)?"Source en syntaxe Python. Passage":"Python syntax source detected. Setting",
+	confirm((lang)?"Source en syntaxe Python. Passage":"Python syntax source detected. Setting",
 #ifdef NSPIRE_NEWLIB
-		(lang==2)?"en Python avec ^=**, enter: ok":"Python mode with ^=**, enter:ok"
+		(lang)?"en Python avec ^=**, enter: ok":"Python mode with ^=**, enter:ok"
 #else
-		(lang==2)?"en Python avec ^=**, OK: ok":"Python mode with ^=**, OK:ok"
+		(lang)?"en Python avec ^=**, OK: ok":"Python mode with ^=**, OK:ok"
 #endif
 		);
       else
-	confirm((lang==2)?"Syntaxe Python avec ^==**, tapez":"Python syntax with ^==**, type",
+	confirm((lang)?"Syntaxe Python avec ^==**, tapez":"Python syntax with ^==**, type",
 #ifdef NSPIRE_NEWLIB
-		(lang==2)?"python_compat(2) pour xor. enter: ok":"python_compat(2) for xor. enter: ok"
+		(lang)?"python_compat(2) pour xor. enter: ok":"python_compat(2) for xor. enter: ok"
 #else
-		(lang==2)?"python_compat(2) pour xor. OK: ok":"python_compat(2) for xor. OK: ok"
+		(lang)?"python_compat(2) pour xor. OK: ok":"python_compat(2) for xor. OK: ok"
 #endif
 		);
     if (mode==2){
-      confirm((lang)?"Python 语法 ^==xor":"Python syntax with ^==xor",
+      confirm((lang)?"\x50\x79\x74\x68\x6f\x6e\x20\xd3\xef\xb7\xa8\x20\x5e\x3d\x3d\x78\x6f\x72":"Python syntax with ^==xor",
 #ifdef NSPIRE_NEWLIB
-	      (lang==2)?"python_compat(1) pour **. enter: ok":"python_compat(1) for **. enter: ok"
+	      (lang)?"python_compat(1) pour **. enter: ok":"python_compat(1) for **. enter: ok"
 #else
-	      (lang==2)?"python_compat(1) pour **. OK: ok":"python_compat(1) for **. OK: ok"
+	      (lang)?"python_compat(1) pour **. OK: ok":"python_compat(1) for **. OK: ok"
 #endif	      
 	      );
     }
     if (mode & 4){
-      confirm((lang==2)?"Interpreteur MicroPython":"MicroPython interpreter",
+      confirm((lang)?"Interpreteur MicroPython":"MicroPython interpreter",
 #ifdef NSPIRE_NEWLIB
-	      (lang==2)?"回车: 确定":"回车: 确定"
+	      (lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8":"\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8"
 #else
-	      (lang==2)?"OK: 确定":"OK: 确定"
+	      (lang)?"\x4f\x4b\x3a\x20\xc8\xb7\xb6\xa8":"\x4f\x4b\x3a\x20\xc8\xb7\xb6\xa8"
 #endif	      
 	      );
     }
@@ -13275,12 +13297,12 @@ namespace xcas {
 #if 0
       if (text->changed){
 	std::string tmp=text->filename;
-	tmp += (lang==2)?" a ete modifie!":" was modified!";
+	tmp += (lang)?" a ete modifie!":" was modified!";
 	if (confirm(tmp.c_str(),
 #ifdef NSPIRE_NEWLIB
-		    (lang==2)?"回车: 保存, ESC: 放弃":"enter: save, esc: discard changes"
+		    (lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xb1\xa3\xb4\xe6\x2c\x20\x45\x53\x43\x3a\x20\xb7\xc5\xc6\xfa":"enter: save, esc: discard changes"
 #else
-		    (lang==2)?"OK: 保存, 返回: 确定":"OK: save, Back: discard changes"
+		    (lang)?"\x4f\x4b\x3a\x20\xb1\xa3\xb4\xe6\x2c\x20\xb7\xb5\xbb\xd8\x3a\x20\xc8\xb7\xb6\xa8":"OK: save, Back: discard changes"
 #endif
 		    )==KEY_CTRL_F1){
 	  save_script(text->filename.c_str(),merge_area(text->elements));
@@ -13312,11 +13334,11 @@ namespace xcas {
       // should detect syntax errors here and return line number
       if (parser_errorline>0){
 	//--parser_errorline; // ?? something strange 
-	sprintf(status,(lang==2)?"错误行 %i":"Error line %i",parser_errorline);	
+	sprintf(status,(lang)?"\xb4\xed\xce\xf3\xd0\xd0\x20\x25\x69":"Error line %i",parser_errorline);	
       }
       else {
 	process_freeze();
-	sprintf(status,"%s",(lang)?"语法正确":"Parse OK");
+	sprintf(status,"%s",(lang)?"\xd3\xef\xb7\xa8\xd5\xfd\xc8\xb7":"Parse OK");
       }
       DefineStatusMessage(status,1,0,0);
       return parser_errorline;
@@ -13363,13 +13385,13 @@ namespace xcas {
       }
       else {
 	lineerr=v.size();
-	tok=(lang==2)?"la fin":"end";
+	tok=(lang)?"la fin":"end";
 	pos=0;
       }
       if (pos>=0)
-	sprintf(status,(lang==2)?"错误行 %i 在 %s":"Error line %i at %s",lineerr,tok.c_str());
+	sprintf(status,(lang)?"\xb4\xed\xce\xf3\xd0\xd0\x20\x25\x69\x20\xd4\xda\x20\x25\x73":"Error line %i at %s",lineerr,tok.c_str());
       else
-	sprintf(status,(lang==2)?"错误行 %i %s":"Error line %i %s",lineerr,(pos==-2?((lang==2)?", : manquant ?":", missing :?"):""));
+	sprintf(status,(lang)?"\xb4\xed\xce\xf3\xd0\xd0\x20\x25\x69\x20\x25\x73":"Error line %i %s",lineerr,(pos==-2?((lang)?", : manquant ?":", missing :?"):""));
       DefineStatusMessage(status,1,0,0);
     }
     else {
@@ -13382,7 +13404,7 @@ namespace xcas {
       // define the function
       if (check_do_graph(g,gs,7,contextptr)==KEY_SHUTDOWN)
 	return KEY_SHUTDOWN;
-      DefineStatusMessage((char *)((lang)?"语法正确":"Parse OK"),1,0,0);
+      DefineStatusMessage((char *)((lang)?"\xd3\xef\xb7\xa8\xd5\xfd\xc8\xb7":"Parse OK"),1,0,0);
     }
     DisplayStatusArea();    
     return lineerr;
@@ -13660,9 +13682,9 @@ namespace xcas {
 
   void search_msg(){
 #ifdef NSPIRE_NEWLIB
-    DefineStatusMessage((char *)((lang==2)?"回车: 下一个, DEL: 取消":"enter: next, DEL: cancel"),1,0,0);
+    DefineStatusMessage((char *)((lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xcf\xc2\xd2\xbb\xb8\xf6\x2c\x20\x44\x45\x4c\x3a\x20\xc8\xa1\xcf\xfb":"enter: next, DEL: cancel"),1,0,0);
 #else
-    DefineStatusMessage((char *)((lang==2)?"回车: 下一个, DEL: 取消":"enter: next, DEL: cancel"),1,0,0);
+    DefineStatusMessage((char *)((lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xcf\xc2\xd2\xbb\xb8\xf6\x2c\x20\x44\x45\x4c\x3a\x20\xc8\xa1\xcf\xfb":"enter: next, DEL: cancel"),1,0,0);
 #endif
     DisplayStatusArea();    	    
   }  
@@ -13734,9 +13756,9 @@ namespace xcas {
   bool chk_replace(textArea * text,const std::string & search,const std::string & replace){
     if (replace.size()){
 #ifdef NSPIRE_NEWLIB      
-      DefineStatusMessage((char *)((lang==2)?"Remplacer? enter: Oui, 8 ou N: Non":"Replace? enter: Yes, 8 or N: No"),1,0,0);
+      DefineStatusMessage((char *)((lang)?"Remplacer? enter: Oui, 8 ou N: Non":"Replace? enter: Yes, 8 or N: No"),1,0,0);
 #else
-      DefineStatusMessage((char *)((lang)?"替换? EXE: 是, 8 或 N: 否":"Replace? EXE: Yes, 8 or N: No"),1,0,0);
+      DefineStatusMessage((char *)((lang)?"\xcc\xe6\xbb\xbb\x3f\x20\x45\x58\x45\x3a\x20\xca\xc7\x2c\x20\x38\x20\xbb\xf2\x20\x4e\x3a\x20\xb7\xf1":"Replace? EXE: Yes, 8 or N: No"),1,0,0);
 #endif
     }
     else
@@ -13773,11 +13795,11 @@ namespace xcas {
 	// save or cancel?
 	std::string tmp=text->filename;
 	if (strcmp(tmp.c_str(),"temp.py")==0){
-	  if (confirm((lang==2)?"修改将丢失":"Changes will be lost",
+	  if (confirm((lang)?"\xd0\xde\xb8\xc4\xbd\xab\xb6\xaa\xca\xa7":"Changes will be lost",
 #ifdef NSPIRE_NEWLIB
-		      (lang==2)?"enter: annuler, esc: tant pis":"enter: cancel, esc: confirm"
+		      (lang)?"enter: annuler, esc: tant pis":"enter: cancel, esc: confirm"
 #else
-		      (lang==2)?"OK: 取消, 返回: 确认":"OK: cancel, Back: confirm"
+		      (lang)?"\x4f\x4b\x3a\x20\xc8\xa1\xcf\xfb\x2c\x20\xb7\xb5\xbb\xd8\x3a\x20\xc8\xb7\xc8\xcf":"OK: cancel, Back: confirm"
 #endif
 		      )==KEY_CTRL_F1)
 	    return 2;
@@ -13785,12 +13807,12 @@ namespace xcas {
 	    return 0;
 	  }
 	}
-	tmp += (lang==2)?" a ete modifie!":" was modified!";
+	tmp += (lang)?" a ete modifie!":" was modified!";
 	if (confirm(tmp.c_str(),
 #ifdef NSPIRE_NEWLIB
-		    (lang==2)?"回车: 保存, ESC: 放弃":"enter: save, esc: discard changes"
+		    (lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xb1\xa3\xb4\xe6\x2c\x20\x45\x53\x43\x3a\x20\xb7\xc5\xc6\xfa":"enter: save, esc: discard changes"
 #else
-		    (lang==2)?"OK: 保存, 返回: 确定":"OK: save, Back: discard changes"
+		    (lang)?"\x4f\x4b\x3a\x20\xb1\xa3\xb4\xe6\x2c\x20\xb7\xb5\xbb\xd8\x3a\x20\xc8\xb7\xb6\xa8":"OK: save, Back: discard changes"
 #endif
 		    )==KEY_CTRL_F1){
 	  save_script(text->filename.c_str(),merge_area(text->elements));
@@ -15079,9 +15101,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     handle_f5();
     string str;
 #ifdef NSPIRE_NEWLIB
-    int res=inputline((lang==2)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang)?"文件名：":"Filename:",str,false);
+    int res=inputline((lang)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang)?"\xce\xc4\xbc\xfe\xc3\xfb\xa3\xba":"Filename:",str,false);
 #else
-    int res=inputline((lang==2)?"EXIT 或空字符串: 取消":"EXIT or empty string: cancel",(lang)?"文件名：":"Filename:",str,false);
+    int res=inputline((lang)?"\x45\x58\x49\x54\x20\xbb\xf2\xbf\xd5\xd7\xd6\xb7\xfb\xb4\xae\x3a\x20\xc8\xa1\xcf\xfb":"EXIT or empty string: cancel",(lang)?"\xce\xc4\xbc\xfe\xc3\xfb\xa3\xba":"Filename:",str,false);
 #endif
     if (res==KEY_CTRL_EXIT || str.empty())
       return 0;
@@ -15092,11 +15114,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     // if file already exists, warn, otherwise create
     if (!file_exists(filename))
       return 1;
-    if (confirm((lang==2)?"  Le fichier existe!":"  File exists!",
+    if (confirm((lang)?"  Le fichier existe!":"  File exists!",
 #ifdef NSPIRE_NEWLIB
-		(lang==2)?"回车: 覆盖, ESC: 取消":"enter:overwrite, esc: cancel"
+		(lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xb8\xb2\xb8\xc7\x2c\x20\x45\x53\x43\x3a\x20\xc8\xa1\xcf\xfb":"enter:overwrite, esc: cancel"
 #else
-		(lang==2)?"OK: 覆盖, 返回: 取消":"OK:overwrite, Back: cancel"
+		(lang)?"\x4f\x4b\x3a\x20\xb8\xb2\xb8\xc7\x2c\x20\xb7\xb5\xbb\xd8\x3a\x20\xc8\xa1\xcf\xfb":"OK:overwrite, Back: cancel"
 #endif
 		)==KEY_CTRL_F1)
       return 1;
@@ -15143,11 +15165,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     }
     std::string msg;
     if (w.empty())
-      msg=(lang==2)?(list?"Creer nouvelle liste":"Creer nouvelle matrice"):(list?"Create new list":"Create new matrix");
+      msg=(lang)?(list?"Creer nouvelle liste":"Creer nouvelle matrice"):(list?"Create new list":"Create new matrix");
     else
-      msg=(((lang==2)?"Creer nouveau ou editer ":"Create new or edit ")+(w.size()==1?w.front():giac::gen(w,giac::_SEQ__VECT)).print(contextptr));
+      msg=(((lang)?"Creer nouveau ou editer ":"Create new or edit ")+(w.size()==1?w.front():giac::gen(w,giac::_SEQ__VECT)).print(contextptr));
     handle_f5();
-    if (inputline(msg.c_str(),((lang==2)?"Nom de variable:":"Variable name:"),*sptr,false) && !sptr->empty() && isalpha((*sptr)[0])){
+    if (inputline(msg.c_str(),((lang)?"Nom de variable:":"Variable name:"),*sptr,false) && !sptr->empty() && isalpha((*sptr)[0])){
       giac::gen g(*sptr,contextptr);
       giac::gen ge(protecteval(g,1,contextptr));
       if (g.type==giac::_IDNT){
@@ -15163,16 +15185,16 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	}
 	if (ge==g || confirm_overwrite()){
 	  *sptr="";
-	  if (inputline(((lang==2)?(list?"Nombre d'elements":"Nombre de lignes"):(list?"Elements number":"Line number")),"",*sptr,true)){
+	  if (inputline(((lang)?(list?"Nombre d'elements":"Nombre de lignes"):(list?"Elements number":"Line number")),"",*sptr,true)){
 	    int l=strtol(sptr->c_str(),0,10);
 	    if (l>0 && l<256){
 	      int c;
 	      if (list)
 		c=0;
 	      else {
-		std::string tmp(*sptr+((lang==2)?" lignes.":" lines."));
+		std::string tmp(*sptr+((lang)?" lignes.":" lines."));
 		*sptr="";
-		inputline(tmp.c_str(),(lang==2)?"Colonnes:":"Columns:",*sptr,true);
+		inputline(tmp.c_str(),(lang)?"Colonnes:":"Columns:",*sptr,true);
 		c=strtol(sptr->c_str(),0,10);
 	      }
 	      if (c==0){
@@ -15201,20 +15223,20 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     std::string search;
     handle_f5();
 #ifdef NSPIRE_NEWLIB
-    int res=inputline((lang==2)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang==2)?"Chercher:":"Search:",search,false);
+    int res=inputline((lang)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang)?"Chercher:":"Search:",search,false);
     if (search.empty() || res==KEY_CTRL_EXIT)
       return "";
     replace="";
-    std::string tmp=((lang==2)?"esc: recherche seule de ":"esc: search only ")+search;
+    std::string tmp=((lang)?"esc: recherche seule de ":"esc: search only ")+search;
 #else
-    int res=inputline((lang==2)?"EXIT 或空字符串: 取消":"EXIT or empty string: cancel",(lang==2)?"Chercher:":"Search:",search,false);
+    int res=inputline((lang)?"\x45\x58\x49\x54\x20\xbb\xf2\xbf\xd5\xd7\xd6\xb7\xfb\xb4\xae\x3a\x20\xc8\xa1\xcf\xfb":"EXIT or empty string: cancel",(lang)?"Chercher:":"Search:",search,false);
     if (search.empty() || res==KEY_CTRL_EXIT)
       return "";
     replace="";
-    std::string tmp=((lang==2)?"EXIT: recherche seule de ":"EXIT: search only ")+search;
+    std::string tmp=((lang)?"EXIT: recherche seule de ":"EXIT: search only ")+search;
 #endif
     handle_f5();
-    res=inputline(tmp.c_str(),(lang==2)?"Remplacer par:":"Replace by:",replace,false);
+    res=inputline(tmp.c_str(),(lang)?"Remplacer par:":"Replace by:",replace,false);
     if (res==KEY_CTRL_EXIT)
       replace="";
     return search;
@@ -15572,17 +15594,17 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 		adds=isex?"def f(x):\nreturn x*x*x\n":"def f(x):\n\nreturn\n";
 	    } else {
 	      if (isif)
-		adds=(lang==2 && text->python==0)?(isex?"si x<0 alors x:=-x; fsi;":"si  alors\n\nsinon\n\nfsi;"):(isex?"if (x<0) { x:=-x;}":"if (){\n\n} else {\n\n}");
-	      if (lang==2 && text->python==0 && iselse)
+		adds=(lang && text->python==0)?(isex?"si x<0 alors x:=-x; fsi;":"si  alors\n\nsinon\n\nfsi;"):(isex?"if (x<0) { x:=-x;}":"if (){\n\n} else {\n\n}");
+	      if (lang && text->python==0 && iselse)
 		adds="sinon ";
 	      if (isfor)
-		adds=(lang==2 && text->python==0)?(isex?"pour j de 1 jusque 10 faire\nprint(j*j);\nfpour;":"pour  de  jusque  faire\n\nfpour;"):(isex?"for (j=1;j<=10;j++){ \nprint(j*j);\n}":"for(;;){\n\n};");
+		adds=(lang && text->python==0)?(isex?"pour j de 1 jusque 10 faire\nprint(j*j);\nfpour;":"pour  de  jusque  faire\n\nfpour;"):(isex?"for (j=1;j<=10;j++){ \nprint(j*j);\n}":"for(;;){\n\n};");
 	      if (isforin)
-		adds=(lang==2 && text->python==0)?(isex?"pour j in [1,4,9,16] faire\nprint(j)\nfpour;":"pour  in  faire\n\nfpour;"):(isex?"for j in [1,4,9,16] do\nprint(j);od;":"for  in  do\n\nod;");
+		adds=(lang && text->python==0)?(isex?"pour j in [1,4,9,16] faire\nprint(j)\nfpour;":"pour  in  faire\n\nfpour;"):(isex?"for j in [1,4,9,16] do\nprint(j);od;":"for  in  do\n\nod;");
 	      if (iswhile)
-		adds=(lang==2 && text->python==0)?(isex?"a,b:=25,15;\ntantque b!=0 faire\na,b:=b,irem(a,b);\nftantque;a;":"tantque  faire\n\nftantque;"):(isex?"a,b:=25,15;\nwhile (b!=0) {\na,b=b,irem(a,b);\n}\na;":"while () {\n\n}");
+		adds=(lang && text->python==0)?(isex?"a,b:=25,15;\ntantque b!=0 faire\na,b:=b,irem(a,b);\nftantque;a;":"tantque  faire\n\nftantque;"):(isex?"a,b:=25,15;\nwhile (b!=0) {\na,b=b,irem(a,b);\n}\na;":"while () {\n\n}");
 	      if (isdef)
-		adds=(lang==2 && text->python==0)?(isex?"fonction f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffonction:;\n":"fonction f(x)\nlocal j;\n\nreturn ;\nffonction:;"):(isex?"function f(x){\nvar j;\nj=x*x;\nreturn j;\n}\n":"function f(x){\n  var j;\n\n return ;\n};");
+		adds=(lang && text->python==0)?(isex?"fonction f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffonction:;\n":"fonction f(x)\nlocal j;\n\nreturn ;\nffonction:;"):(isex?"function f(x){\nvar j;\nj=x*x;\nreturn j;\n}\n":"function f(x){\n  var j;\n\n return ;\n};");
 	    }
 	    insert(text,adds,key!=KEY_CTRL_PASTE); // was true, but we should not indent when pasting
 	    display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
@@ -15781,7 +15803,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	save_script(text->filename.c_str(),merge_area(v));
 	text->changed=false;
 	char status[256];
-	sprintf(status,(lang==2)?"%s sauvegarde":"%s saved",text->filename.c_str());
+	sprintf(status,(lang)?"%s sauvegarde":"%s saved",text->filename.c_str());
 	DefineStatusMessage(status, 1, 0, 0);
 	DisplayStatusArea();    	    
 	continue;      
@@ -15799,15 +15821,15 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  smallmenu.height=MENUHEIGHT;
 	  smallmenu.scrollbar=0;
 	  //smallmenu.title = "KhiCAS";
-	  smallmenuitems[0].text = (char*)((lang)?"检查语法":"Check syntax");
-	  smallmenuitems[1].text = (char*)((lang)?"保存":"Save");
-	  smallmenuitems[2].text = (char*)((lang)?"另存为":"Save as");
-	  if (nspire_exam_mode==2) smallmenuitems[1].text = (char*)(lang==2?"保存已禁用":"Saving disabled");
+	  smallmenuitems[0].text = (char*)((lang)?"\xbc\xec\xb2\xe9\xd3\xef\xb7\xa8":"Check syntax");
+	  smallmenuitems[1].text = (char*)((lang)?"\xb1\xa3\xb4\xe6":"Save");
+	  smallmenuitems[2].text = (char*)((lang)?"\xc1\xed\xb4\xe6\xce\xaa":"Save as");
+	  if (nspire_exam_mode==2) smallmenuitems[1].text = (char*)(lang?"\xb1\xa3\xb4\xe6\xd2\xd1\xbd\xfb\xd3\xc3":"Saving disabled");
 	  if (exam_mode || nspire_exam_mode==2) smallmenuitems[2].text = (char*)"";
-	  smallmenuitems[3].text = (char*)((lang)?"插入":"Insert");
-	  smallmenuitems[4].text = (char*)((lang)?"清除":"Clear");
-	  smallmenuitems[5].text = (char*)((lang)?"查找替换":"Search, replace");
-	  smallmenuitems[6].text = (char*)((lang)?"跳转行":"Goto line");
+	  smallmenuitems[3].text = (char*)((lang)?"\xb2\xe5\xc8\xeb":"Insert");
+	  smallmenuitems[4].text = (char*)((lang)?"\xc7\xe5\xb3\xfd":"Clear");
+	  smallmenuitems[5].text = (char*)((lang)?"\xb2\xe9\xd5\xd2\xcc\xe6\xbb\xbb":"Search, replace");
+	  smallmenuitems[6].text = (char*)((lang)?"\xcc\xf8\xd7\xaa\xd0\xd0":"Goto line");
 	  int p=python_compat(contextptr);
 	  if (p<0){
 	      smallmenuitems[7].text = (char*)"Syntax [QuickJS]";
@@ -15823,10 +15845,10 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 		smallmenuitems[7].text = (char*)"Syntax [Xcas comp Python ^=xor]";
 	    }
 	  }
-	  smallmenuitems[8].text = (char *)((lang)?"更改字体大小":"Change fontsize");
+	  smallmenuitems[8].text = (char *)((lang)?"\xb8\xfc\xb8\xc4\xd7\xd6\xcc\xe5\xb4\xf3\xd0\xa1":"Change fontsize");
 	  smallmenuitems[9].text = (char *)aide_khicas_string;
-	  smallmenuitems[10].text = (char *)((lang)?"关于":"About");
-	  smallmenuitems[11].text = (char*)((lang)?"退出":"Quit");
+	  smallmenuitems[10].text = (char *)((lang)?"\xB9\xD8\xD3\xDA":"About");
+	  smallmenuitems[11].text = (char*)((lang)?"\xcd\xcb\xb3\xf6":"Quit");
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
 	    sres=smallmenu.selection;
@@ -15841,7 +15863,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      text.editable=false;
 	      text.clipline=-1;
 	      text.title = smallmenuitems[sres-1].text;
-	      add(&text,smallmenu.selection==10?((lang==2)?shortcuts_fr_string:shortcuts_en_string):((lang==2)?apropos_fr_string:apropos_en_string));
+	      add(&text,smallmenu.selection==10?((lang)?shortcuts_fr_string:shortcuts_en_string):((lang)?apropos_fr_string:apropos_en_string));
 	      if (doTextArea(&text,contextptr)==KEY_SHUTDOWN)
 		return KEY_SHUTDOWN;
 	      continue;
@@ -15875,7 +15897,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      save_script(text->filename.c_str(),merge_area(v));
 	      text->changed=false;
 	      char status[256];
-	      sprintf(status,(lang==2)?"%s sauvegarde":"%s saved",text->filename.c_str());
+	      sprintf(status,(lang)?"%s sauvegarde":"%s saved",text->filename.c_str());
 	      DefineStatusMessage(status, 1, 0, 0);
 	      DisplayStatusArea();    	    
 	    }
@@ -15914,7 +15936,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    }
 	    if (sres==7){
 	      display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
-	      int l=get_line_number((lang)?"负数: 从末尾计数":"Negative: counted from the end",(lang)?"行号：":"Line number:");
+	      int l=get_line_number((lang)?"\xb8\xba\xca\xfd\x3a\x20\xb4\xd3\xc4\xa9\xce\xb2\xbc\xc6\xca\xfd":"Negative: counted from the end",(lang)?"\xd0\xd0\xba\xc5\xa3\xba":"Line number:");
 	      if (l>0)
 		text->line=l-1;
 	      if (l<0)
@@ -16133,9 +16155,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       set_exam_mode(0,contextptr);
     }
     if (exam_mode)
-      confirm((lang==2)?"停止考试模式":"To stop exam mode",(lang==2)?"连接计算器后执行 doc doc":"plug in the calculator then doc doc");
+      confirm((lang)?"\xcd\xa3\xd6\xb9\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"To stop exam mode",(lang)?"\xc1\xac\xbd\xd3\xbc\xc6\xcb\xe3\xc6\xf7\xba\xf3\xd6\xb4\xd0\xd0\x20\x64\x6f\x63\x20\x64\x6f\x63":"plug in the calculator then doc doc");
     else
-      confirm((lang==2)?"考试模式结束":"End exam mode","enter: OK");
+      confirm((lang)?"\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xbd\xe1\xca\xf8":"End exam mode","enter: OK");
   }    
 
 #ifdef NUMWORKS
@@ -16401,30 +16423,30 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     smallmenuitems[0].type = MENUITEM_CHECKBOX;
     smallmenuitems[0].text = (char*)"x,n,t -> t";
 #endif
-    smallmenuitems[1].text = (char*)"Syntaxe (Xcas/Py/JS)";
+    smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax (Xcas/Py/JS)");
     smallmenuitems[2].type = MENUITEM_CHECKBOX;
     smallmenuitems[2].text = (char*)"Radians (in Xcas)";
     smallmenuitems[3].type = MENUITEM_CHECKBOX;
     smallmenuitems[3].text = (char*)"Sqrt (in Xcas)";
-    smallmenuitems[4].text = (char*)"Francais";
+    smallmenuitems[4].text = (char *)"\xD6\xD0\xCE\xC4"; // GBK: 中文
     smallmenuitems[5].text = (char*)"English";
-    smallmenuitems[6].text = (char*)"Spanish&English";
-    smallmenuitems[7].text = (char*)"Greek&English";
-    smallmenuitems[8].text = (char*)"Deutsch&English";
-    smallmenuitems[9].text = (char *) ((lang)?"键盘快捷键 (0)":"Shortcuts (0)");
+    smallmenuitems[6].text = (char*)"";
+    smallmenuitems[7].text = (char*)"";
+    smallmenuitems[8].text = (char*)"";
+    smallmenuitems[9].text = (char *) ((lang)?"\xBC\xC2\xC5\xC5\xBD\xD3 (0)":"Shortcuts (0)");
 #ifdef NUMWORKS
-    smallmenuitems[10].text = (char*) ((lang==2)?"备份、考试模式 (e^x)":"Backup, exam mode (e^x)");
+    smallmenuitems[10].text = (char*) ((lang)?"\xb1\xb8\xb7\xdd\xa1\xa2\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\x20\x28\x65\x5e\x78\x29":"Backup, exam mode (e^x)");
 #else
-    smallmenuitems[10].text = (char*) ((lang==2)?"考试模式 (e^x)":"Exam mode (e^x)");
+    smallmenuitems[10].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xbd (e^x)":"Exam mode (e^x)");
     if (osok==0)
-      smallmenuitems[10].text = (char*) ((lang==2)?"考试模式不兼容":"Exam mode incompatible");
+      smallmenuitems[10].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xBD\xB2\xBB\xBC\xD9\xD0\xD0":"Exam mode incompatible");
     if (osok==-1)
-      smallmenuitems[10].text = (char*) ((lang)?"考试模式警告":"Exam mode warning");
+      smallmenuitems[10].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xBD\xBE\xAF\xBE\xA1":"Exam mode warning");
 #endif
-    smallmenuitems[11].text = (char*) ((lang)?"关于":"About");
+    smallmenuitems[11].text = (char*) ((lang)?"\xB9\xD8\xD3\xDA":"About");
     smallmenuitems[14].text = (char*) "Quit";
     if (exam_mode)
-      smallmenuitems[14].text = (char*)((lang)?"退出考试模式":"Quit exam mode");
+      smallmenuitems[14].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Quit exam mode");
     
     // smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
     while(1) {
@@ -16466,7 +16488,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  xthetat=1-xthetat;
 #else
 	  double d=decimal_digits(contextptr);
-	  if (inputdouble("Nombre de digits?",d,contextptr) && d==int(d) && d>0){
+	  if (inputdouble((lang)?"\xca\xfd\xd7\xd6\xce\xbb\xca\xfd?":"Number of digits?",d,contextptr) && d==int(d) && d>0){
 	    decimal_digits(d,contextptr);
 	  }
 #endif
@@ -16492,15 +16514,15 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      edptr->python=p;
 	    if (xcas_python_eval!=old_xcas_python_eval){
 	      if (old_xcas_python_eval==0 && xcas_python_eval>0 &&
-		  do_confirm((lang==2)?"清除 Xcas 变量？":"Clear Xcas variables?"))
+		  do_confirm((lang)?"\xc7\xe5\xb3\xfd Xcas \xb1\xe4\xc1\xbf\xa3\xbf":"Clear Xcas variables?"))
 		do_restart(contextptr);
 	    }
 #ifdef MICROPY_LIB
-	    if (old_xcas_python_eval==1 && do_confirm((lang==2)?"清除 MicroPython 堆？":"Clear MicroPython heap?"))
+	    if (old_xcas_python_eval==1 && do_confirm((lang)?"\xc7\xe5\xb3\xfd\x20\x4d\x69\x63\x72\x6f\x50\x79\x74\x68\x6f\x6e\x20\xb6\xd1\xa3\xbf":"Clear MicroPython heap?"))
 	      python_free();
 #endif
 #ifdef QUICKKS
-	    if (0 && old_xcas_python_eval==-1 && do_confirm((lang==2)?"清除 QuickJS 堆？":"Clear QuickJS heap?"))
+	    if (0 && old_xcas_python_eval==-1 && do_confirm((lang)?"\xc7\xe5\xb3\xfd\x20\x51\x75\x69\x63\x6b\x4a\x53\x20\xb6\xd1\xa3\xbf":"Clear QuickJS heap?"))
 	      js_end(global_js_context);
 #endif
 	    warn_python(p,false);
@@ -16516,21 +16538,28 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  statusline(2*xcas_python_eval);
 	  continue;
 	}
+	if (smallmenu.selection == 5){
+	  lang=1; // items[4]: 中文
+	  giac::language(lang,contextptr);
+	  save_lang_setting();
+	  break;
+	}
+	if (smallmenu.selection == 6){
+	  lang=0; // items[5]: English
+	  giac::language(lang,contextptr);
+	  save_lang_setting();
+	  break;
+	}
 	if (smallmenu.selection == 4){
 	  giac::withsqrt(!giac::withsqrt(contextptr),contextptr);
 	  continue;
 	}
-	if (smallmenu.selection>=5 && smallmenu.selection<=9){
-	  lang=smallmenu.selection-4;
-	  giac::language(lang,contextptr);
-	  break;
-	}
 	if (smallmenu.selection==11 && osok==-1){
-	  confirm(lang==2?"激活一次 TI 考试模式":"Activate one time TI exam mode",lang==2?"以便后续使用 KhiCAS":"to enable KhiCAS exam mode");
+	  confirm(lang?"\xbc\xa4\xbb\xee\xd2\xbb\xb4\xce\x20\x54\x49\x20\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Activate one time TI exam mode",lang?"\xd2\xd4\xb1\xe3\xba\xf3\xd0\xf8\xca\xb9\xd3\xc3\x20\x4b\x68\x69\x43\x41\x53":"to enable KhiCAS exam mode");
 	  continue;
 	}
 	if (smallmenu.selection==11 && osok==0){
-	  confirm(lang==2?"此型号不兼容":"This model is not compatible",lang==2?"使用 KhiCAS 考试模式":"with KhiCAS exam mode");
+	  confirm(lang?"\xb4\xcb\xd0\xcd\xba\xc5\xb2\xbb\xbc\xe6\xc8\xdd":"This model is not compatible",lang?"\xca\xb9\xd3\xc3\x20\x4b\x68\x69\x43\x41\x53\x20\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"with KhiCAS exam mode");
 	  continue;
 	}
 	if (smallmenu.selection == 11 && osok>0){
@@ -16538,38 +16567,38 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  if (nspire_exam_mode==1
 	      // && !is_cx2
 	      ){
-	    if (confirm((lang==2?"要重启考试模式，需要":"To re-enter exam mode, you'll have"),(lang==2?"quitter Xcas. enter OK, esc annul":"to quit Xcas. enter OK, esc cancel."))!=KEY_CTRL_F1)
+	    if (confirm((lang?"\xd2\xaa\xd6\xd8\xc6\xf4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xa3\xac\xd0\xe8\xd2\xaa":"To re-enter exam mode, you'll have"),(lang?"quitter Xcas. enter OK, esc annul":"to quit Xcas. enter OK, esc cancel."))!=KEY_CTRL_F1)
 	      break;
 	    do_restart(contextptr);
 	    clear_turtle_history(contextptr);
 	    Console_Init(contextptr);
 	    Console_Clear_EditLine();
 	    console_changed=0;
-	    *logptr(contextptr) << (lang==2?"清理考试模式目录\n":"Cleaning exam mode directory.\n");
-	    *logptr(contextptr) << (lang==2?"请等待约 30 秒\n":"Please wait about 30 secondes\n");
+	    *logptr(contextptr) << (lang?"\xc7\xe5\xc0\xed\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xc4\xbf\xc2\xbc\x5c\x6e":"Cleaning exam mode directory.\n");
+	    *logptr(contextptr) << (lang?"\xc7\xeb\xb5\xc8\xb4\xfd\xd4\xbc\x20\x33\x30\x20\xc3\xeb\x5c\x6e":"Please wait about 30 secondes\n");
 	    // nspire_clear_data(contextptr,false); // done by set_exam_mode
 	    nspire_exam_mode=2;
 	    set_exam_mode(0,contextptr);
-	    *logptr(contextptr) << (lang==2?"指示灯关闭。受限模式（无法访问文件）。\n":"Leds off. Restricted mode (no file access).\n");
-	    *logptr(contextptr) << (lang==2?"退出 KhiCAS (doc doc) 重启考试模式\n":"Leave KhiCAS (doc doc) to reboot in exam mode.\n");
+	    *logptr(contextptr) << (lang?"\xd6\xb8\xca\xbe\xb5\xc6\xb9\xd8\xb1\xd5\xa1\xa3\xca\xdc\xcf\xde\xc4\xa3\xca\xbd\xa3\xa8\xce\xde\xb7\xa8\xb7\xc3\xce\xca\xce\xc4\xbc\xfe\xa3\xa9\xa1\xa3\x5c\x6e":"Leds off. Restricted mode (no file access).\n");
+	    *logptr(contextptr) << (lang?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53\x20\x28\x64\x6f\x63\x20\x64\x6f\x63\x29\x20\xd6\xd8\xc6\xf4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\x5c\x6e":"Leave KhiCAS (doc doc) to reboot in exam mode.\n");
 	    break;
 	  }
 	  else {
 	    if (osok>0 ||
 		!is_cx2){
-	      if (do_confirm((lang==2)?"启动带 CAS 的考试模式？":"Run exam mode with CAS?")){
-		*logptr(contextptr) << (lang==2?"请等待约 2 分钟\n":"Please wait about 2 minutes\n");
-		*logptr(contextptr) << (lang==2?"验证并复制必要资源\n":"Check and copy required ressources\n");
+	      if (do_confirm((lang)?"\xc6\xf4\xb6\xaf\xb4\xf8\x20\x43\x41\x53\x20\xb5\xc4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xa3\xbf":"Run exam mode with CAS?")){
+		*logptr(contextptr) << (lang?"\xc7\xeb\xb5\xc8\xb4\xfd\xd4\xbc\x20\x32\x20\xb7\xd6\xd6\xd3\x5c\x6e":"Please wait about 2 minutes\n");
+		*logptr(contextptr) << (lang?"\xd1\xe9\xd6\xa4\xb2\xa2\xb8\xb4\xd6\xc6\xb1\xd8\xd2\xaa\xd7\xca\xd4\xb4\x5c\x6e":"Check and copy required ressources\n");
 		rm("/exammode/usr/ndless");
 		nspire_clear_data(contextptr,true);
-		*logptr(contextptr) << (lang==2?"最终验证后重启考试模式\n":"Final check then reboot in exam mode\n");
-		*logptr(contextptr) << (lang==2?"请等待约 30 秒\n":"Please wait about 30 secondes\n");
+		*logptr(contextptr) << (lang?"\xd7\xee\xd6\xd5\xd1\xe9\xd6\xa4\xba\xf3\xd6\xd8\xc6\xf4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\x5c\x6e":"Final check then reboot in exam mode\n");
+		*logptr(contextptr) << (lang?"\xc7\xeb\xb5\xc8\xb4\xfd\xd4\xbc\x20\x33\x30\x20\xc3\xeb\x5c\x6e":"Please wait about 30 secondes\n");
 		set_exam_mode(-1,contextptr); // end up with reset()
 	      }
 	      break;
 	    }
 	    else {
-	      confirm((lang==2)?"抱歉。KhiCAS 的考试模式":"Sorry, KhiCAS exam mode",(lang==2)?"ne fonctionne pas sur Nspire CX II":"is not supported on Nspire CX II");
+	      confirm((lang)?"\xb1\xa7\xc7\xb8\xa1\xa3\x4b\x68\x69\x43\x41\x53\x20\xb5\xc4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Sorry, KhiCAS exam mode",(lang)?"ne fonctionne pas sur Nspire CX II":"is not supported on Nspire CX II");
 	      break;
 	    }
 	    if (1
@@ -16578,13 +16607,13 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      textArea text;
 	      text.editable=false;
 	      text.clipline=-1;
-	      text.title = lang==2?"KhiCAS 和考试模式":"KhiCAS and exam mode";
-	      add(&text,(lang==2)?
+	      text.title = lang?"\x4b\x68\x69\x43\x41\x53\x20\xba\xcd\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"KhiCAS and exam mode";
+	      add(&text,(lang)?
 		  "Attention, verifiez que le calcul formel est autorise avant d'utiliser KhiCAS en mode examen. En France, c'est en principe autorise lorsque la calculatrice graphique l'est (par exemple au bac)":
 		  "Warning! Check that CAS is allowed before running KhiCAS in exam mode.");
 	      const char exam_mode_fr_string[]="Pour utiliser KhiCAS en mode examen, il faut effectuer une preparation chez soi quelques heures avant avec une connection PC ou quelques minutes avant l'examen avec un autre etudiant ayant une Nspire CX ou CX II.\nLancer le mode examen sur la calculatrice cible (esc-on), recopier ndless et khicas.tns (ou luagiac.luax.tns et khicaslua.tns) sur la calculatrice cible en mode examen. Avec 2 calculatrices, recommencez sur l'autre calculatrice (mettre l'autre calculatrice en mode examen et copiez dessus ndless et khicas).\nActiver ndless (cable debranche) puis lancez KhiCAS puis touche calculatrice (en-dessous de esc) puis selectionner l'item 11. mode examen, valider : ceci va effacer les donnees et desactiver le clignotement des leds.\n\nAu debut de l'examen, lorsque le surveillant demande d'activer le mode examen, quittez KhiCAS en tapant doc doc (ou appuyez sur reset), le mode examen sera a nouveau actif et les leds clignoteront. Vous pouvez activer ndless et lancez KhiCAS.\nPour les institutions n'acceptant pas KhiCAS en mode examen: demandez a vos etudiants de redemarrer la calculatrice, puis faire esc-on et reinitialiser le mode examen.";
 	      const char exam_mode_en_string[]="Running KhiCAS in exam mode requires preparation at home with a PC or a few minutes with another student having a Nspire CX/CXII.\nActivate exam mode on the target calculator (esc-on), connect the PC or the other calculator, copy ndless and khicas.tns (or luagiac.luax.tns and khicaslua.tns) to the target calc (kept in exam mode). With 2 calculators, repeat on the other calculator.\n Activate ndless (disconnect the link) and run KhiCAS. Type the calculator key below esc then select 11. Exam mode. This will desactivate leds blinking and clear data. When exam begins, quit KhiCAS (doc doc) or press reset, exam mode will be active again and leds will blink. Activate ndless and run KhiCAS.\n\nFor institutions who do not want to allow KhiCAS, ask your students to reset their calculator, press esc-on and restart exam mode, this will clear ndless and KhiCAS.";
-	      add(&text,(lang==2)?exam_mode_fr_string:exam_mode_en_string);
+	      add(&text,(lang)?exam_mode_fr_string:exam_mode_en_string);
 	      if (doTextArea(&text,contextptr)==KEY_SHUTDOWN)
 		return ;
 	      break;
@@ -16593,29 +16622,29 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #endif // NSPIRE_NEWLIB
 #ifdef NUMWORKS
 #ifdef DEVICE
-	  const char * tab[]={lang==2?"多固件备份":"Backup for multi-firmware",lang==2?"Restauration multifirmwares":"Restore multi-firmware backup",lang==2?"启动考试模式":"Run exam mode",lang==2?"考试模式备份":"Restore exam mode backup",0};
-	  int choix=select_item(tab,"考试模式",true);
+	  const char * tab[]={lang?"\xb6\xe0\xb9\xcc\xbc\xfe\xb1\xb8\xb7\xdd":"Backup for multi-firmware",lang?"Restauration multifirmwares":"Restore multi-firmware backup",lang?"\xc6\xf4\xb6\xaf\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Run exam mode",lang?"\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xb1\xb8\xb7\xdd":"Restore exam mode backup",0};
+	  int choix=select_item(tab,"\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd",true);
 	  if (choix<0 || choix>4)
 	    break;
 	  if (choix==0){
 	    if (!save_backup(1))
-	      confirm(lang==2?"无需保存":"Nothing to save","OK?");
+	      confirm(lang?"\xce\xde\xd0\xe8\xb1\xa3\xb4\xe6":"Nothing to save","OK?");
 	    break;
 	  }
 	  if (choix==1){
 	    if (restore_backup(3)){
-	      if (confirm(lang==2?"当前数据将被清除":"Current data will be erased!","OK/Back?")==KEY_CTRL_F1){
+	      if (confirm(lang?"\xb5\xb1\xc7\xb0\xca\xfd\xbe\xdd\xbd\xab\xb1\xbb\xc7\xe5\xb3\xfd":"Current data will be erased!","OK/Back?")==KEY_CTRL_F1){
 		confirm(restore_backup(1)?"Success!":"Failure!","OK?");
 	      }
 	    }
 	    else
-	      confirm(lang==2?"没有数据":"No data.","OK/Back?");	      
+	      confirm(lang?"\xc3\xbb\xd3\xd0\xca\xfd\xbe\xdd":"No data.","OK/Back?");	      
 	    break;
 	  }
 	  if (choix==2){
-	    if (confirm(lang==2?"保存、清除后进入考试模式":"Backup, clear then exam mode","OK/Back?")==KEY_CTRL_F1){
+	    if (confirm(lang?"\xb1\xa3\xb4\xe6\xa1\xa2\xc7\xe5\xb3\xfd\xba\xf3\xbd\xf8\xc8\xeb\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Backup, clear then exam mode","OK/Back?")==KEY_CTRL_F1){
 	      if (!save_backup(0))
-		confirm(lang==2?"无需保存":"Nothing to save","OK?");
+		confirm(lang?"\xce\xde\xd0\xe8\xb1\xa3\xb4\xe6":"Nothing to save","OK?");
 	      // save to exam mode backup sector and format reset backup sector
 	      set_exammode(1,4);
 	      erase_sector(0); // means reset
@@ -16623,29 +16652,29 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  }
 	  if (choix==3){
 	    if (inexammode()){ 
-	      confirm(lang==2?"请先退出考试模式！":"Leave exam mode first!",lang==2?"(Connectez la calculatrice)":"(Connect calculator)");
+	      confirm(lang?"\xc7\xeb\xcf\xc8\xcd\xcb\xb3\xf6\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xa3\xa1":"Leave exam mode first!",lang?"(Connectez la calculatrice)":"(Connect calculator)");
 	      break;
 	    }
 	    confirm(restore_backup(0)?"Success!":"Failure!","OK?");
 	    break;
 	  }
 #endif
-	  // if (do_confirm(lang==2?"考试模式从设置启动":"Enter Exam mode from Settings")) shutdown_state=1;
+	  // if (do_confirm(lang?"\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xb4\xd3\xc9\xe8\xd6\xc3\xc6\xf4\xb6\xaf":"Enter Exam mode from Settings")) shutdown_state=1;
 	  break;
 #else
-	  if (!exam_mode && confirm((lang==2?"请确认允许 CAS 计算。":"Please check that the CAS is allowed."),(lang==2?"法国：高考允许。回车: 确定, ESC: 取消":"enter: yes, esc: no"))!=KEY_CTRL_F1)
+	  if (!exam_mode && confirm((lang?"\xc7\xeb\xc8\xb7\xc8\xcf\xd4\xca\xd0\xed\x20\x43\x41\x53\x20\xbc\xc6\xcb\xe3\xa1\xa3":"Please check that the CAS is allowed."),(lang?"\xb7\xa8\xb9\xfa\xa3\xba\xb8\xdf\xbf\xbc\xd4\xca\xd0\xed\xa1\xa3\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8\x2c\x20\x45\x53\x43\x3a\x20\xc8\xa1\xcf\xfb":"enter: yes, esc: no"))!=KEY_CTRL_F1)
 	    break;
 #endif
 	  // confirmation, duree (>=0 French indicative, else not indicative)
 	  double duration=exam_mode?absint(exam_duration):0;
-	  string msg=(lang==2)?"Compte a rebours en h.min ou 0 pour horloge":"Exam duration in h.min (0: end by pluging)";
+	  string msg=(lang)?"\xbf\xbc\xca\xd4\xca\xb1\xb3\xa4 h.min\xa3\xac0 \xce\xaa\xca\xb1\xd6\xd3":"Exam duration in h.min (0: end by pluging)";
 	  msg += print_duration(duration);
 	  if (inputdouble(msg.c_str(),duration,contextptr)){
-	    bool indicative=lang==2?duration>=0:duration<=0;
+	    bool indicative=lang?duration>=0:duration<=0;
 	    if (exam_mode)
 	      indicative=exam_duration<=0;
 	    else {
-	      if (lang==2 && !indicative && confirm("Attention, mode non conforme au bac en France","enter: corriger, esc: tant pis")!=KEY_CTRL_F6)
+	      if (lang && !indicative && confirm((lang)?"\xd7\xa2\xd2\xe2\xa3\xba\xb4\xcb\xc4\xa3\xca\xbd\xb2\xbb\xb7\xfb\xba\xcf\xb7\xa8\xb9\xfa\xb8\xdf\xd6\xd0\xbf\xbc\xca\xd4\xb9\xe6\xb7\xb6":"Warning: this mode does not comply with French high school exam rules","enter: \xd0\xde\xd5\xfd, esc: \xb2\xbb\xb9\xdc")!=KEY_CTRL_F6)
 		indicative=true;
 	    }
 	    if (duration<0)
@@ -16655,15 +16684,15 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    else
 	      duration=std::floor(duration)+100.0/60*(duration-std::floor(duration));
 	    if (duration){
-	      msg=lang==2?"倒计时 ":"Exam duration ";
+	      msg=lang?"\xb5\xb9\xbc\xc6\xca\xb1\x20":"Exam duration ";
 	      double d=giacmax(duration*3600,absint(exam_duration));
 	      msg += print_duration(d);
 	    }
 	    else
 	      msg="Mode examen.";
 	    if (indicative)
-	      msg += lang==2?" 分支结束":" Exit by pluging";
-	    if (confirm(msg.c_str(),(lang==2?"!考试模式下 Xcas 阻塞! 回车确认, ESC 取消":"!Trapped in Xcas in exam mode! enter OK, esc cancel."))==KEY_CTRL_F1){
+	      msg += lang?"\x20\xb7\xd6\xd6\xa7\xbd\xe1\xca\xf8":" Exit by pluging";
+	    if (confirm(msg.c_str(),(lang?"\x21\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\xcf\xc2\x20\x58\x63\x61\x73\x20\xd7\xe8\xc8\xfb\x21\x20\xbb\xd8\xb3\xb5\xc8\xb7\xc8\xcf\x2c\x20\x45\x53\x43\x20\xc8\xa1\xcf\xfb":"!Trapped in Xcas in exam mode! enter OK, esc cancel."))==KEY_CTRL_F1){
 #ifdef NSPIRE_NEWLIB
 	      if (exam_mode) 
 		exam_duration=duration?giacmax(absint(exam_duration),duration*3600+30):0;
@@ -16709,7 +16738,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #if defined NUMWORKS && defined DEVICE
 			  string("Tas MicroPy/JS en K (16-"+print_INT_(_heap_size/1024-52)+")?").c_str()
 #else
-			  "Tas MicroPy/JS en K (64-1728)?"
+			  (lang)?"MicroPy/JS \xb6\xd1 (K) (64-1728)?":"MicroPy/JS heap (K) (64-1728)?"
 #endif
 			  ,d,contextptr) && d==int(d) &&
 #if defined NUMWORKS && defined DEVICE
@@ -16735,7 +16764,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #if defined NUMWORKS && defined DEVICE
 			  "Pile MicroPy/JS en K (8-20)?"
 #else
-			  "Pile MicroPy/JS en K (32-512)?"
+			  (lang)?"MicroPy/JS \xd5\xbb (K) (32-512)?":"MicroPy/JS stack (K) (32-512)?"
 #endif
 			  ,d,contextptr) && d==int(d) &&
 #if defined NUMWORKS && defined DEVICE
@@ -16765,7 +16794,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  text.editable=false;
 	  text.clipline=-1;
 	  text.title = smallmenuitems[smallmenu.selection-1].text;
-	  add(&text,smallmenu.selection==10?((lang==2)?shortcuts_fr_string:shortcuts_en_string):((lang==2)?apropos_fr_string:apropos_en_string));
+	  add(&text,smallmenu.selection==10?((lang)?shortcuts_fr_string:shortcuts_en_string):((lang)?apropos_fr_string:apropos_en_string));
 	  if (doTextArea(&text,contextptr)==KEY_SHUTDOWN)
 	    return ;
 	  continue;
@@ -16805,11 +16834,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       if (edptr)
 	edptr->python=p>0?p&3:0;
 #ifdef MICROPY_LIB
-      if (p==4 && do_confirm((lang==2)?"清除 MicroPython 堆？":"Clear MicroPython heap?"))
+      if (p==4 && do_confirm((lang)?"\xc7\xe5\xb3\xfd\x20\x4d\x69\x63\x72\x6f\x50\x79\x74\x68\x6f\x6e\x20\xb6\xd1\xa3\xbf":"Clear MicroPython heap?"))
 	python_free();
 #endif
 #ifdef QUICKJS
-      if (0 && p==-1 && do_confirm((lang==2)?"清除 QuickJS 堆？":"Clear QuickJS heap?"))
+      if (0 && p==-1 && do_confirm((lang)?"\xc7\xe5\xb3\xfd\x20\x51\x75\x69\x63\x6b\x4a\x53\x20\xb6\xd1\xa3\xbf":"Clear QuickJS heap?"))
 	js_end(global_js_context);
 #endif
       *logptr(contextptr) << "Xcas interpreter\n";
@@ -17001,7 +17030,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
           ok=false;
       }
       if (!ok){
-        confirm((lang==2)?"上下文太重，无法保存":"Context too havy, not saved.",(lang==2)?"重新执行加载脚本 (esc enter)":"Re-run scripts at load time (esc enter)",true,64);
+        confirm((lang)?"\xc9\xcf\xcf\xc2\xce\xc4\xcc\xab\xd6\xd8\xa3\xac\xce\xde\xb7\xa8\xb1\xa3\xb4\xe6":"Context too havy, not saved.",(lang)?"\xd6\xd8\xd0\xc2\xd6\xb4\xd0\xd0\xbc\xd3\xd4\xd8\xbd\xc5\xb1\xbe\x20\x28\x65\x73\x63\x20\x65\x6e\x74\x65\x72\x29":"Re-run scripts at load time (esc enter)",true,64);
         buf[0]=0;
       }
     }
@@ -17905,11 +17934,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 
   void chk_clearscreen(GIAC_CONTEXT){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
-    if (confirm((lang==2)?"Effacer l'historique?":"Clear history?",
+    if (confirm((lang)?"Effacer l'historique?":"Clear history?",
 #ifdef NSPIRE_NEWLIB
-		(lang==2)?"回车: 是, ESC: 保留":"enter: yes, esc: keep",
+		(lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xca\xc7\x2c\x20\x45\x53\x43\x3a\x20\xb1\xa3\xc1\xf4":"enter: yes, esc: keep",
 #else
-		(lang==2)?"OK: oui, Back: conserver":"OK: yes, Back: keep",
+		(lang)?"OK: oui, Back: conserver":"OK: yes, Back: keep",
 #endif
 		false)==KEY_CTRL_F1){
       Console_Init(contextptr);
@@ -18004,8 +18033,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     string s;
     filename=remove_path(remove_extension(filename));
     if (msg && filename!="session"){
-      *logptr(contextptr) << (lang==2?"shift ) 8 或 python/xcas 切换解释器\n":"shift ) 8 or python/xcas to change interpreter\n");
-      *logptr(contextptr) << (lang==2?"按 esc 进入编辑器或用 Micropython 执行\n":"Press esc for editor or in MicroPython exec\n");
+      *logptr(contextptr) << (lang?"\x73\x68\x69\x66\x74\x20\x29\x20\x38\x20\xbb\xf2\x20\x70\x79\x74\x68\x6f\x6e\x2f\x78\x63\x61\x73\x20\xc7\xd0\xbb\xbb\xbd\xe2\xca\xcd\xc6\xf7\x5c\x6e":"shift ) 8 or python/xcas to change interpreter\n");
+      *logptr(contextptr) << (lang?"\xb0\xb4\x20\x65\x73\x63\x20\xbd\xf8\xc8\xeb\xb1\xe0\xbc\xad\xc6\xf7\xbb\xf2\xd3\xc3\x20\x4d\x69\x63\x72\x6f\x70\x79\x74\x68\x6f\x6e\x20\xd6\xb4\xd0\xd0\x5c\x6e":"Press esc for editor or in MicroPython exec\n");
       *logptr(contextptr) << "from "+filename+" import *\n";
     }
 #ifdef NSPIRE_NEWLIB
@@ -18040,11 +18069,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     // check internal flash sha256 signature
     size_t internal_flash_start=0x08000000;
     if (bootloader_sha256_check(internal_flash_start)){
-      confirm(lang==2?"计算器启动认证通过！":"Boot sector certified!",lang==2?"Acces amorcage par Power ln":"Access boot with Power ln");
+      confirm(lang?"\xbc\xc6\xcb\xe3\xc6\xf7\xc6\xf4\xb6\xaf\xc8\xcf\xd6\xa4\xcd\xa8\xb9\xfd\xa3\xa1":"Boot sector certified!",lang?"Acces amorcage par Power ln":"Access boot with Power ln");
       Bdisp_AllClr_VRAM();
       return;
     }
-    PrintMini(0,0,lang==2?"启动未认证。":"Boot sector not certified.",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+    PrintMini(0,0,lang?"\xc6\xf4\xb6\xaf\xce\xb4\xc8\xcf\xd6\xa4\xa1\xa3":"Boot sector not certified.",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
     std::vector<fileinfo_t> v=tar_fileinfo(flash_buf,0);
     int i=0;
     for (;i<v.size();++i){
@@ -18057,20 +18086,20 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     if (i<v.size() && !bootloader_sha256_check(romaddr))
       i=v.size();
     if (i==v.size()){
-      PrintMini(0,18,lang==2?"更新方法：":"Please upgrade from:",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(0,18,lang?"\xb8\xfc\xd0\xc2\xb7\xbd\xb7\xa8\xa3\xba":"Please upgrade from:",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       PrintMini(0,36,"www-fourier.univ-grenoble-alpes.fr",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       PrintMini(0,54,"/~parisse/nw",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       int key; GetKey(&key);
     }
     else {
-      if (confirm(lang==2?"更新启动程序？":"Update bootsector?","OK/Annul.")==KEY_CTRL_F1){
+      if (confirm(lang?"\xb8\xfc\xd0\xc2\xc6\xf4\xb6\xaf\xb3\xcc\xd0\xf2\xa3\xbf":"Update bootsector?","OK/Annul.")==KEY_CTRL_F1){
 	// sector size=16K -> erase 4 sector for 64K
 	erase_sector((const char *) internal_flash_start);
 	erase_sector((const char *) (internal_flash_start+16*1024));
 	erase_sector((const char *) (internal_flash_start+32*1024));
 	erase_sector((const char *) (internal_flash_start+48*1024));
 	WriteMemory((char *)internal_flash_start,(const char *) romaddr,bootloader_size);
-	confirm(lang==2?"更新完成":"Update done",lang==2?"Acces amorcage par Power ln":"Access boot with Power ln");
+	confirm(lang?"\xb8\xfc\xd0\xc2\xcd\xea\xb3\xc9":"Update done",lang?"Acces amorcage par Power ln":"Access boot with Power ln");
       }
     }
     Bdisp_AllClr_VRAM();
@@ -18092,8 +18121,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #endif
     if (!load_console_state_smem(filename.c_str(),contextptr)){
       dbgprintf("restore_session not found\n");
-      if (confirm("OK: Francais, Back: English","set_language(1|0)")==KEY_CTRL_F6)
-        lang=0;
+      if (confirm("OK: English, Back: Chinese","set_language(0|1)")==KEY_CTRL_F6)
+        lang=1;
       numworks_certify_internal();
       Bdisp_AllClr_VRAM();
       int x=0,y=0;
@@ -18102,18 +18131,18 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,((lang==2)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
 #else
-      PrintMini(x,y,((lang==2)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
 #endif
       y += 18;
-      PrintMini(x,y,((lang==2)?"退出 KhiCAS。":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53\xa1\xa3":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
-      PrintMini(x,y,(lang==2)?"如果禁止 CAS 计算":"If CAS is forbidden!",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini(x,y,(lang)?"\xc8\xe7\xb9\xfb\xbd\xfb\xd6\xb9\x20\x43\x41\x53\x20\xbc\xc6\xcb\xe3":"If CAS is forbidden!",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,(lang==2)?"退出 KhiCAS (menu menu menu)":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
-      if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang==2?"可从配置菜单修改":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
+      PrintMini(x,y,(lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53\x20\x28\x6d\x65\x6e\x75\x20\x6d\x65\x6e\x75\x20\x6d\x65\x6e\x75\x29":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang?"\xbf\xc9\xb4\xd3\xc5\xe4\xd6\xc3\xb2\xcb\xb5\xa5\xd0\xde\xb8\xc4":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
 	python_compat(4,contextptr);
 	xcas_python_eval=1;
 	*logptr(contextptr) << "Micropython interpreter\n";
@@ -18124,8 +18153,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
       }
 #else
-      PrintMini(x,y,(lang==2)?"退出 KhiCAS (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
-      if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang==2?"可从配置菜单修改":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
+      PrintMini(x,y,(lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53\x20\x28\x48\x4f\x4d\x45\x20\x48\x4f\x4d\x45\x20\x48\x4f\x4d\x45\x29":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang?"\xbf\xc9\xb4\xd3\xc5\xe4\xd6\xc3\xb2\xcb\xb5\xa5\xd0\xde\xb8\xc4":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
 	python_compat(4,contextptr);
 	xcas_python_eval=1;
 	*logptr(contextptr) << "Micropython interpreter\n";
@@ -18139,7 +18168,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       }
 #endif
 #ifdef NUMWORKS
-      if (lang==2){
+      if (lang){
 	*logptr(contextptr) << "!!! ATTENTION !!!\n";
 	*logptr(contextptr) << "Ne faites pas de mises a jour\n";
 	*logptr(contextptr) << "depuis le site de Numworks.\n";
@@ -18199,8 +18228,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #endif
     if (!load_console_state_smem(filename.c_str(),contextptr)){
 #ifdef NUMWORKS
-      if (confirm("OK: Francais, Back: English","set_language(1|0)")==KEY_CTRL_F6)
-	lang=0;
+      if (confirm("OK: English, Back: Chinese","set_language(0|1)")==KEY_CTRL_F6)
+	lang=1;
       Bdisp_AllClr_VRAM();
 #endif
       int x=0,y=0;
@@ -18209,18 +18238,18 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,((lang==2)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
 #else
-      PrintMini(x,y,((lang==2)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
 #endif
       y += 18;
-      PrintMini(x,y,((lang==2)?"退出 KhiCAS。":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53\xa1\xa3":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
-      PrintMini(x,y,(lang==2)?"如果禁止 CAS 计算":"If CAS is forbidden!",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini(x,y,(lang)?"\xc8\xe7\xb9\xfb\xbd\xfb\xd6\xb9\x20\x43\x41\x53\x20\xbc\xc6\xcb\xe3":"If CAS is forbidden!",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,(lang==2)?"退出 KhiCAS (doc doc doc)":"Leave Khicas (doc doc doc)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
-      if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang==2?"可从配置菜单修改":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
+      PrintMini(x,y,(lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53\x20\x28\x64\x6f\x63\x20\x64\x6f\x63\x20\x64\x6f\x63\x29":"Leave Khicas (doc doc doc)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang?"\xbf\xc9\xb4\xd3\xc5\xe4\xd6\xc3\xb2\xcb\xb5\xa5\xd0\xde\xb8\xc4":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
 	python_compat(4,contextptr);
 	xcas_python_eval=1;
 	*logptr(contextptr) << "Micropython interpreter\n";
@@ -18231,8 +18260,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
       }
 #else
-      PrintMini(x,y,(lang==2)?"退出 KhiCAS (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
-      if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang==2?"可从配置菜单修改":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
+      PrintMini(x,y,(lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53\x20\x28\x48\x4f\x4d\x45\x20\x48\x4f\x4d\x45\x20\x48\x4f\x4d\x45\x29":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang?"\xbf\xc9\xb4\xd3\xc5\xe4\xd6\xc3\xb2\xcb\xb5\xa5\xd0\xde\xb8\xc4":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
 	python_compat(4,contextptr);
 	xcas_python_eval=1;
 	*logptr(contextptr) << "Micropython interpreter\n";
@@ -18341,7 +18370,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   void erase_script(){
     char filename[MAX_FILENAME_SIZE+1];
     int res=giac_filebrowser(filename, "py", "Scripts");
-    if (res && do_confirm((lang==2)?"真的要清除吗？":"Really erase?")){
+    if (res && do_confirm((lang)?"\xd5\xe6\xb5\xc4\xd2\xaa\xc7\xe5\xb3\xfd\xc2\xf0\xa3\xbf":"Really erase?")){
       erase_file(filename);
     }
   }
@@ -18381,7 +18410,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       string s;
       load_script(filename,s);
       if (s.empty()){
-	s=python_compat(contextptr)?((lang==2)?"Prog. Python, sinon taper":"Python prog., for Xcas"):((lang==2)?"Prog. Xcas, sinon taper":"Xcas prog., for Python");
+	s=python_compat(contextptr)?((lang)?"Prog. Python, sinon taper":"Python prog., for Xcas"):((lang)?"Prog. Xcas, sinon taper":"Xcas prog., for Python");
 	s += " AC F6 12";
 	int k=confirm(s.c_str(),
 #ifdef NSPIRE_NEWLIB
@@ -18432,11 +18461,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 
   void chk_restart(GIAC_CONTEXT){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
-    if (confirm((lang)?"保留变量？":"Keep variables?",
+    if (confirm((lang)?"\xb1\xa3\xc1\xf4\xb1\xe4\xc1\xbf\xa3\xbf":"Keep variables?",
 #ifdef NSPIRE_NEWLIB
-		(lang==2)?"回车: 保留, ESC: 清除":"enter: keep, esc: erase"
+		(lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xb1\xa3\xc1\xf4\x2c\x20\x45\x53\x43\x3a\x20\xc7\xe5\xb3\xfd":"enter: keep, esc: erase"
 #else
-		(lang==2)?"OK: 保留, 返回: 清除":"OK: keep, Back: erase"
+		(lang)?"\x4f\x4b\x3a\x20\xb1\xa3\xc1\xf4\x2c\x20\xb7\xb5\xbb\xd8\x3a\x20\xc7\xe5\xb3\xfd":"OK: keep, Back: erase"
 #endif
 		)==KEY_CTRL_F6)
       do_restart(contextptr);
@@ -18447,11 +18476,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     if (giac_filebrowser(filename, "xw", "Sessions",2)){
       if (console_changed==0 ||
 	  strcmp(session_filename,"session")==0 ||
-	  confirm((lang==2)?"当前会话将丢失？":"Current session will be lost",
+	  confirm((lang)?"\xb5\xb1\xc7\xb0\xbb\xe1\xbb\xb0\xbd\xab\xb6\xaa\xca\xa7\xa3\xbf":"Current session will be lost",
 #ifdef NSPIRE_NEWLIB
-		  (lang==2)?"回车: 确定, ESC: 取消":"enter: ok, esc: cancel"
+		  (lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xc8\xb7\xb6\xa8\x2c\x20\x45\x53\x43\x3a\x20\xc8\xa1\xcf\xfb":"enter: ok, esc: cancel"
 #else
-		  (lang==2)?"OK: 确定, 返回: 取消":"OK: ok, Back: cancel"
+		  (lang)?"\x4f\x4b\x3a\x20\xc8\xb7\xb6\xa8\x2c\x20\xb7\xb5\xbb\xd8\x3a\x20\xc8\xa1\xcf\xfb":"OK: ok, Back: cancel"
 #endif
 		  )==KEY_CTRL_F1){
 #ifndef NUMWORKS
@@ -18463,10 +18492,10 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	static bool ctrl_r=true;
 	if (ctrl_r){
 #ifdef NSPIRE_NEWLIB
-	  confirm((lang==2)?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
+	  confirm((lang)?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
 #endif
 #ifdef NUMWORKS
-	  confirm((lang==2)?"Taper shift EXE pour executer session ":"Type shift then EXE to run session","Enter: OK");
+	  confirm((lang)?"Taper shift EXE pour executer session ":"Type shift then EXE to run session","Enter: OK");
 #endif
 	  ctrl_r=false;
 	}
@@ -18701,41 +18730,41 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #else
 	  smallmenuitems[0].text = (char*)"Applications (shift doc)";
 #endif
-	  string sess=(lang==2)?"Enregistrer ":"Save ";
+	  string sess=(lang)?"Enregistrer ":"Save ";
 	  sess += session_filename;
 	  smallmenuitems[1].text = (char *) (sess.c_str());
-	  smallmenuitems[2].text = (char *) ((lang)?"另存为":"Save session as");
-	  if (nspire_exam_mode==2) smallmenuitems[1].text = (char*)(lang==2?"保存已禁用":"Saving disabled");
+	  smallmenuitems[2].text = (char *) ((lang)?"\xc1\xed\xb4\xe6\xce\xaa":"Save session as");
+	  if (nspire_exam_mode==2) smallmenuitems[1].text = (char*)(lang?"\xb1\xa3\xb4\xe6\xd2\xd1\xbd\xfb\xd3\xc3":"Saving disabled");
 	  if (exam_mode || nspire_exam_mode==2)
 	    smallmenuitems[2].text = (char *) "";
-	  smallmenuitems[3].text = (char*) ((lang)?"加载会话":"Load session");
-	  smallmenuitems[4].text = (char*)((lang)?"新建会话":"New session");
-	  smallmenuitems[5].text = (char*)((lang)?"执行会话":"Run session");
-	  smallmenuitems[6].text = (char*)((lang)?"脚本编辑器":"Script editor");
-	  smallmenuitems[7].text = (char*)((lang)?"打开脚本":"Open script");
-	  smallmenuitems[8].text = (char*)((lang)?"执行脚本":"Run script");
-	  smallmenuitems[9].text = (char*)((lang==2)?"清除历史 (0)":"Clear history");
-	  smallmenuitems[10].text = (char*)((lang==2)?"清除脚本 (e^)":"Clear script");
+	  smallmenuitems[3].text = (char*) ((lang)?"\xbc\xd3\xd4\xd8\xbb\xe1\xbb\xb0":"Load session");
+	  smallmenuitems[4].text = (char*)((lang)?"\xd0\xc2\xbd\xa8\xbb\xe1\xbb\xb0":"New session");
+	  smallmenuitems[5].text = (char*)((lang)?"\xd6\xb4\xd0\xd0\xbb\xe1\xbb\xb0":"Run session");
+	  smallmenuitems[6].text = (char*)((lang)?"\xbd\xc5\xb1\xbe\xb1\xe0\xbc\xad\xc6\xf7":"Script editor");
+	  smallmenuitems[7].text = (char*)((lang)?"\xb4\xf2\xbf\xaa\xbd\xc5\xb1\xbe":"Open script");
+	  smallmenuitems[8].text = (char*)((lang)?"\xd6\xb4\xd0\xd0\xbd\xc5\xb1\xbe":"Run script");
+	  smallmenuitems[9].text = (char*)((lang)?"\xc7\xe5\xb3\xfd\xc0\xfa\xca\xb7\x20\x28\x30\x29":"Clear history");
+	  smallmenuitems[10].text = (char*)((lang)?"\xc7\xe5\xb3\xfd\xbd\xc5\xb1\xbe\x20\x28\x65\x5e\x29":"Clear script");
 	  smallmenuitems[11].text = (char*)"Configuration/examen (ln)";
-	  smallmenuitems[12].text = (char *) ((lang)?"界面帮助 (log)":"Shortcuts");
-	  smallmenuitems[13].text = (char*)((lang)?"矩阵编辑 (i)":"Matrix editor");
-	  smallmenuitems[14].text = (char*) ((lang)?"创建参数 (,)":"Create slider (,)");
-	  smallmenuitems[15].text = (char*) ((lang)?"关于 (x^y)":"About");
+	  smallmenuitems[12].text = (char *) ((lang)?"\xbd\xe7\xc3\xe6\xb0\xef\xd6\xfa\x20\x28\x6c\x6f\x67\x29":"Shortcuts");
+	  smallmenuitems[13].text = (char*)((lang)?"\xbe\xd8\xd5\xf3\xb1\xe0\xbc\xad\x20\x28\x69\x29":"Matrix editor");
+	  smallmenuitems[14].text = (char*) ((lang)?"\xb4\xb4\xbd\xa8\xb2\xce\xca\xfd\x20\x28\x2c\x29":"Create slider (,)");
+	  smallmenuitems[15].text = (char*) ((lang)?"\xb9\xd8\xd3\xda\x20\x28\x78\x5e\x79\x29":"About");
 #ifdef NSPIRE_NEWLIB
-	  smallmenuitems[16].text = (char*) ((lang)?"退出 (菜单)":"Quit");
+	  smallmenuitems[16].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6\x20\x28\xb2\xcb\xb5\xa5\x29":"Quit");
 #else
-	  smallmenuitems[16].text = (char*) ((lang)?"退出 (HOME)":"Quit");
+	  smallmenuitems[16].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6\x20\x28\x48\x4f\x4d\x45\x29":"Quit");
 #endif
 #if defined NUMWORKS && defined DEVICE
-	  smallmenuitems[16].text = (char*) ((lang)?"重启其他固件":"Reboot alt. firmware");
-	  smallmenuitems[17].text = (char*) ((lang)?"多固件备份":"Backup multi-firmware");
-	  smallmenuitems[18].text = (char*) ((lang)?"多固件恢复":"Restore multi-firmware");
-	  smallmenuitems[19].text = (char*) ((lang)?"退出 (HOME)":"Quit");
+	  smallmenuitems[16].text = (char*) ((lang)?"\xd6\xd8\xc6\xf4\xc6\xe4\xcb\xfb\xb9\xcc\xbc\xfe":"Reboot alt. firmware");
+	  smallmenuitems[17].text = (char*) ((lang)?"\xb6\xe0\xb9\xcc\xbc\xfe\xb1\xb8\xb7\xdd":"Backup multi-firmware");
+	  smallmenuitems[18].text = (char*) ((lang)?"\xb6\xe0\xb9\xcc\xbc\xfe\xbb\xd6\xb8\xb4":"Restore multi-firmware");
+	  smallmenuitems[19].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6\x20\x28\x48\x4f\x4d\x45\x29":"Quit");
 #endif
 	  if (exam_mode)
-	    smallmenuitems[16].text = (char*)((lang)?"退出考试模式":"Quit exam mode");
+	    smallmenuitems[16].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Quit exam mode");
 	  if (nspire_exam_mode==2)
-	    smallmenuitems[16].text = (char*)((lang)?"重启考试模式":"Restart exam mode");
+	    smallmenuitems[16].text = (char*)((lang)?"\xd6\xd8\xc6\xf4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Restart exam mode");
 	  if (shutdown_state)
 	    return KEY_SHUTDOWN;
 	  int sres = doMenu(&smallmenu);
@@ -18749,19 +18778,19 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 		break;
 	      }
 	      if (choix>=0 && choix<=3){
-		if (confirm(lang==2?"数据将丢失！":"Data will be lost!",lang==2?"OK/Back?":"OK/Back?")==KEY_CTRL_F1)
+		if (confirm(lang?"\xca\xfd\xbe\xdd\xbd\xab\xb6\xaa\xca\xa7\xa3\xa1":"Data will be lost!",lang?"OK/Back?":"OK/Back?")==KEY_CTRL_F1)
 		  boot_firmware(choix);
 	      }
 	      break;
 	    }
 	    if (smallmenu.selection==18){
 	      if (!save_backup(1))
-		confirm(lang==2?"无需保存":"Nothing to save","OK?");
+		confirm(lang?"\xce\xde\xd0\xe8\xb1\xa3\xb4\xe6":"Nothing to save","OK?");
 	      break;
 	    }
 	    if (smallmenu.selection==19){
 	      if (restore_backup(3)){
-		if (confirm(lang==2?"当前数据将被清除":"Current data will be erased!","OK/Back?")==KEY_CTRL_F1){
+		if (confirm(lang?"\xb5\xb1\xc7\xb0\xca\xfd\xbe\xdd\xbd\xab\xb1\xbb\xc7\xe5\xb3\xfd":"Current data will be erased!","OK/Back?")==KEY_CTRL_F1){
 		  confirm(restore_backup(1)?"Success!":"Failure!","OK?");
 		}
 	      }
@@ -18822,7 +18851,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      }
 #endif
 	      if (exam_mode){
-		if (do_confirm((lang==2)?"全部清除？":"Really clear?")){
+		if (do_confirm((lang)?"\xc8\xab\xb2\xbf\xc7\xe5\xb3\xfd\xa3\xbf":"Really clear?")){
 		  Console_Init(contextptr);
 		  Console_Clear_EditLine();
 		  giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
@@ -18834,11 +18863,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 		if (get_filename(filename,".xw")){
 		  if (console_changed==0 ||
 		      strcmp(session_filename,"session")==0 ||
-		      confirm((lang==2)?"当前会话将丢失？":"Current session will be lost",
+		      confirm((lang)?"\xb5\xb1\xc7\xb0\xbb\xe1\xbb\xb0\xbd\xab\xb6\xaa\xca\xa7\xa3\xbf":"Current session will be lost",
 #ifdef NSPIRE_NEWLIB
-			      (lang==2)?"enter: annul, esc: ok":"enter: cancel, esc: ok"
+			      (lang)?"enter: annul, esc: ok":"enter: cancel, esc: ok"
 #else
-			      (lang==2)?"OK: annul, Back: ok":"OK: cancel, Back: ok"
+			      (lang)?"OK: annul, Back: ok":"OK: cancel, Back: ok"
 #endif
 			      )==KEY_CTRL_F6){
 		    clip_pasted=true;
@@ -18898,7 +18927,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      text.editable=false;
 	      text.clipline=-1;
 	      text.title = smallmenuitems[smallmenu.selection-1].text;
-	      add(&text,smallmenu.selection==13?((lang==2)?shortcuts_fr_string:shortcuts_en_string):((lang==2)?apropos_fr_string:apropos_en_string));
+	      add(&text,smallmenu.selection==13?((lang)?shortcuts_fr_string:shortcuts_en_string):((lang)?apropos_fr_string:apropos_en_string));
 	      doTextArea(&text,contextptr);
 	      continue;
 	    } 
@@ -19928,7 +19957,7 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 #endif
       menu += string(menu_f3);
 #ifdef HP39
-      menu += " |cmds |A<>a |Fich";
+      menu += " |cmds |A<>a |File";
       drawRectangle(0,C205,LCD_WIDTH_PX,17,giac::_BLACK);
       PrintMini(0,C205,menu.c_str(),4);
 #else
@@ -19982,12 +20011,12 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
       return;
     if (strcmp(session_filename,"session") && console_changed){
       string tmp(session_filename);
-      tmp += (lang==2)?" a ete modifie!":" was modified!";
+      tmp += (lang)?" a ete modifie!":" was modified!";
       if (confirm(tmp.c_str(),
 #ifdef NSPIRE_NEWLIB
-		  (lang==2)?"回车: 保存, ESC: 放弃":"enter: save, esc: discard changes"
+		  (lang)?"\xbb\xd8\xb3\xb5: \xb1\xa3\xb4\xe6, ESC: \xb7\xc5\xc6\xfa":"enter: save, esc: discard changes"
 #else
-		  (lang==2)?"OK: 保存, 返回: 确认":"OK: save, Back: discard changes"
+		  (lang)?"OK: \xb1\xa3\xb4\xe6, \xb7\xb5\xbb\xd8: \xc8\xb7\xc8\xcf":"OK: save, Back: discard changes"
 #endif
 		  )==KEY_CTRL_F1){
 	save(session_filename,contextptr);
@@ -20061,14 +20090,14 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 	    pos=-1;
 	}
 	else {
-	  tok=(lang==2)?"la fin":"end";
+	  tok=(lang)?"la fin":"end";
 	  pos=0;
 	}
 	if (pos>=0)
-	  sprintf(status,(lang==2)?"错误行 %i 在 %s":"Error line %i at %s",i+1,tok.c_str());
+	  sprintf(status,(lang)?"\xb4\xed\xce\xf3\xd0\xd0 %i \xd4\xda %s":"Error line %i at %s",i+1,tok.c_str());
 	else
-	  sprintf(status,(lang==2)?"错误行 %i %s":"Error line %i %s",i+1,(pos==-2?((lang==2)?", : manquant ?":", missing :?"):""));
-	if (confirm(status,(lang==2)?"OK: 修正, 返回: 继续":"OK: fix",1)==KEY_CTRL_F1){
+	  sprintf(status,(lang)?"\xb4\xed\xce\xf3\xd0\xd0 %i %s":"Error line %i %s",i+1,(pos==-2?((lang)?", : manquant ?":", missing :?"):""));
+	if (confirm(status,(lang)?"OK: \xd0\xde\xd5\xfd, \xb7\xb5\xbb\xd8: \xbc\xcc\xd0\xf8":"OK: fix",1)==KEY_CTRL_F1){
 	  text->line=i;
 	  if (pos>=0 && pos<v[i].s.size()) text->pos=pos;
 	  return true;
@@ -20257,7 +20286,7 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 	  break;
       }
       if (i==nand_size){
-	confirm(lang==2?"激活一次 TI 考试模式":"Activate one time TI exam mode",lang==2?"以便后续使用 KhiCAS":"to enable KhiCAS exam mode");
+	confirm(lang?"\xbc\xa4\xbb\xee\xd2\xbb\xb4\xce TI \xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Activate one time TI exam mode",lang?"\xd2\xd4\xb1\xe3\xba\xf3\xd0\xf8\xca\xb9\xd3\xc3 KhiCAS":"to enable KhiCAS exam mode");
 	osok=-1;
       }
     }
@@ -20335,11 +20364,11 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 	return 0;
       }
       if (strcmp((const char *)expr,"restart")==0){
-	if (confirm((lang==2)?"Effacer variables?":"Clear variables?",
+	if (confirm((lang)?"Effacer variables?":"Clear variables?",
 #ifdef NSPIRE_NEWLIB
-		    (lang==2)?"enter: confirmer,  esc: annuler":"enter: confirm,  esc: cancel"
+		    (lang)?"enter: confirmer,  esc: annuler":"enter: confirm,  esc: cancel"
 #else
-		    (lang==2)?"OK: confirmer,  Back: annuler":"OK: confirm,  Back: cancel"
+		    (lang)?"OK: confirmer,  Back: annuler":"OK: confirm,  Back: cancel"
 #endif
 		    )!=KEY_CTRL_F1){
 	  Console_Output(" cancelled");
@@ -22210,9 +22239,9 @@ const char * gettext(const char * s) {
       giac::freeze=false;
       for (;;){
 #ifdef NSPIRE_NEWLIB
-	DefineStatusMessage((char*)((lang==2)?"屏幕冻结。按 esc":"Screen frozen. Press esc."), 1, 0, 0);
+	DefineStatusMessage((char*)((lang)?"\xc6\xc1\xc4\xbb\xb6\xb3\xbd\xe1\xa1\xa3\xb0\xb4 esc":"Screen frozen. Press esc."), 1, 0, 0);
 #else
-	DefineStatusMessage((char*)((lang==2)?"屏幕冻结。按 clear":"Screen frozen. Press clear."), 1, 0, 0);
+	DefineStatusMessage((char*)((lang)?"\xc6\xc1\xc4\xbb\xb6\xb3\xbd\xe1\xa1\xa3\xb0\xb4 clear":"Screen frozen. Press clear."), 1, 0, 0);
 #endif
 	DisplayStatusArea();
 	int key;
@@ -22259,23 +22288,24 @@ int kcas_main(int isAppli, unsigned short OptionNum)
   contextptr = &ct;
   xcas::Console_Init(contextptr);
   giac::_srand(vecteur(0), contextptr);
+  load_lang_setting(); // apply saved language preference before session restore
   xcas::restore_session("session", contextptr);
   // load_config();
   xcas::Console_Disp(1,contextptr);
   //init_locale();
-  lang = 0;
+  // lang is loaded from file at startup, don't reset here
   i = 0;
 
   while (1)
   {
     
     if ((expr = xcas::Console_GetLine(contextptr)) == NULL){
-      confirm("memory error","");
+      xcas::save_session(contextptr);
       break;
     }
     if (strcmp((const char *)expr, "restart") == 0)
     {
-      if (confirm(lang ? "Effacer variables?" : "Clear variables?", lang ? "F1: annul,  F6: confirmer" : "F1: cancel,  F6: confirm") != KEY_CTRL_F6)
+      if (confirm(lang ? "\xC7\xE5\xB3\xFD\xB1\xE4\xC1\xBF" : "Clear variables?", lang ? "F1: \xC8\xA1\xCF\xFB,  F6: \xC8\xB7\xC8\xEB" : "F1: cancel,  F6: confirm") != KEY_CTRL_F6)
       {
         xcas::Console_Output((const char *)" cancelled");
         xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT, 1);
@@ -22297,8 +22327,6 @@ int kcas_main(int isAppli, unsigned short OptionNum)
     // ck_getkey((int *)&key);
     xcas::Console_Disp(1,contextptr);
   }
-  for (;;)
-    GetKey((int *)&key);
   return 1;
 }
 

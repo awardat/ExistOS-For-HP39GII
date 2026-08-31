@@ -309,6 +309,6 @@ void buildIconTable(MenuItemIcon* icontable) {
                              };
 
   for(int i = 0; i < 10; i++)
-    SMEM_MapIconToExt( (unsigned char*)bogusFiles[i], (i==0 ? folder : (unsigned short*)"\x000\x000"), &msgno, icontable[i].data );
+    SMEM_MapIconToExt( (unsigned char*)bogusFiles[i], (i==0 ? folder : (unsigned short*)"\x00\x00"), &msgno, icontable[i].data );
 }
 #endif

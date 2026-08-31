@@ -7420,7 +7420,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	  // COUT << "// Using keyword file " << file << '\n';
 	} // if (f)
 	else {
-	  if (lang==2){
+	  if (lang){
 #ifdef HAVE_SSTREAM
       istringstream f(
 #else

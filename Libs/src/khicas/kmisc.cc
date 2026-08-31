@@ -6729,8 +6729,8 @@ int step_param(const gen &f, const gen &g, const gen &t, gen &tmin, gen &tmax, v
       if (row<0) row=5; else if (row>5) row=0;
       // display table
       drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,COLOR_WHITE);
-      // os_draw_string(0,0,COLOR_BLACK,COLOR_WHITE,lang==2?"选择字符":"Select char");
-      PrintXY(0,0,(const unsigned char *) (lang==2?"shift Char: 字符表":"shift Char: char table"),TEXT_MODE_NORMAL);
+      // os_draw_string(0,0,COLOR_BLACK,COLOR_WHITE,lang?"\xd1\xa1\xd4\xf1\xd7\xd6\xb7\xfb":"Select char");
+      PrintXY(0,0,(const unsigned char *) (lang?"\x73\x68\x69\x66\x74\x20\x43\x68\x61\x72\x3a\x20\xd7\xd6\xb7\xfb\xb1\xed":"shift Char: char table"),TEXT_MODE_NORMAL);
       int dy=12;
       for (int r=0;r<6;++r){
         for (int c=0;c<16;++c){
@@ -7173,7 +7173,7 @@ int step_param(const gen &f, const gen &g, const gen &t, gen &tmin, gen &tmax, v
 
   void invalid_varname()
   {
-    confirm(lang ? "变量名无效" : "Invalid variable name", lang ? "F1 ou F6: ok" : "F1 or F6: ok");
+    confirm(lang ? "\xb1\xe4\xc1\xbf\xc3\xfb\xce\xde\xd0\xa7" : "Invalid variable name", lang ? "F1 ou F6: ok" : "F1 or F6: ok");
   }
 
   // required arg postprocessing because black is 1 and white is 0

@@ -347,7 +347,7 @@ void menu_setup()
   smallmenuitems[3].type = MENUITEM_CHECKBOX;
   smallmenuitems[3].text = (char *)"Sqrt";
   smallmenuitems[4].text = (char *)(giac::lang ? "Raccourcis" : "Shortcuts");
-  smallmenuitems[5].text = (char *)(giac::lang ? "关于" : "About");
+  smallmenuitems[5].text = (char *)(giac::lang ? "\xb9\xd8\xd3\xda" : "About");
   smallmenuitems[6].text = (char *)"Quit";
   // smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
   while (1)
@@ -1473,20 +1473,20 @@ int Console_GetKey()
       smallmenu.scrollout = 1;
       // smallmenu.title = "KhiCAS";
       smallmenuitems[0].text = (char *)(giac::lang ? "Enregistrer session" : "Save session ");
-      smallmenuitems[1].text = (char *)(giac::lang ? "另存为" : "Save session as");
-      smallmenuitems[2].text = (char *)(giac::lang ? "加载会话" : "Load session");
-      smallmenuitems[3].text = (char *)(giac::lang ? "新建会话" : "New session");
-      smallmenuitems[4].text = (char *)(giac::lang ? "执行会话" : "Run session");
-      smallmenuitems[5].text = (char *)(giac::lang ? "脚本编辑器" : "Script editor");
-      smallmenuitems[6].text = (char *)(giac::lang ? "打开脚本" : "Open script");
-      smallmenuitems[7].text = (char *)(giac::lang ? "执行脚本" : "Run script");
+      smallmenuitems[1].text = (char *)(giac::lang ? "\xc1\xed\xb4\xe6\xce\xaa" : "Save session as");
+      smallmenuitems[2].text = (char *)(giac::lang ? "\xbc\xd3\xd4\xd8\xbb\xe1\xbb\xb0" : "Load session");
+      smallmenuitems[3].text = (char *)(giac::lang ? "\xd0\xc2\xbd\xa8\xbb\xe1\xbb\xb0" : "New session");
+      smallmenuitems[4].text = (char *)(giac::lang ? "\xd6\xb4\xd0\xd0\xbb\xe1\xbb\xb0" : "Run session");
+      smallmenuitems[5].text = (char *)(giac::lang ? "\xbd\xc5\xb1\xbe\xb1\xe0\xbc\xad\xc6\xf7" : "Script editor");
+      smallmenuitems[6].text = (char *)(giac::lang ? "\xb4\xf2\xbf\xaa\xbd\xc5\xb1\xbe" : "Open script");
+      smallmenuitems[7].text = (char *)(giac::lang ? "\xd6\xb4\xd0\xd0\xbd\xc5\xb1\xbe" : "Run script");
       smallmenuitems[8].text = (char *)(giac::lang ? "Effacer historique" : "Clear history");
       smallmenuitems[9].text = (char *)(giac::lang ? "Effacer script" : "Clear script");
-      smallmenuitems[10].text = (char *)(giac::lang ? "编辑矩阵" : "Matrix editor");
+      smallmenuitems[10].text = (char *)(giac::lang ? "\xb1\xe0\xbc\xad\xbe\xd8\xd5\xf3" : "Matrix editor");
       smallmenuitems[11].text = (char *)"Parameter";
       smallmenuitems[12].text = (char *)"Config shift-SETUP";
       smallmenuitems[13].text = (char *)(giac::lang ? "Raccourcis" : "Shortcuts");
-      smallmenuitems[14].text = (char *)(giac::lang ? "关于" : "About");
+      smallmenuitems[14].text = (char *)(giac::lang ? "\xb9\xd8\xd3\xda" : "About");
       // smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
       while (1)
       {
@@ -1522,7 +1522,7 @@ int Console_GetKey()
             char filename[MAX_FILENAME_SIZE + 1];
             if (fileBrowser(filename, (char *)"*.xw", (char *)"Sessions"))
             {
-              if (console_changed == 0 || strcmp(session_filename, "session") == 0 || giac::confirm(giac::lang ? "当前会话将丢失？" : "Current session will be lost", giac::lang ? "F1: annul, F6: ok" : "F1: cancel, F6: ok") == KEY_CTRL_F6)
+              if (console_changed == 0 || strcmp(session_filename, "session") == 0 || giac::confirm(giac::lang ? "\xB5\xB1\xC7\xB0\xBB\xE1\xBB\xAD\xBD\xF8\xD0\xD0\xB6\xC8\xBF\xAA" : "Current session will be lost", giac::lang ? "F1: annul, F6: ok" : "F1: cancel, F6: ok") == KEY_CTRL_F6)
               {
                 giac::clip_pasted = true;
                 giac::_restart(giac::gen(giac::vecteur(0), giac::_SEQ__VECT), contextptr);
@@ -1547,7 +1547,7 @@ int Console_GetKey()
             giac::drawRectangle(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX - 8, COLOR_WHITE);
             if (get_filename(filename, ".xw"))
             {
-              if (console_changed == 0 || strcmp(session_filename, "session") == 0 || giac::confirm(giac::lang ? "当前会话将丢失？" : "Current session will be lost", giac::lang ? "F1: annul, F6: ok" : "F1: cancel, F6: ok") == KEY_CTRL_F6)
+              if (console_changed == 0 || strcmp(session_filename, "session") == 0 || giac::confirm(giac::lang ? "\xB5\xB1\xC7\xB0\xBB\xE1\xBB\xAD\xBD\xF8\xD0\xD0\xB6\xC8\xBF\xAA" : "Current session will be lost", giac::lang ? "F1: annul, F6: ok" : "F1: cancel, F6: ok") == KEY_CTRL_F6)
               {
                 giac::clip_pasted = true;
                 Console_Init();

@@ -223,7 +223,7 @@ int do_mastermind(GIAC_CONTEXT){
       if (essai.size()==4){
         if (essai==solution){
           char buf[16]; sprint_int(buf,essais.size());
-          confirm(lang==2?"找到解！尝试次数：":"Vous avez trouve. Essais:",buf);
+          confirm(lang?"\xd5\xd2\xb5\xbd\xbd\xe2\xa3\xa1\xb3\xa2\xca\xd4\xb4\xce\xca\xfd\xa3\xba":"Vous avez trouve. Essais:",buf);
           return i;
         }
         fulldisp=true;
@@ -233,7 +233,7 @@ int do_mastermind(GIAC_CONTEXT){
           mastermind_disp(solution,essais,essai,true,contextptr);
           for (int i=0;i<solution.size();++i)
             draw_filled_circle(30+C20*i+C20/2,190+C20,C20/2,mmind_col[solution[i]],true,true,contextptr);
-          confirm(lang==2?"游戏结束！":"Vous avez perdu.",lang==2?"Solution was":"La solution etait",false,140);
+          confirm(lang?"\xd3\xce\xcf\xb7\xbd\xe1\xca\xf8\xa3\xa1":"Vous avez perdu.",lang?"Solution was":"La solution etait",false,140);
           return -1;
         }
       }
@@ -538,23 +538,23 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   smallmenu.height=MENUHEIGHT-1;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenu.title = (char *) (lang==2?(mode==-1?"Pret bancaire":"Epargne"):(mode==-1?"Mortgage":"Savings"));
+  smallmenu.title = (char *) (lang?(mode==-1?"Pret bancaire":"Epargne"):(mode==-1?"Mortgage":"Savings"));
   smallmenu.type = MENUTYPE_NO_NUMBER;
   while(1) {
     drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
     string pvs,fvs,pms;
     if (mode==-1){
-      pvs=((lang==2)?"Somme due actuelle ":"Present due amount ");
-      fvs=((lang==2)?"Somme due future ":"Future due amount "); 
-      pms=((lang==2)?"Mensualite ":"Payment ");
+      pvs=((lang)?"Somme due actuelle ":"Present due amount ");
+      fvs=((lang)?"Somme due future ":"Future due amount "); 
+      pms=((lang)?"Mensualite ":"Payment ");
     } else {
-      pvs=((lang==2)?"Epargne actuelle ":"Present amount ");
-      fvs=((lang==2)?"Epargne future ":"Future amount ");
-      pms=((lang==2)?"Versement mensuel ":"Payment ");
+      pvs=((lang)?"Epargne actuelle ":"Present amount ");
+      fvs=((lang)?"Epargne future ":"Future amount ");
+      pms=((lang)?"Versement mensuel ":"Payment ");
     }
-    string irs=((lang==2)?"Taux d'interet annuel ":"Annual interest rate ");
-    string irpys=((lang==2)?"Paiements par an ":"Payments per year ");
-    string nbs=((lang==2)?"Nombre d'annees ":"Number of years ");
+    string irs=((lang)?"Taux d'interet annuel ":"Annual interest rate ");
+    string irpys=((lang)?"Paiements par an ":"Payments per year ");
+    string nbs=((lang)?"Nombre d'annees ":"Number of years ");
     string pvs1=pvs+giac::print_DOUBLE_((-mode)*pv,contextptr),
       fvs1=fvs+giac::print_DOUBLE_((-mode)*fv,contextptr),
       irs1=irs+giac::print_DOUBLE_(ir,contextptr)+"%",
@@ -564,7 +564,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
     char * tab[6]={(char*)pvs1.c_str(),(char*)fvs1.c_str(), (char*)irs1.c_str(),(char*)irpys1.c_str(), (char*)pms1.c_str(),(char*)nbs1.c_str()};
     for (int i=0;i<6;i++)
       smallmenuitems[i].text = tab[i];
-    smallmenuitems[6].text = (char*)((lang==2)?"Quitter ":"Quit ");
+    smallmenuitems[6].text = (char*)((lang)?"Quitter ":"Quit ");
 #ifdef HP39
     os_draw_string_medium(0,114,solved?_BLACK:_WHITE,solved?_WHITE:_BLACK,"Ans solve|EXE change|Tool help");
 #else
@@ -578,17 +578,17 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
       xcas::textArea text;
       text.editable=false;
       text.clipline=-1;
-      text.title = (char*)((lang==2)?(mode==-1?"Calcul d'un pret":"Interet d'un placement"):"Finance help");
+      text.title = (char*)((lang)?(mode==-1?"Calcul d'un pret":"Interet d'un placement"):"Finance help");
       text.allowF1=true;
       text.python=python_compat(contextptr);
       std::vector<xcas::textElement> & elem=text.elements;
       elem = std::vector<xcas::textElement> (2);
-      elem[0].s = (lang==2)?"Deplacez le curseur sur une ligne, tapez EXE/OK pour entrer une nouvelle valeur ou tapez sur Ans pour resoudre.":"Move cursor on a line, type EXE/OK to enter a new value or type Ans to solve";
+      elem[0].s = (lang)?"Deplacez le curseur sur une ligne, tapez EXE/OK pour entrer une nouvelle valeur ou tapez sur Ans pour resoudre.":"Move cursor on a line, type EXE/OK to enter a new value or type Ans to solve";
       elem[0].newLine = 0;
       if (mode==-1)
-	elem[1].s = (lang==2)?"Par exemple entrez le montant de l'emprunt en 1, 0 en 2, le taux d'interet, le nombre d'annees puis placez le curseur en 5 et tapez Ans.":"For example, enter due amount in 1, 0 in 2, interest rate, number of years then move cursor on 5 and type Ans";
+	elem[1].s = (lang)?"Par exemple entrez le montant de l'emprunt en 1, 0 en 2, le taux d'interet, le nombre d'annees puis placez le curseur en 5 et tapez Ans.":"For example, enter due amount in 1, 0 in 2, interest rate, number of years then move cursor on 5 and type Ans";
       else
-	elem[1].s = (lang==2)?"Pour calculer l'evolution d'un placement, entrer le montant place au debut, le taux d'interet, le nombre d'annees, 0 en 5 (paiement) puis deplacez le curseur en 2 et tapez Ans":"";
+	elem[1].s = (lang)?"Pour calculer l'evolution d'un placement, entrer le montant place au debut, le taux d'interet, le nombre d'annees, 0 en 5 (paiement) puis deplacez le curseur en 2 et tapez Ans":"";
       elem[1].newLine = 1;
       sres=doTextArea(&text,contextptr);
       continue;
@@ -678,25 +678,25 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenu.width=28;
   //smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenuitems[0].text = (char*)((lang)?"几何":"Geometry");
-  smallmenuitems[1].text = (char*)((lang)?"电子表格":"Spreadsheet");
-  smallmenuitems[2].text = (char*)((lang)?"元素周期表":"Periodic table");
-  smallmenuitems[3].text = (char*)((lang)?"贷款":"Mortgage");
-  smallmenuitems[4].text = (char*)((lang==2)?"Epargne":"TVM");
-  smallmenuitems[5].text = (char*)((lang==2)?"Table caracteres":"Char table");
-  smallmenuitems[6].text = (char*)((lang==2)?"Exemple simple: Syracuse":"Simple example; Syracuse");
-  smallmenuitems[7].text = (char*)((lang==2)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
-  smallmenuitems[8].text = (char*)((lang==2)?"Exemples de fractales":"Fractals examples");
+  smallmenuitems[0].text = (char*)((lang)?"\xbc\xb8\xba\xce":"Geometry");
+  smallmenuitems[1].text = (char*)((lang)?"\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1":"Spreadsheet");
+  smallmenuitems[2].text = (char*)((lang)?"\xd4\xaa\xcb\xd8\xd6\xdc\xc6\xda\xb1\xed":"Periodic table");
+  smallmenuitems[3].text = (char*)((lang)?"\xb4\xfb\xbf\xee":"Mortgage");
+  smallmenuitems[4].text = (char*)((lang)?"Epargne":"TVM");
+  smallmenuitems[5].text = (char*)((lang)?"Table caracteres":"Char table");
+  smallmenuitems[6].text = (char*)((lang)?"Exemple simple: Syracuse":"Simple example; Syracuse");
+  smallmenuitems[7].text = (char*)((lang)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
+  smallmenuitems[8].text = (char*)((lang)?"Exemples de fractales":"Fractals examples");
   // smallmenuitems[8].text = (char*)"Mon application"; // adjust numitem !
   // smallmenuitems[9].text = (char*)"Autre application";
   // smallmenuitems[10].text = (char*)"Encore une autre";
   // smallmenuitems[11].text = (char*)"Une avant-derniere";
   // smallmenuitems[12].text = (char*)"Une derniere";
 #ifdef NUMWORKS
-  smallmenuitems[smallmenu.numitems-3].text = (char*)((lang==2)?"自定义 Flash":"Customize flash");
+  smallmenuitems[smallmenu.numitems-3].text = (char*)((lang)?"\xd7\xd4\xb6\xa8\xd2\xe5\x20\x46\x6c\x61\x73\x68":"Customize flash");
 #endif
-  smallmenuitems[smallmenu.numitems-2].text = (char*)((lang==2)?"Quitter le menu":"Leave menu");
-  smallmenuitems[smallmenu.numitems-1].text = (char*)((lang==2)?"Quitter KhiCAS":"Leave KhiCAS");
+  smallmenuitems[smallmenu.numitems-2].text = (char*)((lang)?"Quitter le menu":"Leave menu");
+  smallmenuitems[smallmenu.numitems-1].text = (char*)((lang)?"Quitter KhiCAS":"Leave KhiCAS");
   while(1) {
     int sres = doMenu(&smallmenu);
     if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
@@ -820,11 +820,11 @@ void flash_info(const char * buf,std::vector<fileinfo_t> &v,size_t & first_modif
   smallmenu.height=modif?11:12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenu.title = (char*)(lang==2?"Flash 信息":"Flash Files");
+  smallmenu.title = (char*)(lang?"\x46\x6c\x61\x73\x68\x20\xd0\xc5\xcf\xa2":"Flash Files");
   smallmenu.type = MENUTYPE_FKEYS;
   smallmenu.selection=initpos;
   if (modif){
-    smallmenu.title = (char*)(lang==2?"修改文件":"Modify files");
+    smallmenu.title = (char*)(lang?"\xd0\xde\xb8\xc4\xce\xc4\xbc\xfe":"Modify files");
   }
   vector<string> vs(v.size());
   for (int i=0;i<v.size();++i){
@@ -846,7 +846,7 @@ void flash_info(const char * buf,std::vector<fileinfo_t> &v,size_t & first_modif
       break;
     }
     if (modif && sres == KEY_CTRL_CATALOG || sres==KEY_BOOK) { // rename
-      string s=v[i].filename,msg1=(lang==2?"重命名 ":"Rename ")+s;
+      string s=v[i].filename,msg1=(lang?"\xd6\xd8\xc3\xfc\xc3\xfb\x20":"Rename ")+s;
       int j=inputline(msg1.c_str(),"",s,false);
       if (j){
 	v[i].filename=s;
@@ -927,7 +927,7 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
 // copy text file from ram scriptstore
 int flash_from_ram(const char * buf,size_t & first_modif,GIAC_CONTEXT){
   char filename[MAX_FILENAME_SIZE+1];
-  int n=giac_filebrowser(filename,"py",(lang==2?"选择要复制的文件":"Select file to copy"),0);
+  int n=giac_filebrowser(filename,"py",(lang?"\xd1\xa1\xd4\xf1\xd2\xaa\xb8\xb4\xd6\xc6\xb5\xc4\xce\xc4\xbc\xfe":"Select file to copy"),0);
   if (n==0) return 0;
   const char * data=read_file(filename);
   n=flash_adddata(buf,filename,data,strlen(data),0);
@@ -940,8 +940,8 @@ void handle_flash(GIAC_CONTEXT){
   textArea text;
   text.editable=false;
   text.clipline=-1;
-  text.title =(lang==2)?"EXIT: annuler, EXE: ok":"EXIT: cancel, EXE: run";
-  add(&text,(lang==2)?flash_fr:flash_en);
+  text.title =(lang)?"EXIT: annuler, EXE: ok":"EXIT: cancel, EXE: run";
+  add(&text,(lang)?flash_fr:flash_en);
   int key=doTextArea(&text,contextptr);
   if (key!=1
 #ifdef DEVICE
@@ -952,7 +952,7 @@ void handle_flash(GIAC_CONTEXT){
   text.elements.clear();
   buf64k=(char *)malloc(1<<16);
   if (buf64k==0){
-    confirm(lang==2?"RAM 内存不足。":"RAM Memory full",lang==2?"清理并重启 KhiCAS":"Purge and restart KhiCAS");    
+    confirm(lang?"\x52\x41\x4d\x20\xc4\xda\xb4\xe6\xb2\xbb\xd7\xe3\xa1\xa3":"RAM Memory full",lang?"\xc7\xe5\xc0\xed\xb2\xa2\xd6\xd8\xc6\xf4\x20\x4b\x68\x69\x43\x41\x53":"Purge and restart KhiCAS");    
     return;
   }
 #ifndef NUMWORKS
@@ -966,14 +966,14 @@ void handle_flash(GIAC_CONTEXT){
   smallmenu.height=12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenuitems[0].text = (char*)(lang==2?"Flash 信息":"Flash informations");
-  smallmenuitems[1].text = (char*)(lang==2?"复制 RAM->Flash":"Copy RAM->flash");
-  smallmenuitems[2].text = (char*)(lang==2?"修改文件信息":"Modify file infos");
-  smallmenuitems[3].text = (char*)(lang==2?"清空回收站":"Empty trash");
-  smallmenuitems[4].text = (char*)(lang==2?"退出":"Leave");
+  smallmenuitems[0].text = (char*)(lang?"\x46\x6c\x61\x73\x68\x20\xd0\xc5\xcf\xa2":"Flash informations");
+  smallmenuitems[1].text = (char*)(lang?"\xb8\xb4\xd6\xc6\x20\x52\x41\x4d\x2d\x3e\x46\x6c\x61\x73\x68":"Copy RAM->flash");
+  smallmenuitems[2].text = (char*)(lang?"\xd0\xde\xb8\xc4\xce\xc4\xbc\xfe\xd0\xc5\xcf\xa2":"Modify file infos");
+  smallmenuitems[3].text = (char*)(lang?"\xc7\xe5\xbf\xd5\xbb\xd8\xca\xd5\xd5\xbe":"Empty trash");
+  smallmenuitems[4].text = (char*)(lang?"\xcd\xcb\xb3\xf6":"Leave");
   while (1){
     size_t first_modif=tar_totalsize(flash_buf,numworks_maxtarsize);
-    string title=(lang==2?"Flash 空闲 ":"Free flash ");
+    string title=(lang?"\x46\x6c\x61\x73\x68\x20\xbf\xd5\xcf\xd0\x20":"Free flash ");
     title += print_INT_(numworks_maxtarsize-first_modif);
     smallmenu.title = (char*)title.c_str();
     smallmenu.selection = 1;
@@ -1016,7 +1016,7 @@ void handle_flash(GIAC_CONTEXT){
 	continue;
       }
       if (smallmenu.selection==4){
-	if (numworks_maxtarsize-first_modif>65536 && do_confirm(lang==2?"还有空间，确定吗？":"There's still room, are you sure?"))
+	if (numworks_maxtarsize-first_modif>65536 && do_confirm(lang?"\xbb\xb9\xd3\xd0\xbf\xd5\xbc\xe4\xa3\xac\xc8\xb7\xb6\xa8\xc2\xf0\xa3\xbf":"There's still room, are you sure?"))
 	  flash_emptytrash(flash_buf,&first_modif);
       }
     }
@@ -1091,10 +1091,10 @@ void sheet_status(tableur & t,GIAC_CONTEXT){
   else
     st += " -";
   if (t.sel_row_begin>=0)
-    st += (lang==2)?" esc: annule selection":" esc: cancel selection";
+    st += (lang)?" esc: annule selection":" esc: cancel selection";
   else {
     if (t.cmd_row>=0)
-      st += (lang==2)?" esc: annule ligne cmd":" esc: cancel cmdline";
+      st += (lang)?" esc: annule ligne cmd":" esc: cancel cmdline";
   }
   statuslinemsg(st.c_str());
 }
@@ -1348,7 +1348,7 @@ void sheet_pntv(const vecteur & v,vecteur & res){
 void resizesheet(tableur &t){
   int cur_r=t.m.size(),cur_c=t.m.front()._VECTptr->size(),nr=t.nrows,nc=t.ncols;
   if (nr!=cur_r || nc!=cur_c){
-    if (do_confirm(((lang==2?"调整大小 ":"Resize ")+print_INT_(cur_r)+"x"+print_INT_(cur_c)+"->"+print_INT_(nr)+"x"+print_INT_(nc)).c_str())){
+    if (do_confirm(((lang?"\xb5\xf7\xd5\xfb\xb4\xf3\xd0\xa1\x20":"Resize ")+print_INT_(cur_r)+"x"+print_INT_(cur_c)+"->"+print_INT_(nr)+"x"+print_INT_(nc)).c_str())){
       vecteur fill(3,0);
       if (nr<cur_r) // erase rows
 	t.m.resize(nr);
@@ -1390,21 +1390,21 @@ void sheet_menu_setup(tableur & t,GIAC_CONTEXT){
   smallmenu.height=12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenu.title = (char*)(lang==2?"电子表格配置":"Sheet config");
+  smallmenu.title = (char*)(lang?"\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1\xc5\xe4\xd6\xc3":"Sheet config");
   smallmenuitems[3].type = MENUITEM_CHECKBOX;
   smallmenuitems[3].text = (char*)"Reeval";
   smallmenuitems[4].type = MENUITEM_CHECKBOX;
-  smallmenuitems[4].text = (char*)(lang==2?"矩阵：填充单元格":"Matrix: fill cells");
+  smallmenuitems[4].text = (char*)(lang?"\xbe\xd8\xd5\xf3\xa3\xba\xcc\xee\xb3\xe4\xb5\xa5\xd4\xaa\xb8\xf1":"Matrix: fill cells");
   smallmenuitems[5].type = MENUITEM_CHECKBOX;
-  smallmenuitems[5].text = (char*)(lang==2?"向下移动":"Move down");
+  smallmenuitems[5].text = (char*)(lang?"\xcf\xf2\xcf\xc2\xd2\xc6\xb6\xaf":"Move down");
   smallmenuitems[smallmenu.numitems-1].text = (char*) "Quit";
   while(1) {
     string dig("Digits (in Xcas): ");
     dig += print_INT_(decimal_digits(contextptr));
     smallmenuitems[0].text = (char*)dig.c_str();
-    string nrows((lang==2?"行数 ":"Rows ")+print_INT_(t.nrows));
+    string nrows((lang?"\xd0\xd0\xca\xfd\x20":"Rows ")+print_INT_(t.nrows));
     smallmenuitems[1].text = (char*)nrows.c_str();
-    string ncols((lang==2?"列数 ":"Cols ")+print_INT_(t.ncols));
+    string ncols((lang?"\xc1\xd0\xca\xfd\x20":"Cols ")+print_INT_(t.ncols));
     smallmenuitems[2].text = (char*)ncols.c_str();
     smallmenuitems[3].value = t.recompute;
     smallmenuitems[4].value = t.matrix_fill_cells;
@@ -1424,14 +1424,14 @@ void sheet_menu_setup(tableur & t,GIAC_CONTEXT){
       }
       if (smallmenu.selection == 2){
 	double d=t.nrows;
-	if (inputdouble((lang==2?"行数？":"Rows?"),d,contextptr) && d==int(d) && d>0){
+	if (inputdouble((lang?"\xd0\xd0\xca\xfd\xa3\xbf":"Rows?"),d,contextptr) && d==int(d) && d>0){
 	  t.nrows=d;
 	}
 	continue;
       }
       if (smallmenu.selection == 3){
 	double d=t.ncols;
-	if (inputdouble((lang==2?"列数？":"Colonnes?"),d,contextptr) && d==int(d) && d>0){
+	if (inputdouble((lang?"\xc1\xd0\xca\xfd\xa3\xbf":"Colonnes?"),d,contextptr) && d==int(d) && d>0){
 	  t.ncols=d;
 	}
 	continue;
@@ -1475,31 +1475,31 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
 #ifdef NUMWORKS
-  smallmenu.title = (char*)(lang==2?"Back: 取消电子表格菜单":"Back: cancel sheet menu");
+  smallmenu.title = (char*)(lang?"\x42\x61\x63\x6b\x3a\x20\xc8\xa1\xcf\xfb\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1\xb2\xcb\xb5\xa5":"Back: cancel sheet menu");
 #else
-  smallmenu.title = (char*)(lang==2?"Esc: 取消电子表格菜单":"Esc: cancel sheet menu");
+  smallmenu.title = (char*)(lang?"\x45\x73\x63\x3a\x20\xc8\xa1\xcf\xfb\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1\xb2\xcb\xb5\xa5":"Esc: cancel sheet menu");
 #endif
-  smallmenuitems[0].text = (char *)(lang==2?"保存电子表格 (shift sto)":"Save sheet (shift sto)");
-  smallmenuitems[1].text = (char *)(lang==2?"另存为电子表格":"Save sheet as");
-  if (nspire_exam_mode==2) smallmenuitems[1].text=smallmenuitems[0].text = (char*)(lang==2?"保存已禁用":"Saving disabled");
-  smallmenuitems[2].text = (char*)(lang==2?"加载":"Load");
-  string cell=(lang==2?"编辑单元格 ":"Edit cell ")+printcell(t.cur_row,t.cur_col);
+  smallmenuitems[0].text = (char *)(lang?"\xb1\xa3\xb4\xe6\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1\x20\x28\x73\x68\x69\x66\x74\x20\x73\x74\x6f\x29":"Save sheet (shift sto)");
+  smallmenuitems[1].text = (char *)(lang?"\xc1\xed\xb4\xe6\xce\xaa\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1":"Save sheet as");
+  if (nspire_exam_mode==2) smallmenuitems[1].text=smallmenuitems[0].text = (char*)(lang?"\xb1\xa3\xb4\xe6\xd2\xd1\xbd\xfb\xd3\xc3":"Saving disabled");
+  smallmenuitems[2].text = (char*)(lang?"\xbc\xd3\xd4\xd8":"Load");
+  string cell=(lang?"\xb1\xe0\xbc\xad\xb5\xa5\xd4\xaa\xb8\xf1\x20":"Edit cell ")+printcell(t.cur_row,t.cur_col);
   smallmenuitems[3].text = (char*)cell.c_str();
-  smallmenuitems[4].text = (char*)(lang==2?"查看图形 (shift 6)":"View graph (shift 4)");
+  smallmenuitems[4].text = (char*)(lang?"\xb2\xe9\xbf\xb4\xcd\xbc\xd0\xce\x20\x28\x73\x68\x69\x66\x74\x20\x36\x29":"View graph (shift 4)");
 #ifdef NUMWORKS
-  smallmenuitems[5].text = (char*)(lang==2?"向下复制 (shift 4)":"Copy down (shift 7)");
-  smallmenuitems[6].text = (char*)(lang==2?"向右复制 (shift 4)":"Copy right (shift 7)");
+  smallmenuitems[5].text = (char*)(lang?"\xcf\xf2\xcf\xc2\xb8\xb4\xd6\xc6\x20\x28\x73\x68\x69\x66\x74\x20\x34\x29":"Copy down (shift 7)");
+  smallmenuitems[6].text = (char*)(lang?"\xcf\xf2\xd3\xd2\xb8\xb4\xd6\xc6\x20\x28\x73\x68\x69\x66\x74\x20\x34\x29":"Copy right (shift 7)");
 #else
-  smallmenuitems[5].text = (char*)(lang==2?"向下复制 (ctrl D)":"Copy down (ctrl D)");
-  smallmenuitems[6].text = (char*)(lang==2?"向右复制 (ctrl R)":"Copy right (ctrl R)");
+  smallmenuitems[5].text = (char*)(lang?"\xcf\xf2\xcf\xc2\xb8\xb4\xd6\xc6\x20\x28\x63\x74\x72\x6c\x20\x44\x29":"Copy down (ctrl D)");
+  smallmenuitems[6].text = (char*)(lang?"\xcf\xf2\xd3\xd2\xb8\xb4\xd6\xc6\x20\x28\x63\x74\x72\x6c\x20\x52\x29":"Copy right (ctrl R)");
 #endif
-  smallmenuitems[7].text = (char*)(lang==2?"插入一行":"Insert row");
-  smallmenuitems[8].text = (char*)(lang==2?"插入一列":"Insert column");
-  smallmenuitems[9].text = (char*)(lang==2?"删除当前行":"Remove current row");
-  smallmenuitems[10].text = (char*)(lang==2?"删除当前列":"Remove current column");
-  smallmenuitems[11].text = (char*)(lang==2?"用 0 填充表格":"Fill sheet with 0");
+  smallmenuitems[7].text = (char*)(lang?"\xb2\xe5\xc8\xeb\xd2\xbb\xd0\xd0":"Insert row");
+  smallmenuitems[8].text = (char*)(lang?"\xb2\xe5\xc8\xeb\xd2\xbb\xc1\xd0":"Insert column");
+  smallmenuitems[9].text = (char*)(lang?"\xc9\xbe\xb3\xfd\xb5\xb1\xc7\xb0\xd0\xd0":"Remove current row");
+  smallmenuitems[10].text = (char*)(lang?"\xc9\xbe\xb3\xfd\xb5\xb1\xc7\xb0\xc1\xd0":"Remove current column");
+  smallmenuitems[11].text = (char*)(lang?"\xd3\xc3\x20\x30\x20\xcc\xee\xb3\xe4\xb1\xed\xb8\xf1":"Fill sheet with 0");
   smallmenuitems[smallmenu.numitems-2].text = (char*) "Config";
-  smallmenuitems[smallmenu.numitems-1].text = (char*) (lang==2?"退出电子表格":"Leave sheet");
+  smallmenuitems[smallmenu.numitems-1].text = (char*) (lang?"\xcd\xcb\xb3\xf6\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1":"Leave sheet");
   while(1) {
     int sres = doMenu(&smallmenu);
     if (sres==MENU_RETURN_EXIT)
@@ -1521,8 +1521,8 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
       }
       if (smallmenu.selection== 3 && !exam_mode) {
 	char filename[128];
-	if (giac_filebrowser(filename,"tab",(lang==2?"电子表格文件":"Sheet files"),2)){
-	  if (t.changed && do_confirm(lang==2?"保存当前电子表格？":"Save current sheet?"))
+	if (giac_filebrowser(filename,"tab",(lang?"\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1\xce\xc4\xbc\xfe":"Sheet files"),2)){
+	  if (t.changed && do_confirm(lang?"\xb1\xa3\xb4\xe6\xb5\xb1\xc7\xb0\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1\xa3\xbf":"Save current sheet?"))
 	    save_sheet(t,contextptr);
 	  const char * s=read_file(filename);
 	  if (s){
@@ -1541,7 +1541,7 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
 	      s=0;
 	  }
 	  if (!s)
-	    do_confirm(lang==2?"文件读取错误":"Error reading file");
+	    do_confirm(lang?"\xce\xc4\xbc\xfe\xb6\xc1\xc8\xa1\xb4\xed\xce\xf3":"Error reading file");
 	}
 	return -1;
       } // end load
@@ -1649,7 +1649,7 @@ void sheet_cmd(tableur & t,const char * ans){
       t.cur_col=j;
     }
     else {
-      do_confirm((lang==2?"无法找到空闲单元格":"Could not find an empty cell"));
+      do_confirm((lang?"\xce\xde\xb7\xa8\xd5\xd2\xb5\xbd\xbf\xd5\xcf\xd0\xb5\xa5\xd4\xaa\xb8\xf1":"Could not find an empty cell"));
       return;
     }
   }
@@ -2119,9 +2119,9 @@ int geoapp(GIAC_CONTEXT){
       const char * tab[figs.size()+3]={0};
       for (int i=0;i<figs.size();++i)
 	tab[i]=fign[i].c_str();
-      tab[figs.size()]=lang==2?"新建 2D 图形":"New 2d figure";
-      tab[figs.size()+1]=lang==2?"新建 3D 图形":"New 3d figure";
-      int s=select_item(tab,lang==2?"选择图形":"Choose figure",true);
+      tab[figs.size()]=lang?"\xd0\xc2\xbd\xa8\x20\x32\x44\x20\xcd\xbc\xd0\xce":"New 2d figure";
+      tab[figs.size()+1]=lang?"\xd0\xc2\xbd\xa8\x20\x33\x44\x20\xcd\xbc\xd0\xce":"New 3d figure";
+      int s=select_item(tab,lang?"\xd1\xa1\xd4\xf1\xcd\xbc\xd0\xce":"Choose figure",true);
       if (s>=0 && s<sizeof(tab)/sizeof(char *) && tab[s]){
 	text->elements.clear();
 	if (s<figs.size()){

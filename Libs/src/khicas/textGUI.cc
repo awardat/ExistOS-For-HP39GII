@@ -334,9 +334,9 @@ int check_parse(const ustl::vector<textElement> &v, int python)
       pos = 0;
     }
     if (pos >= 0)
-      sprintf(status, giac::lang ? "错误行 %i 在 %s" : "Error line %i at %s", lineerr, tok.c_str());
+      sprintf(status, giac::lang ? "\xb4\xed\xce\xf3\xd0\xd0\x20\x25\x69\x20\xd4\xda\x20\x25\x73" : "Error line %i at %s", lineerr, tok.c_str());
     else
-      sprintf(status, giac::lang ? "错误行 %i %s" : "Error line %i %s", lineerr, (pos == -2 ? (giac::lang ? ", : manquant ?" : ", missing :?") : ""));
+      sprintf(status, giac::lang ? "\xb4\xed\xce\xf3\xd0\xd0\x20\x25\x69\x20\x25\x73" : "Error line %i %s", lineerr, (pos == -2 ? (giac::lang ? ", : manquant ?" : ", missing :?") : ""));
     warning(status);
   }
   else
@@ -347,7 +347,7 @@ int check_parse(const ustl::vector<textElement> &v, int python)
     ctrl_c = false;
     giac::kbd_interrupted = interrupted = false;
     check_do_graph(g); // define the function
-    warning(giac::lang ? "语法正确" : "Parse OK");
+    warning(giac::lang ? "\xd3\xef\xb7\xa8\xd5\xfd\xc8\xb7" : "Parse OK");
   }
   return lineerr;
 }
@@ -697,13 +697,13 @@ int check_leave(textArea *text)
       tmp = tmp.substr(7, tmp.size() - 7);
       if (strcmp(tmp.c_str(), "temp.py") == 0)
       {
-        if (giac::confirm(giac::lang ? "Les modifs seront perdues" : "Changes will be lost", giac::lang ? "F1: 取消, F6: 确认" : "F1: cancel, F6: confirm") == KEY_CTRL_F1)
+        if (giac::confirm(giac::lang ? "Les modifs seront perdues" : "Changes will be lost", giac::lang ? "\x46\x31\x3a\x20\xc8\xa1\xcf\xfb\x2c\x20\x46\x36\x3a\x20\xc8\xb7\xc8\xcf" : "F1: cancel, F6: confirm") == KEY_CTRL_F1)
           return 2;
         else
           return 0;
       }
       tmp += giac::lang ? " a ete modifie!" : " was modified!";
-      if (giac::confirm(tmp.c_str(), giac::lang ? "F1: 保存, F6: 放弃" : "F1: save, F6: discard changes") == KEY_CTRL_F1)
+      if (giac::confirm(tmp.c_str(), giac::lang ? "\x46\x31\x3a\x20\xb1\xa3\xb4\xe6\x2c\x20\x46\x36\x3a\x20\xb7\xc5\xc6\xfa" : "F1: save, F6: discard changes") == KEY_CTRL_F1)
       {
         save_script(text->filename.c_str(), merge_area(text->elements));
         text->changed = false;
@@ -983,10 +983,10 @@ void warn_python(int mode, bool autochange)
     if (autochange)
       giac::confirm(giac::lang ? "Passage en syntaxe Python." : "Setting Python syntax source.", giac::lang ? "avec ^=**, F1/F6: ok" : "with ^=**, F1/F6:ok");
     else
-      giac::confirm(giac::lang ? "Syntaxe Python avec ^==**," : "Python syntax with ^==**,", giac::lang ? "python_compat(2): xor. F1: 确定" : "python_compat(2): xor. F1: 确定");
+      giac::confirm(giac::lang ? "Syntaxe Python avec ^==**," : "Python syntax with ^==**,", giac::lang ? "\x70\x79\x74\x68\x6f\x6e\x5f\x63\x6f\x6d\x70\x61\x74\x28\x32\x29\x3a\x20\x78\x6f\x72\x2e\x20\x46\x31\x3a\x20\xc8\xb7\xb6\xa8" : "\x70\x79\x74\x68\x6f\x6e\x5f\x63\x6f\x6d\x70\x61\x74\x28\x32\x29\x3a\x20\x78\x6f\x72\x2e\x20\x46\x31\x3a\x20\xc8\xb7\xb6\xa8");
   if (mode == 2)
   {
-    giac::confirm(giac::lang ? "Syntaxe Python avec ^==xor" : "Python syntax with ^==xor", giac::lang ? "python_compat(1): **. F1: 确定" : "python_compat(1): **. F1: 确定");
+    giac::confirm(giac::lang ? "Syntaxe Python avec ^==xor" : "Python syntax with ^==xor", giac::lang ? "\x70\x79\x74\x68\x6f\x6e\x5f\x63\x6f\x6d\x70\x61\x74\x28\x31\x29\x3a\x20\x2a\x2a\x2e\x20\x46\x31\x3a\x20\xc8\xb7\xb6\xa8" : "\x70\x79\x74\x68\x6f\x6e\x5f\x63\x6f\x6d\x70\x61\x74\x28\x31\x29\x3a\x20\x2a\x2a\x2e\x20\x46\x31\x3a\x20\xc8\xb7\xb6\xa8");
   }
 }
 

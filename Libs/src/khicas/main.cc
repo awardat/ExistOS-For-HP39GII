@@ -1458,19 +1458,19 @@ void displaygraph(const giac::gen & ge){
       smallmenuitems[7].text = (char *) ("Zoom in +");
       smallmenuitems[8].text = (char *) ("Zoom out -");
       smallmenuitems[9].text = (char *) ("Y-Zoom out (-)");
-      smallmenuitems[10].text = (char*) ((lang)?"显示坐标轴":"Show axes");
+      smallmenuitems[10].text = (char*) ((lang)?"\xcf\xd4\xca\xbe\xd7\xf8\xb1\xea\xd6\xe1":"Show axes");
       smallmenuitems[10].type = MENUITEM_CHECKBOX;
       smallmenuitems[10].value = gr.show_axes;
-      smallmenuitems[11].text = (char*) ((lang==2)?"显示切线 (F3)":"Show tangent (F3)");
+      smallmenuitems[11].text = (char*) ((lang)?"\xcf\xd4\xca\xbe\xc7\xd0\xcf\xdf\x20\x28\x46\x33\x29":"Show tangent (F3)");
       smallmenuitems[11].type = MENUITEM_CHECKBOX;
       smallmenuitems[11].value = (gr.tracemode & 2)!=0;
-      smallmenuitems[12].text = (char*) ((lang==2)?"显示法线 (F4)":"Show normal (F4)");
+      smallmenuitems[12].text = (char*) ((lang)?"\xcf\xd4\xca\xbe\xb7\xa8\xcf\xdf\x20\x28\x46\x34\x29":"Show normal (F4)");
       smallmenuitems[12].type = MENUITEM_CHECKBOX;
       smallmenuitems[12].value = (gr.tracemode & 4)!=0;
-      smallmenuitems[13].text = (char*) ((lang==2)?"显示圆 (F5)":"Show circle (F5)");
+      smallmenuitems[13].text = (char*) ((lang)?"\xcf\xd4\xca\xbe\xd4\xb2\x20\x28\x46\x35\x29":"Show circle (F5)");
       smallmenuitems[13].type = MENUITEM_CHECKBOX;
       smallmenuitems[13].value = (gr.tracemode & 8)!=0;
-      smallmenuitems[14].text = (char*)(lang?"退出":"Quit");
+      smallmenuitems[14].text = (char*)(lang?"\xcd\xcb\xb3\xf6":"Quit");
       int sres = doMenu(&smallmenu);
       if(sres == MENU_RETURN_SELECTION) {
 	const char * ptr=0;
@@ -1728,7 +1728,7 @@ void run(const char *s, int do_logo_graph_eqw)
   if (giac::freeze)
   {
     giac::freeze = false;
-    // DefineStatusMessage((char*)lang?"按任意键":"Screen freezed. Press any key.", 1, 0, 0);
+    // DefineStatusMessage((char*)lang?"\xb0\xb4\xc8\xce\xd2\xe2\xbc\xfc":"Screen freezed. Press any key.", 1, 0, 0);
     // DisplayStatusArea();
     // int keyflag = GetSetupSetting( (unsigned int)0x14);
     unsigned int key;
@@ -1841,12 +1841,13 @@ int kcas_main(int isAppli, unsigned short OptionNum)
   context ct;
   contextptr = &ct;
   _srand(vecteur(0), contextptr);
+  // Load saved language preference BEFORE session restore
+  { extern void load_lang_setting(); load_lang_setting(); }
   confirm("khicas session");
   restore_session("session");
   // load_config();
   Console_Disp();
   //init_locale();
-  lang = 0;
 
   i = 0;
 
@@ -1854,8 +1855,10 @@ int kcas_main(int isAppli, unsigned short OptionNum)
   while (1)
   {
     
-    if ((expr = Console_GetLine()) == NULL)
-      stop("memory error");
+    if ((expr = Console_GetLine()) == NULL){
+      save_session();
+      break;
+    }
     if (strcmp((const char *)expr, "restart") == 0)
     {
       if (confirm(lang ? "Effacer variables?" : "Clear variables?", lang ? "F1: annul,  F6: confirmer" : "F1: cancel,  F6: confirm") != KEY_CTRL_F6)
@@ -1883,8 +1886,6 @@ int kcas_main(int isAppli, unsigned short OptionNum)
 #ifdef TEX
   TeX_quit();
 #endif
-  for (;;)
-    ck_getkey((int *)&key);
   return 1;
 }
 
