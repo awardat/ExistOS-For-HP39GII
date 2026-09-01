@@ -16488,7 +16488,6 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 #endif
 	  continue;
 	}
-#if defined MICROPY_LIB || defined QUICKJS
 	if (smallmenu.selection == 2){
 	  int c=select_interpreter();
 	  if (c>=0){
@@ -16525,7 +16524,6 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	    break;
 	  }
 	}
-#endif
 	if (smallmenu.selection == 3){
 	  giac::angle_radian(!giac::angle_radian(contextptr),contextptr);
 	  os_set_angle_unit(giac::angle_radian(contextptr)?0:1);
@@ -20889,7 +20887,11 @@ int select_item(const char ** ptr,const char * title,bool askfor1){
 }
 
 int select_interpreter(){
+#ifdef MICROPY_LIB
   const char * choix[]={"Xcas interpreter","Xcas compat Python ^=**","Xcas compat Python ^=xor","MicroPython interpreter","Javascript (QuickJS)",0};
+#else
+  const char * choix[]={"Xcas interpreter","Xcas compat Python ^=**","Xcas compat Python ^=xor",0};
+#endif
   return select_item(choix,"Syntax",false);
 }
 
