@@ -14,6 +14,8 @@
 int g_slowdown_enable = 0;
 static uint8_t min_cpu_frac_sd = CPU_DIVIDE_SAVE_IDLE;
 
+static void setCPUSpeed(uint32_t div, uint32_t frac);
+
 static void PLLEnable(bool enable) {
     BF_SETV(CLKCTRL_PLLCTRL0, POWER, enable);
     portDelayus(20);
@@ -44,11 +46,11 @@ void enterSlowDown()
 {
     if(g_slowdown_enable == 1)
     {
-        setCPUDivider(CPU_DIVIDE_STD_IDLE);
+        setCPUSpeed(CPU_DIVIDE_STD_IDLE, 18);
     }else if(g_slowdown_enable == 2){
-        setCPUDivider(CPU_DIVIDE_SAVE_IDLE);
+        setCPUSpeed(CPU_DIVIDE_SAVE_IDLE, 18);
     }else if(g_slowdown_enable == 3){
-        setCPUDivider(CPU_DIVIDE_BOOST_IDLE);
+        setCPUSpeed(CPU_DIVIDE_BOOST_IDLE, 18);
     }
 }
 
@@ -56,13 +58,13 @@ void exitSlowDown()
 {
     if(g_slowdown_enable == 1)
     {
-        setCPUDivider(CPU_DIVIDE_STD_BUSY);
+        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
     }else if(g_slowdown_enable == 2){
-        setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
+        setCPUSpeed(CPU_DIVIDE_SAVE_BUSY, 18);
     }else if(g_slowdown_enable == 3){
-        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
+        setCPUSpeed(CPU_DIVIDE_BOOST_BUSY, CPU_DIVIDE_BOOST_FRAC);
     }else{
-        setCPUDivider(CPU_DIVIDE_STD_BUSY);
+        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
     }
     
 }
@@ -73,13 +75,20 @@ void slowDownEnable(int mode)
     g_slowdown_enable = mode;
     if(g_slowdown_enable == 2)
     {
-        setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
+        setCPUSpeed(CPU_DIVIDE_SAVE_BUSY, 18);
     }else if(g_slowdown_enable == 3)
     {
-        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
+        setCPUSpeed(CPU_DIVIDE_BOOST_BUSY, CPU_DIVIDE_BOOST_FRAC);
     }else{
-        setCPUDivider(CPU_DIVIDE_STD_BUSY);
+        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
     }
+}
+
+// 设置 CPU 频率：div 整数分频 + frac 分数分频（frac=18 为整数模式）
+static void setCPUSpeed(uint32_t div, uint32_t frac)
+{
+    setCPUDivider(div);
+    setCPUFracDivider(frac);
 }
 
 
