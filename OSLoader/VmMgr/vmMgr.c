@@ -360,7 +360,12 @@ static inline int save_cache_page(CachePageInfo_t *cache_page) {
             }
             cdmp_free(ZRAMAddress_Tab[ind]);
             ZRAMAddress_Tab[ind] = cdmp_alloc(sz);
-            cdmp_wrtie(ZRAMAddress_Tab[ind], 0, sz, (void *)compress_buffer);
+            if (ZRAMAddress_Tab[ind]) {
+                cdmp_wrtie(ZRAMAddress_Tab[ind], 0, sz, (void *)compress_buffer);
+            } else {
+                printf("ZRAM OOM!\n");
+                return -2;
+            }
 #endif
 #if MEM_COMPRESSION_ALGORITHM == MINILZO
             int ret = lzo1x_1_compress((void *)cache_page->PageOnPhyAddr, PAGE_SIZE, (char *)compress_buffer, &sz, comp_wrkbuffer);
