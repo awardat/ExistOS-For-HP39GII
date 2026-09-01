@@ -98,15 +98,16 @@ const int xwaspy_shift=33; // must be between 32 and 63, reflect in xcas.js and 
 //giac::context * contextptr=0;
 int clip_ymin=0;
 int lang=1;
+int saved_digits=0; // persisted decimal_digits (0 = not set)
 
-// Save/load language setting
+// Save/load language setting (+ decimal digits)
 void save_lang_setting() {
     FILE *f = fopen("/khi_lang.dat", "wb");
-    if (f) { fwrite(&lang, sizeof(int), 1, f); fclose(f); }
+    if (f) { fwrite(&lang, sizeof(int), 1, f); fwrite(&saved_digits, sizeof(int), 1, f); fclose(f); }
 }
 void load_lang_setting() {
     FILE *f = fopen("/khi_lang.dat", "rb");
-    if (f) { int saved=0; if (fread(&saved, sizeof(int), 1, f)==1) { if (saved==0||saved==1) lang=saved; } fclose(f); }
+    if (f) { int saved=0; if (fread(&saved, sizeof(int), 1, f)==1) { if (saved==0||saved==1) lang=saved; } if (fread(&saved_digits, sizeof(int), 1, f)==1) { if (saved_digits<0 || saved_digits>15) saved_digits=0; } fclose(f); }
 }
 short int nspirelua=0;
 bool warn_nr=true; 
@@ -16407,7 +16408,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   
   void menu_setup(GIAC_CONTEXT){
     Menu smallmenu;
-    smallmenu.numitems=15;
+    smallmenu.numitems=10;
     MenuItem smallmenuitems[smallmenu.numitems];
     smallmenu.items=smallmenuitems;
     smallmenu.height=MENUHEIGHT;
@@ -16423,32 +16424,27 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     smallmenuitems[0].type = MENUITEM_CHECKBOX;
     smallmenuitems[0].text = (char*)"x,n,t -> t";
 #endif
-    smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax (Xcas/Py/JS)");
+smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax (Xcas/Py/JS)");
     smallmenuitems[2].type = MENUITEM_CHECKBOX;
     smallmenuitems[2].text = (char*)"Radians (in Xcas)";
     smallmenuitems[3].type = MENUITEM_CHECKBOX;
     smallmenuitems[3].text = (char*)"Sqrt (in Xcas)";
     smallmenuitems[4].text = (char *)"\xD6\xD0\xCE\xC4"; // GBK: 中文
     smallmenuitems[5].text = (char*)"English";
-    smallmenuitems[6].text = (char*)"";
-    smallmenuitems[7].text = (char*)"";
-    smallmenuitems[8].text = (char*)"";
-    smallmenuitems[9].text = (char *) ((lang)?"\xBC\xC2\xC5\xC5\xBD\xD3 (0)":"Shortcuts (0)");
+    smallmenuitems[6].text = (char *) ((lang)?"\xbf\xec\xbd\xdd\xbc\xfc (0)":"Shortcuts (0)");
 #ifdef NUMWORKS
-    smallmenuitems[10].text = (char*) ((lang)?"\xb1\xb8\xb7\xdd\xa1\xa2\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\x20\x28\x65\x5e\x78\x29":"Backup, exam mode (e^x)");
+    smallmenuitems[7].text = (char*) ((lang)?"\xb1\xb8\xb7\xdd\xa1\xa2\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd\x20\x28\x65\x5e\x78\x29":"Backup, exam mode (e^x)");
 #else
-    smallmenuitems[10].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xbd (e^x)":"Exam mode (e^x)");
+    smallmenuitems[7].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xBD (e^x)":"Exam mode (e^x)");
     if (osok==0)
-      smallmenuitems[10].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xBD\xB2\xBB\xBC\xD9\xD0\xD0":"Exam mode incompatible");
+      smallmenuitems[7].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xBD\xB2\xBB\xBC\xD9\xD0\xD0":"Exam mode incompatible");
     if (osok==-1)
-      smallmenuitems[10].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xBD\xBE\xAF\xBE\xA1":"Exam mode warning");
+      smallmenuitems[7].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xBD\xBE\xAF\xBE\xA1":"Exam mode warning");
 #endif
-    smallmenuitems[11].text = (char*) ((lang)?"\xB9\xD8\xD3\xDA":"About");
-    smallmenuitems[12].text = (char*)"";
-    smallmenuitems[13].text = (char*)"";
-    smallmenuitems[14].text = (char*) ((lang)?"\xb7\xb5\xbb\xd8":"Back");
+    smallmenuitems[8].text = (char*) ((lang)?"\xB9\xD8\xD3\xDA":"About");
+    smallmenuitems[9].text = (char*) ((lang)?"\xb7\xb5\xbb\xd8":"Back");
     if (exam_mode)
-      smallmenuitems[14].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Quit exam mode");
+      smallmenuitems[9].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Quit exam mode");
     
     // smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
     while(1) {
@@ -16459,11 +16455,6 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       dig += print_INT_(decimal_digits(contextptr));
       smallmenuitems[0].text = (char*)dig.c_str();
 #endif
-      string heaps("Micropy/JS heap "+print_INT_(pythonjs_heap_size/1024)+"K");
-      smallmenuitems[12].text = (char *) heaps.c_str();
-      string stacks("-------------");
-      // string stacks("Micropython stack "+print_INT_(pythonjs_stack_size/1024)+"K"); // enable in micropython mpconfig.h + call to pystack_init + remove continue below
-      smallmenuitems[13].text = (char *) stacks.c_str();
       int p=python_compat(contextptr);
       if (p<0){
 	smallmenuitems[1].text = (char*)"Change syntax (QuickJS)";
@@ -16492,6 +16483,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  double d=decimal_digits(contextptr);
 	  if (inputdouble((lang)?"\xca\xfd\xd7\xd6\xce\xbb\xca\xfd?":"Number of digits?",d,contextptr) && d==int(d) && d>0){
 	    decimal_digits(d,contextptr);
+	    saved_digits=int(d);
 	  }
 #endif
 	  continue;
@@ -16556,15 +16548,15 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  giac::withsqrt(!giac::withsqrt(contextptr),contextptr);
 	  continue;
 	}
-	if (smallmenu.selection==11 && osok==-1){
+	if (smallmenu.selection==8 && osok==-1){
 	  confirm(lang?"\xbc\xa4\xbb\xee\xd2\xbb\xb4\xce\x20\x54\x49\x20\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Activate one time TI exam mode",lang?"\xd2\xd4\xb1\xe3\xba\xf3\xd0\xf8\xca\xb9\xd3\xc3\x20\x4b\x68\x69\x43\x41\x53":"to enable KhiCAS exam mode");
 	  continue;
 	}
-	if (smallmenu.selection==11 && osok==0){
+	if (smallmenu.selection==8 && osok==0){
 	  confirm(lang?"\xb4\xcb\xd0\xcd\xba\xc5\xb2\xbb\xbc\xe6\xc8\xdd":"This model is not compatible",lang?"\xca\xb9\xd3\xc3\x20\x4b\x68\x69\x43\x41\x53\x20\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"with KhiCAS exam mode");
 	  continue;
 	}
-	if (smallmenu.selection == 11 && osok>0){
+	if (smallmenu.selection == 8 && osok>0){
 #ifdef NSPIRE_NEWLIB
 	  if (nspire_exam_mode==1
 	      // && !is_cx2
@@ -16786,17 +16778,17 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  continue;
 	}
 #endif // MICROPY_LIB
-	if (smallmenu.selection == 15){
+	if (smallmenu.selection == 10){
 	  if (exam_mode)
 	    leave_exam_mode(contextptr);
 	  return;
 	}
-	if (smallmenu.selection >= 10) {
+	if (smallmenu.selection == 7 || smallmenu.selection == 9) {
 	  textArea text;
 	  text.editable=false;
 	  text.clipline=-1;
 	  text.title = smallmenuitems[smallmenu.selection-1].text;
-	  add(&text,smallmenu.selection==10?((lang)?shortcuts_fr_string:shortcuts_en_string):((lang)?apropos_fr_string:apropos_en_string));
+	  add(&text,smallmenu.selection==7?((lang)?shortcuts_fr_string:shortcuts_en_string):((lang)?apropos_fr_string:apropos_en_string));
 	  if (doTextArea(&text,contextptr)==KEY_SHUTDOWN)
 	    return ;
 	  continue;
@@ -18747,7 +18739,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  smallmenuitems[8].text = (char*)((lang)?"\xd6\xb4\xd0\xd0\xbd\xc5\xb1\xbe":"Run script");
 	  smallmenuitems[9].text = (char*)((lang)?"\xc7\xe5\xb3\xfd\xc0\xfa\xca\xb7\x20\x28\x30\x29":"Clear history");
 	  smallmenuitems[10].text = (char*)((lang)?"\xc7\xe5\xb3\xfd\xbd\xc5\xb1\xbe\x20\x28\x65\x5e\x29":"Clear script");
-	  smallmenuitems[11].text = (char*)"Configuration/examen (ln)";
+	  smallmenuitems[11].text = (char*) ((lang)?"\xc5\xe4\xd6\xc3/\xbf\xbc\xca\xd4 (ln)":"Configuration/exam (ln)");
 	  smallmenuitems[12].text = (char *) ((lang)?"\xbd\xe7\xc3\xe6\xb0\xef\xd6\xfa\x20\x28\x6c\x6f\x67\x29":"Shortcuts");
 	  smallmenuitems[13].text = (char*)((lang)?"\xbe\xd8\xd5\xf3\xb1\xe0\xbc\xad\x20\x28\x69\x29":"Matrix editor");
 	  smallmenuitems[14].text = (char*) ((lang)?"\xb4\xb4\xbd\xa8\xb2\xce\xca\xfd\x20\x28\x2c\x29":"Create slider (,)");
@@ -22291,6 +22283,8 @@ int kcas_main(int isAppli, unsigned short OptionNum)
   xcas::Console_Init(contextptr);
   giac::_srand(vecteur(0), contextptr);
   load_lang_setting(); // apply saved language preference before session restore
+  if (saved_digits>0)
+    decimal_digits(saved_digits,contextptr); // restore persisted decimal digits
   xcas::restore_session("session", contextptr);
   // load_config();
   xcas::Console_Disp(1,contextptr);
@@ -22302,6 +22296,8 @@ int kcas_main(int isAppli, unsigned short OptionNum)
   {
     
     if ((expr = xcas::Console_GetLine(contextptr)) == NULL){
+      saved_digits = decimal_digits(contextptr);
+      save_lang_setting();
       xcas::save_session(contextptr);
       break;
     }
