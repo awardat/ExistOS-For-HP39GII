@@ -971,6 +971,7 @@ void TaskUSBLog(void *_) {
             ava = tud_cdc_write_available();
             if (ava > 0) {
             retest:
+                {
                 uint32_t li = log_i; // snapshot (atomic 32-bit read)
                 uint32_t lj = log_j;
                 if (lj < li) {
@@ -1000,6 +1001,7 @@ void TaskUSBLog(void *_) {
                 }
             }
         }
+    }
 
         vTaskDelay(pdMS_TO_TICKS(200));
     }
