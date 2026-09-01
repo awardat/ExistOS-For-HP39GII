@@ -128,8 +128,7 @@ void volatile arm_do_swi(uint32_t SWINum, uint32_t *pRegFram) {
 
         case LL_FAST_SWI_CORE_CUR_FREQ: {
             uint32_t div = HW_CLKCTRL_CPU.B.DIV_CPU;
-            uint32_t frac = HW_CLKCTRL_FRAC.B.CPUFRAC;
-            pRegFram[0 + 2] = div ? (480000000UL / 1000000 * frac / (18 * div)) : 0;
+            pRegFram[0 + 2] = div ? (480000000UL / 1000000 / div) : 0;
             break;
         }
 
