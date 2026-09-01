@@ -973,7 +973,7 @@ static void checkFS() {
 inline void initConsole() {
     console = new SimpShell(uidisp);
     console->puts("\n"
-        "ExistOS Console build 128\n"
+        "ExistOS Console build 129\n"
         "2026 (C) ExistOS Team\n"
         "Forked from ExistOS-Team/ExistOS-For-HP39GII\n"
         "Licensed under GPL-3.0: <https://github.com/awardcat/ExistOS-For-HP39GII>\n"
