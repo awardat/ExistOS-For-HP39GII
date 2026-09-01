@@ -180,10 +180,13 @@ _ssize_t _write_r(struct _reent *pReent, int fd, const void *buf, size_t nbytes)
         pReent->_errno = 0;
         int k = 0;
         while (k < nbytes) {
-            log_buf[log_i++] = ((char *)buf)[k++];
-            if (log_i >= SYS_LOG_BUFSIZE) {
-                log_i = 0;
+            uint32_t cur = log_i;
+            uint32_t next = cur + 1;
+            if (next >= SYS_LOG_BUFSIZE) {
+                next = 0;
             }
+            log_buf[cur] = ((char *)buf)[k++]; // write data first
+            log_i = next;                      // then publish index (atomic 32-bit store)
         }
         
         for (i = 0; i < nbytes; i++) {

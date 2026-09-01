@@ -439,9 +439,16 @@ void parseCDCCommand(char *cmd) {
     }
 
     if (memcmp(cmd, "ERASEB", 6) == 0) {
-        uint32_t erase_blk = 30;
-        sscanf(cmd, "ERASEB:%ld", &erase_blk);
-        printf("ERASEB:%ld\n", erase_blk);
+        uint32_t erase_blk;
+        if (sscanf(cmd, "ERASEB:%lu", &erase_blk) != 1) {
+            MscSetCmd("ERR:INV\n");
+            return;
+        }
+        if (erase_blk >= MTD_getDeviceInfo()->Blocks) {
+            MscSetCmd("ERR:BLK\n");
+            return;
+        }
+        printf("ERASEB:%lu\n", erase_blk);
 
         MTD_ErasePhyBlock(erase_blk);
 
@@ -451,11 +458,18 @@ void parseCDCCommand(char *cmd) {
     }
 
     if (memcmp(cmd, "PROGP", 5) == 0) {
-        uint32_t prog_page = 1111;
-        uint32_t wrMeta;
+        uint32_t prog_page, wrMeta;
         uint8_t mtbuff[32];
-        sscanf(cmd, "PROGP:%ld,%ld", &prog_page, &wrMeta);
-        printf("PROGP:%ld,%ld\n", prog_page, wrMeta);
+        if (sscanf(cmd, "PROGP:%lu,%lu", &prog_page, &wrMeta) != 2) {
+            MscSetCmd("ERR:INV\n");
+            return;
+        }
+        mtdInfo_t *nand_info = MTD_getDeviceInfo();
+        if (prog_page + CDC_BINMODE_BUFSIZE / 2048 > nand_info->Blocks * nand_info->PagesPerBlock) {
+            MscSetCmd("ERR:PG\n");
+            return;
+        }
+        printf("PROGP:%lu,%lu\n", prog_page, wrMeta);
 
         if (wrMeta) {
             // mtbuff = pvPortMalloc(19);
@@ -485,8 +499,16 @@ void parseCDCCommand(char *cmd) {
 
     if (memcmp(cmd, "MKNCB", 5) == 0) {
         uint32_t stblock, pages;
-        sscanf(cmd, "MKNCB:%ld,%ld", &stblock, &pages);
-        printf("MKNCB:%ld,%ld\n", stblock, pages);
+        if (sscanf(cmd, "MKNCB:%lu,%lu", &stblock, &pages) != 2) {
+            MscSetCmd("ERR:INV\n");
+            return;
+        }
+        mtdInfo_t *nand_info = MTD_getDeviceInfo();
+        if (stblock >= nand_info->Blocks || pages > nand_info->Blocks * nand_info->PagesPerBlock) {
+            MscSetCmd("ERR:BLK\n");
+            return;
+        }
+        printf("MKNCB:%lu,%lu\n", stblock, pages);
         mkSTMPNandStructure(stblock, pages);
         MscSetCmd("MKOK\n");
 
@@ -949,26 +971,28 @@ void TaskUSBLog(void *_) {
             ava = tud_cdc_write_available();
             if (ava > 0) {
             retest:
-                if (log_j < log_i) {
-                    if (log_i - log_j <= ava) {
-                        tud_cdc_write(&log_buf[log_j], log_i - log_j);
+                uint32_t li = log_i; // snapshot (atomic 32-bit read)
+                uint32_t lj = log_j;
+                if (lj < li) {
+                    if (li - lj <= ava) {
+                        tud_cdc_write(&log_buf[lj], li - lj);
                         tud_cdc_write_flush();
-                        log_j = log_i;
+                        log_j = li;
                     } else {
-                        tud_cdc_write(&log_buf[log_j], ava);
+                        tud_cdc_write(&log_buf[lj], ava);
                         tud_cdc_write_flush();
-                        log_j += ava;
+                        log_j = lj + ava;
                     }
 
-                } else if (log_j > log_i) {
-                    if (SYS_LOG_BUFSIZE - log_j <= ava) {
-                        tud_cdc_write(&log_buf[log_j], SYS_LOG_BUFSIZE - log_j);
+                } else if (lj > li) {
+                    if (SYS_LOG_BUFSIZE - lj <= ava) {
+                        tud_cdc_write(&log_buf[lj], SYS_LOG_BUFSIZE - lj);
                         tud_cdc_write_flush();
                         log_j = 0;
                     } else {
-                        tud_cdc_write(&log_buf[log_j], ava);
+                        tud_cdc_write(&log_buf[lj], ava);
                         tud_cdc_write_flush();
-                        log_j += ava;
+                        log_j = lj + ava;
                     }
 
                     vTaskDelay(pdMS_TO_TICKS(200));

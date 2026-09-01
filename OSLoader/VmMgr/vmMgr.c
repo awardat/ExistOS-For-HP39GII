@@ -528,7 +528,7 @@ static inline int save_cache_page(CachePageInfo_t *cache_page) {
 
 bool inline __attribute__((target("thumb"))) vmMgr_checkAddressValid(uint32_t address, uint32_t perm) {
     if (address < MEMORY_SIZE) {
-        return true;
+        return !(perm & PERM_W); // 低区仅允许读（System 读内存信息），禁止 VM 写入内核区
     }
 #if (VMRAM_USE_FTL == 0)
     if ((address >= VM_RAM_BASE) && (address <= VM_RAM_BASE + VM_RAM_SIZE_NONE_FTL)) {

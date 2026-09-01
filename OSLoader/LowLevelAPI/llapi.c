@@ -369,14 +369,10 @@ void __attribute__((target("thumb"))) LLAPI_Task_thumb_entry() {
 
             case LL_SWI_SET_CONTEXT: {
                 uint32_t *from_addr = (uint32_t *)currentCall.para0;
-                /*
-                                uint32_t moved[17];
-                                moved[0] = from_addr[17];
-                                memcpy(&moved[1], &from_addr[0], 16 * 4);
-                                vm_load_context(moved);
-                */
-
-
+                if ((!vmMgr_checkAddressValid(currentCall.para0, PERM_R)) ||
+                    (!vmMgr_checkAddressValid(currentCall.para0 + 68 - 1, PERM_R))) {
+                    break;
+                }
                 vm_load_context(from_addr, false);
                 vm_enable_irq = currentCall.para1;
                 LLAPI_INFO("SET_CONTEXT:%08x\n", from_addr);
@@ -520,8 +516,9 @@ void __attribute__((target("thumb"))) LLAPI_Task_thumb_entry() {
                 uint32_t spage = currentCall.para0;
                 uint32_t pages = currentCall.para1;
                 uint32_t *buffer = (uint32_t *)currentCall.para2;
-                if ((!vmMgr_checkAddressValid(currentCall.para2, PERM_R)) ||
-                    (!vmMgr_checkAddressValid(currentCall.para2 + (currentCall.para1 + 1) * 2048 - 1, PERM_R))) {
+                if ((currentCall.para1 > 0xFFFF) ||
+                    (!vmMgr_checkAddressValid(currentCall.para2, PERM_W)) ||
+                    (!vmMgr_checkAddressValid(currentCall.para2 + (currentCall.para1 + 1) * 2048 - 1, PERM_W))) {
                     break;
                 }
                 LLAPI_INFO("VM Read:%d, pages:%d, buf:%08x\n", currentCall.para0, currentCall.para1, currentCall.para2);
@@ -545,7 +542,8 @@ void __attribute__((target("thumb"))) LLAPI_Task_thumb_entry() {
                 uint32_t spage = currentCall.para0;
                 uint32_t pages = currentCall.para1;
                 uint32_t *buffer = (uint32_t *)currentCall.para2;
-                if ((!vmMgr_checkAddressValid(currentCall.para2, PERM_R)) ||
+                if ((currentCall.para1 > 0xFFFF) ||
+                    (!vmMgr_checkAddressValid(currentCall.para2, PERM_R)) ||
                     (!vmMgr_checkAddressValid(currentCall.para2 + (currentCall.para1 + 1) * 2048 - 1, PERM_R))) {
                     break;
                 }
@@ -609,6 +607,10 @@ void __attribute__((target("thumb"))) LLAPI_Task_thumb_entry() {
 
             case LL_SWI_MEM_PHY_INFO:
             {
+                if ((!vmMgr_checkAddressValid(currentCall.para0, PERM_W)) ||
+                    (!vmMgr_checkAddressValid(currentCall.para1, PERM_W))) {
+                    break;
+                }
                 //#include "cdmp.h"
 
                 zram_info((uint32_t *)currentCall.para0, (uint32_t *)currentCall.para1);
