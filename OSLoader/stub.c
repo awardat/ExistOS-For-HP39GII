@@ -168,8 +168,8 @@ int _wait_r(struct _reent *pReent, int *wstat) {
     return -1;
 }
 
-char log_buf[SYS_LOG_BUFSIZE] = {0};
-uint32_t log_i = 0, log_j = 0;
+volatile char log_buf[SYS_LOG_BUFSIZE] = {0};
+volatile uint32_t log_i = 0, log_j = 0;
 
 extern uint32_t g_CDC_TransTo;
 _ssize_t _write_r(struct _reent *pReent, int fd, const void *buf, size_t nbytes) {
@@ -181,7 +181,7 @@ _ssize_t _write_r(struct _reent *pReent, int fd, const void *buf, size_t nbytes)
         int k = 0;
         while (k < nbytes) {
             log_buf[log_i++] = ((char *)buf)[k++];
-            if (log_i > SYS_LOG_BUFSIZE) {
+            if (log_i >= SYS_LOG_BUFSIZE) {
                 log_i = 0;
             }
         }

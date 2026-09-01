@@ -1117,15 +1117,7 @@ void UI_Task(void *) {
     // ʹ������ϵͳ�е���������
     UI_SetLang(config_get_language());
     
-    // Ӧ�õ�Դģʽ����
-    char power_save_mode = config_get_power_save();
-    if (power_save_mode == 'S') {
-        ll_cpu_slowdown_enable(1);
-    } else if (power_save_mode == 'L') {
-        ll_cpu_slowdown_enable(2);
-    } else {
-        ll_cpu_slowdown_enable(0);
-    }
+    // 电源档位由 main_thread 统一应用（此处删除过时映射，避免覆盖启动配置）
     
     // Ӧ�ó��״̬����
     if (config_get_enable_charge()) {

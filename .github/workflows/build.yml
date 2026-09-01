@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  TOOLCHAIN_SHA256: 97dbb4f019ad1650b732faffcc881689cedc14e2b7ee863d390e0a41ef16c9a3
   
 jobs:
   build:
@@ -20,6 +20,7 @@ jobs:
     - name: Install gcc-arm-none-eabi-10.3
       run: |
         wget -q "https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2"
+        echo "$TOOLCHAIN_SHA256  gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2" | sha256sum -c -
         sudo tar -xf gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 -C /opt
         echo '/opt/gcc-arm-none-eabi-10.3-2021.10/bin' >> $GITHUB_PATH
     - name: Install packages build sbtools required
@@ -88,7 +89,7 @@ jobs:
         cmake --build build
     - name: Create GitHub release
       if: github.ref_name == 'main'
-      uses: marvinpinto/action-automatic-releases@latest
+      uses: marvinpinto/action-automatic-releases@919008c # v1.2.1 (repo archived, pin SHA)
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag:  build-${{ github.run_number }}

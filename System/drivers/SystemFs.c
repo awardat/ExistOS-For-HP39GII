@@ -91,7 +91,7 @@ struct lfs_config lfs_cfg = {
 void *GetFsObj()
 {
     #if FS_TYPE == FS_FATFS
-        
+        return NULL; // FATFS 分支未挂载，返回空对象
     #else
         return (void *)&lfs;
     #endif
