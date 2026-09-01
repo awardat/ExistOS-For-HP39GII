@@ -109,7 +109,7 @@ void config_load(void) {
     // 解析电源节省模式
     if (find_json_value(buffer, "power_save", value, sizeof(value)) == 0) {
         g_config.power_save = value[0];
-        if (g_config.power_save != ' ' && g_config.power_save != 'S' && g_config.power_save != 'L') {
+        if (g_config.power_save != ' ' && g_config.power_save != 'S' && g_config.power_save != 'L' && g_config.power_save != 'B') {
             g_config.power_save = DEFAULT_POWER_SAVE;
         }
     }
@@ -190,7 +190,7 @@ char config_get_power_save(void) {
 }
 
 void config_set_power_save(char mode) {
-    if (mode == ' ' || mode == 'S' || mode == 'L') {
+    if (mode == ' ' || mode == 'S' || mode == 'L' || mode == 'B') {
         g_config.power_save = mode;
         config_save();
     }
