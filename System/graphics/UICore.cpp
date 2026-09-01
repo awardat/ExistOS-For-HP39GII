@@ -775,14 +775,16 @@ void keyMsg(uint32_t key, int state) {
                         ll_cpu_slowdown_enable(3);
                     } else if (config_get_power_save() == 'B') {
                         config_set_power_save(' ');
-                        ll_cpu_slowdown_enable(0);
+                        ll_cpu_slowdown_enable(1);
                     } else if (config_get_power_save() == ' ') {
                         config_set_power_save('S');
-                        ll_cpu_slowdown_enable(1);
+                        ll_cpu_slowdown_enable(2);
                     } else if (config_get_power_save() == 'L') { // 兼容旧配置
                         config_set_power_save('S');
-                        ll_cpu_slowdown_enable(1);
+                        ll_cpu_slowdown_enable(2);
                     }
+                    mainw->refreshWindow();
+                    pageUpdate();
                     break;
 
                 case 1: {

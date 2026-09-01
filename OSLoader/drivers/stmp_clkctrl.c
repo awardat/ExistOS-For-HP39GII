@@ -42,7 +42,7 @@ void setSlowDownMinCpuFrac(uint8_t frac)
 
 void enterSlowDown()
 {
-    if(g_slowdown_enable == 1 || g_slowdown_enable == 3)
+    if(g_slowdown_enable)
     {
         setCPUDivider(min_cpu_frac_sd);
     }
@@ -68,6 +68,9 @@ void slowDownEnable(int mode)
 {
     g_slowdown_enable = mode;
     if(g_slowdown_enable == 0)
+    {
+        setCPUDivider(CPU_DIVIDE_NORMAL);
+    }else if(g_slowdown_enable == 1)
     {
         setCPUDivider(CPU_DIVIDE_NORMAL);
     }else if(g_slowdown_enable == 2)

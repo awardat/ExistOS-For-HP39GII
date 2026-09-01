@@ -159,11 +159,11 @@ void main_thread() {
     // 初始化崩溃日志系统
     crash_log_init();
 
-    // 应用省电配置：' '=标准(120MHz), 'S'=省电(80+空闲降频48), 'L'=旧配置兼容(80MHz), 'B'=加速(240MHz)
+    // 应用省电配置：' '=标准(120+空闲48MHz), 'S'=省电(80+空闲48), 'L'=旧配置兼容(80+空闲48), 'B'=加速(240+空闲48)
     {
         extern char config_get_power_save(void);
         char ps = config_get_power_save();
-        ll_cpu_slowdown_enable(ps == 'S' ? 1 : (ps == 'L' ? 2 : (ps == 'B' ? 3 : 0)));
+        ll_cpu_slowdown_enable(ps == 'S' ? 2 : (ps == 'L' ? 2 : (ps == 'B' ? 3 : 1)));
     }
 
     // StartKhiCAS();
