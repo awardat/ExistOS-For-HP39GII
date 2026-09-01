@@ -783,8 +783,7 @@ void keyMsg(uint32_t key, int state) {
                         config_set_power_save('S');
                         ll_cpu_slowdown_enable(2);
                     }
-                    mainw->refreshWindow();
-                    pageUpdate();
+                    drawPage(curPage); // 完整重绘配置页，确保档位文本立即更新
                     break;
 
                 case 1: {
