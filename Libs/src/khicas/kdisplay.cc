@@ -11350,7 +11350,7 @@ namespace xcas {
 	  smallmenuitems[8].text = (char *) menu_depth;
 	  smallmenuitems[9].text = (char*) (lang?"\xb1\xa3\xb4\xe6\xcd\xbc\xd0\xce":"Save figure");
 	  smallmenuitems[10].text = (char*) (lang?"\xc1\xed\xb4\xe6\xce\xaa":"Save as");
-	  smallmenuitems[11].text = (char*)((lang)?"\xcd\xcb\xb3\xf6":"Quit");
+	  smallmenuitems[11].text = (char*)((lang)?"\xb7\xb5\xbb\xd8":"Back");
 	  smallmenuitems[12].text = (char*) "Orthonormalize /";
 	  smallmenuitems[13].text = (char*) "Autoscale *";
 	  smallmenuitems[14].text = (char *) ("Zoom in +");
@@ -15848,7 +15848,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  smallmenuitems[8].text = (char *)((lang)?"\xb8\xfc\xb8\xc4\xd7\xd6\xcc\xe5\xb4\xf3\xd0\xa1":"Change fontsize");
 	  smallmenuitems[9].text = (char *)aide_khicas_string;
 	  smallmenuitems[10].text = (char *)((lang)?"\xB9\xD8\xD3\xDA":"About");
-	  smallmenuitems[11].text = (char*)((lang)?"\xcd\xcb\xb3\xf6":"Quit");
+	  smallmenuitems[11].text = (char*)((lang)?"\xb7\xb5\xbb\xd8":"Back");
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
 	    sres=smallmenu.selection;
@@ -16444,7 +16444,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       smallmenuitems[10].text = (char*) ((lang)?"\xBF\xBC\xCA\xD4\xC4\xA3\xB7\xBD\xBE\xAF\xBE\xA1":"Exam mode warning");
 #endif
     smallmenuitems[11].text = (char*) ((lang)?"\xB9\xD8\xD3\xDA":"About");
-    smallmenuitems[14].text = (char*) "Quit";
+    smallmenuitems[12].text = (char*)"";
+    smallmenuitems[13].text = (char*)"";
+    smallmenuitems[14].text = (char*) ((lang)?"\xb7\xb5\xbb\xd8":"Back");
     if (exam_mode)
       smallmenuitems[14].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Quit exam mode");
     

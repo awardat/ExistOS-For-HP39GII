@@ -564,7 +564,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
     char * tab[6]={(char*)pvs1.c_str(),(char*)fvs1.c_str(), (char*)irs1.c_str(),(char*)irpys1.c_str(), (char*)pms1.c_str(),(char*)nbs1.c_str()};
     for (int i=0;i<6;i++)
       smallmenuitems[i].text = tab[i];
-    smallmenuitems[6].text = (char*)((lang)?"\xcd\xcb\xb3\xf6 ":"Quit ");
+    smallmenuitems[6].text = (char*)((lang)?"\xb7\xb5\xbb\xd8 ":"Back ");
 #ifdef HP39
     os_draw_string_medium(0,114,solved?_BLACK:_WHITE,solved?_WHITE:_BLACK,"Ans solve|EXE change|Tool help");
 #else
@@ -695,7 +695,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 #ifdef NUMWORKS
   smallmenuitems[smallmenu.numitems-3].text = (char*)((lang)?"\xd7\xd4\xb6\xa8\xd2\xe5\x20\x46\x6c\x61\x73\x68":"Customize flash");
 #endif
-  smallmenuitems[smallmenu.numitems-2].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xb2\xcb\xb5\xa5":"Leave menu");
+  smallmenuitems[smallmenu.numitems-2].text = (char*)((lang)?"\xb7\xb5\xbb\xd8":"Back");
   smallmenuitems[smallmenu.numitems-1].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53":"Leave KhiCAS");
   while(1) {
     int sres = doMenu(&smallmenu);
@@ -703,6 +703,10 @@ int khicas_addins_menu(GIAC_CONTEXT){
       if (smallmenu.selection==smallmenu.numitems){
 	return KEY_CTRL_MENU;
       }
+#ifndef NUMWORKS
+      if (smallmenu.selection==smallmenu.numitems-2) // Back
+	break;
+#endif
 #ifdef NUMWORKS
       if (smallmenu.selection==smallmenu.numitems-2)
 	handle_flash(contextptr);
@@ -970,7 +974,7 @@ void handle_flash(GIAC_CONTEXT){
   smallmenuitems[1].text = (char*)(lang?"\xb8\xb4\xd6\xc6\x20\x52\x41\x4d\x2d\x3e\x46\x6c\x61\x73\x68":"Copy RAM->flash");
   smallmenuitems[2].text = (char*)(lang?"\xd0\xde\xb8\xc4\xce\xc4\xbc\xfe\xd0\xc5\xcf\xa2":"Modify file infos");
   smallmenuitems[3].text = (char*)(lang?"\xc7\xe5\xbf\xd5\xbb\xd8\xca\xd5\xd5\xbe":"Empty trash");
-  smallmenuitems[4].text = (char*)(lang?"\xcd\xcb\xb3\xf6":"Leave");
+  smallmenuitems[4].text = (char*)(lang?"\xb7\xb5\xbb\xd8":"Back");
   while (1){
     size_t first_modif=tar_totalsize(flash_buf,numworks_maxtarsize);
     string title=(lang?"\x46\x6c\x61\x73\x68\x20\xbf\xd5\xcf\xd0\x20":"Free flash ");
@@ -1397,7 +1401,7 @@ void sheet_menu_setup(tableur & t,GIAC_CONTEXT){
   smallmenuitems[4].text = (char*)(lang?"\xbe\xd8\xd5\xf3\xa3\xba\xcc\xee\xb3\xe4\xb5\xa5\xd4\xaa\xb8\xf1":"Matrix: fill cells");
   smallmenuitems[5].type = MENUITEM_CHECKBOX;
   smallmenuitems[5].text = (char*)(lang?"\xcf\xf2\xcf\xc2\xd2\xc6\xb6\xaf":"Move down");
-  smallmenuitems[smallmenu.numitems-1].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6":"Quit");
+  smallmenuitems[smallmenu.numitems-1].text = (char*) ((lang)?"\xb7\xb5\xbb\xd8":"Back");
   while(1) {
     string dig("Digits (in Xcas): ");
     dig += print_INT_(decimal_digits(contextptr));
@@ -1499,7 +1503,7 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
   smallmenuitems[10].text = (char*)(lang?"\xc9\xbe\xb3\xfd\xb5\xb1\xc7\xb0\xc1\xd0":"Remove current column");
   smallmenuitems[11].text = (char*)(lang?"\xd3\xc3\x20\x30\x20\xcc\xee\xb3\xe4\xb1\xed\xb8\xf1":"Fill sheet with 0");
   smallmenuitems[smallmenu.numitems-2].text = (char*) ((lang)?"\xc5\xe4\xd6\xc3":"Config");
-  smallmenuitems[smallmenu.numitems-1].text = (char*) (lang?"\xcd\xcb\xb3\xf6\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1":"Leave sheet");
+  smallmenuitems[smallmenu.numitems-1].text = (char*) (lang?"\xb7\xb5\xbb\xd8":"Back");
   while(1) {
     int sres = doMenu(&smallmenu);
     if (sres==MENU_RETURN_EXIT)
