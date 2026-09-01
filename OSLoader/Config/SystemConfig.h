@@ -124,9 +124,11 @@
 #define SIZE_SWAPAREA_MB    (VM_RAM_SIZE / 1048576)
 
 // CPU = PLL(480MHz) / DIV：NORMAL=6 -> 80MHz（原厂 39GII 频率，性能过剩，省电），
-// PWRSAVE=12 -> 40MHz（L 档强制低功耗），IDLE=10 -> 48MHz（空闲降频）
+// PWRSAVE=12 -> 40MHz（L 档强制低功耗），BOOST=2 -> 240MHz（B 档加速），
+// IDLE=10 -> 48MHz（S 档空闲降频）
 #define CPU_DIVIDE_NORMAL       6
 #define CPU_DIVIDE_PWRSAVE      12
+#define CPU_DIVIDE_BOOST        2
 #define CPU_DIVIDE_IDLE_INTIAL  10
 
 // Flash is divided in sectors of size 2K,

@@ -163,11 +163,11 @@ void main_thread() {
     // 初始化崩溃日志系统
     crash_log_init();
 
-    // 应用省电配置：'S'=空闲降频, 'L'=强制低功耗, ' '=关闭
+    // 应用省电配置：' '=标准(80MHz 恒定), 'S'=省电(80+空闲降频), 'L'=低功耗(40MHz), 'B'=加速(240MHz)
     {
         extern char config_get_power_save(void);
         char ps = config_get_power_save();
-        ll_cpu_slowdown_enable(ps == 'S' ? 1 : (ps == 'L' ? 2 : 0));
+        ll_cpu_slowdown_enable(ps == 'S' ? 1 : (ps == 'L' ? 2 : (ps == 'B' ? 3 : 0)));
     }
 
     // StartKhiCAS();

@@ -233,12 +233,21 @@ void pageUpdate() {
 
             uint32_t Charging = ll_get_charge_status();
 
-            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "CPU:%3d/%d MHz, %s:%d `C", ll_get_cur_freq(), 480 * 18 / cur_cpu_div / cur_cpu_frac, UI_TEMPERRATURE, ll_get_core_temp());
+            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "CPU:%3d/%d MHz, %s:%d `C", ll_get_cur_freq(), 480, UI_TEMPERRATURE, ll_get_core_temp());
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %d/%d KB", UI_MEMUSE, getHeapAllocateSize() / 1024, TotalAllocatableSize / 1024);
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %d mv, %s: %s  ", UI_BATTERY, ll_get_bat_voltage(), UI_CHARGING, Charging ? UI_Yes : UI_No);
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s", UI_TIME, timeStr);
 
-            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "[%c]%s (1)", config_get_power_save(), UI_Power_Save_Mode);
+            {
+                char ps = config_get_power_save();
+                const char *psn;
+                if (config_get_language()) {
+                    psn = ps=='S' ? "\xca\xa1\xb5\xe7" : ps=='L' ? "\xb5\xcd\xb9\xa6\xba\xc4" : ps=='B' ? "\xbc\xd3\xcb\xd9" : "\xb1\xea\xd7\xbc";
+                } else {
+                    psn = ps=='S' ? "Save" : ps=='L' ? "Low" : ps=='B' ? "Boost" : "Off";
+                }
+                uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)", UI_Power_Save_Mode, psn);
+            }
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "[%c]%s (2)", config_get_enable_charge() ? 'X' : ' ', UI_Enable_Charge);
         } else if (page3Subpage == 1) {
 
@@ -765,6 +774,9 @@ void keyMsg(uint32_t key, int state) {
                         config_set_power_save('L');
                         ll_cpu_slowdown_enable(2);
                     } else if (config_get_power_save() == 'L') {
+                        config_set_power_save('B');
+                        ll_cpu_slowdown_enable(3);
+                    } else if (config_get_power_save() == 'B') {
                         config_set_power_save(' ');
                         ll_cpu_slowdown_enable(0);
                     } else if (config_get_power_save() == ' ') {

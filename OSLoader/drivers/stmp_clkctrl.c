@@ -42,7 +42,7 @@ void setSlowDownMinCpuFrac(uint8_t frac)
 
 void enterSlowDown()
 {
-    if(g_slowdown_enable)
+    if(g_slowdown_enable == 1 || g_slowdown_enable == 3)
     {
         setCPUDivider(min_cpu_frac_sd);
     }
@@ -55,6 +55,8 @@ void exitSlowDown()
         setCPUDivider(CPU_DIVIDE_NORMAL);
     }else if(g_slowdown_enable == 2){
         setCPUDivider(CPU_DIVIDE_PWRSAVE);
+    }else if(g_slowdown_enable == 3){
+        setCPUDivider(CPU_DIVIDE_BOOST);
     }else{
         setCPUDivider(CPU_DIVIDE_NORMAL);
     }
@@ -71,6 +73,9 @@ void slowDownEnable(int mode)
     }else if(g_slowdown_enable == 2)
     {
         setCPUDivider(CPU_DIVIDE_PWRSAVE);
+    }else if(g_slowdown_enable == 3)
+    {
+        setCPUDivider(CPU_DIVIDE_BOOST);
     }
 }
 
@@ -87,6 +92,10 @@ void setCPUDivider(uint32_t div)
     BF_SETV(CLKCTRL_CPU, DIV_CPU, div);
     //while (BF_RD(CLKCTRL_CPU, BUSY_REF_CPU));
     BF_CLRV(CLKCTRL_CPU, DIV_CPU, BF_RD(CLKCTRL_CPU, DIV_CPU) ^ div);
+
+    // 更新实际频率（UI ll_get_cur_freq 读取）
+    extern uint32_t g_core_cur_freq_mhz;
+    g_core_cur_freq_mhz = PLL_FREQ_HZ / 1000000 / div;
 
     //INFO("CPU new Div:%d\n", BF_RD(CLKCTRL_CPU, DIV_CPU));
 }
