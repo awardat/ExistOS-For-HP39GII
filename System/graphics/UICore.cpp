@@ -242,9 +242,9 @@ void pageUpdate() {
                 char ps = config_get_power_save();
                 const char *psn;
                 if (config_get_language()) {
-                    psn = ps=='S' ? "\xca\xa1\xb5\xe7" : ps=='L' ? "\xb5\xcd\xb9\xa6\xba\xc4" : ps=='B' ? "\xbc\xd3\xcb\xd9" : "\xb1\xea\xd7\xbc";
+                    psn = ps=='S' ? "\xca\xa1\xb5\xe7" : ps=='B' ? "\xbc\xd3\xcb\xd9" : ps=='L' ? "\xb5\xcd\xb9\xa6\xba\xc4" : "\xb1\xea\xd7\xbc";
                 } else {
-                    psn = ps=='S' ? "Save" : ps=='L' ? "Low" : ps=='B' ? "Boost" : "Off";
+                    psn = ps=='S' ? "Save" : ps=='B' ? "Boost" : ps=='L' ? "Low" : "Off";
                 }
                 uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)", UI_Power_Save_Mode, psn);
             }
@@ -771,15 +771,15 @@ void keyMsg(uint32_t key, int state) {
                 switch (page3Subpage) {
                 case 0:
                     if (config_get_power_save() == 'S') {
-                        config_set_power_save('L');
-                        ll_cpu_slowdown_enable(2);
-                    } else if (config_get_power_save() == 'L') {
                         config_set_power_save('B');
                         ll_cpu_slowdown_enable(3);
                     } else if (config_get_power_save() == 'B') {
                         config_set_power_save(' ');
                         ll_cpu_slowdown_enable(0);
                     } else if (config_get_power_save() == ' ') {
+                        config_set_power_save('S');
+                        ll_cpu_slowdown_enable(1);
+                    } else if (config_get_power_save() == 'L') { // 兼容旧配置
                         config_set_power_save('S');
                         ll_cpu_slowdown_enable(1);
                     }

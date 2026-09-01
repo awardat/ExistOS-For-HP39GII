@@ -12,7 +12,7 @@ extern "C" {
 
 // 配置项默认值
 #define DEFAULT_LANGUAGE UI_LANG_EN
-#define DEFAULT_POWER_SAVE 'S'  // ' ' = 关闭, 'S' = 空闲降频, 'L' = 强制低功耗
+#define DEFAULT_POWER_SAVE ' '  // ' ' = 标准(120MHz), 'S' = 省电(80+空闲48MHz), 'B' = 加速(240MHz), 'L' 兼容旧配置(80MHz)
 #define DEFAULT_ENABLE_CHARGE false
 #define DEFAULT_ENABLE_MEM_SWAP false
 
