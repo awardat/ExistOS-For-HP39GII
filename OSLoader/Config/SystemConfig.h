@@ -46,8 +46,8 @@
         #if USE_HARDWARE_DFLPT
             #if SEPARATE_VMM_CACHE
                 #if MEM_COMPRESSION_ALGORITHM
-                    #define NUM_CACHEPAGE_VROM             ( 160 )  
-                    #define NUM_CACHEPAGE_VRAM             ( 40 ) 
+                    #define NUM_CACHEPAGE_VROM             ( 128 )  
+                    #define NUM_CACHEPAGE_VRAM             ( 32 ) 
                     #define ZRAM_SIZE                      ( (TOTAL_MEM_PAGE - NUM_CACHEPAGE_VROM - NUM_CACHEPAGE_VRAM) * 1024 ) 
                     #define ZRAM_COMPRESSED_SIZE           (int)( ZRAM_SIZE * 3 ) // (Assume that the compression ratio is 0.33)
                 #else 
