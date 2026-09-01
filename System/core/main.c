@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <math.h>
 
@@ -122,6 +123,21 @@ void khicasTask(void *_) {
 
     void testcpp();
     testcpp();
+
+    // 菜单 quit 收尾：与 shift+ON 退出（khicas_stub.cpp GetKey case KEY_ON）相同的
+    // 清屏 + 提示 + 等待 + 恢复 UI 序列，确保 KhiCAS 画面不残留、home 正常显示
+    extern void vGL_clearArea(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1);
+    extern void vGL_putString(int x0, int y0, const char *s, int fg, int bg, int fontSize);
+    vGL_clearArea(0, 0, 255, 126);
+    vGL_putString(0, 0, (char *)"Quitting...", 0, 255, 16);
+    vGL_putString(0, 16, (char *)"Waiting session save...", 0, 255, 16);
+
+    extern bool khicasRunning;
+    extern char keyStatus;
+    khicasRunning = false;
+    keyStatus = 0;
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     SystemUIResume();
 
