@@ -1716,7 +1716,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   std::string insert_string(int index){
     std::string s;
-    const catalogFunc * completeCat=(lang)?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=completeCaten; // 帮助统一英文（completeCatfr 法语版待汉化）
     if (completeCat[index].insert)
       s=completeCat[index].insert;
     else {
@@ -1874,7 +1874,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #else
     int iii=0;
 #endif
-    const catalogFunc * completeCat=(lang)?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=completeCaten; // 帮助统一英文（completeCatfr 法语版待汉化）
     for (;iii<nfunc;++iii){
       if (xcas_python_eval>0 && (completeCat[iii].category & XCAS_ONLY) )
 	continue;
@@ -2077,7 +2077,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   // 0 on exit, 1 on success
   int doCatalogMenu(char* insertText, const char* title, int category,GIAC_CONTEXT) {
-    const catalogFunc * completeCat=(lang)?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=completeCaten; // 帮助统一英文（completeCatfr 法语版待汉化）
     for (;;){
       int allcmds=builtin_lexer_functions_end()-builtin_lexer_functions_begin();
       int allopts=lexer_tab_int_values_end-lexer_tab_int_values_begin;
