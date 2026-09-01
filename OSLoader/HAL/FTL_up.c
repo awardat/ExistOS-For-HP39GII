@@ -413,34 +413,17 @@ int FTL_TrimSector(uint32_t sector) {
 }
 
 int FTL_Sync() {
-    //FTL_Operates newOpa;
-    dhara_error_t err;
-    int ret;
-
+    FTL_Operates newOpa;
     int retVal;
     if (!FTL_inited()) {
         return -1;
     }
 
-    ret = dhara_map_sync(&FTLmap, &err);
-    if (ret) {
-        FTL_WARN("FTL SYNC FAIL:%d,%s\n", ret, dhara_strerror(err));
-    }
-    INFO("Sync.\n");
-    return ret;
-
-    /*
-        newOpa.opa = FTL_SYNC;
-        newOpa.task = xTaskGetCurrentTaskHandle();
-        //newOpa.BLock = FTL_getLock();
-        //newOpa.StatusBuf = FTL_GetStatusBuf();
-        xTaskNotifyStateClear(NULL);
-        xQueueSend(FTL_Operates_Queue, &newOpa, portMAX_DELAY);
-
-
-        xTaskNotifyWait(0, 0xFFFFFFFF, (uint32_t *)&retVal, portMAX_DELAY);
-    */
-
+    newOpa.opa = FTL_SYNC;
+    newOpa.task = xTaskGetCurrentTaskHandle();
+    xTaskNotifyStateClear(NULL);
+    xQueueSend(FTL_Operates_Queue, &newOpa, portMAX_DELAY);
+    xTaskNotifyWait(0, 0xFFFFFFFF, (uint32_t *)&retVal, portMAX_DELAY);
     return retVal;
 }
 
