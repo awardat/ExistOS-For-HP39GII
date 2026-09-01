@@ -16426,9 +16426,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #endif
 smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax (Xcas/Py/JS)");
     smallmenuitems[2].type = MENUITEM_CHECKBOX;
-    smallmenuitems[2].text = (char*)"Radians (in Xcas)";
+    smallmenuitems[2].text = (char*)((lang)?"\xbb\xa1\xb6\xc8 (Xcas)":"Radians (in Xcas)");
     smallmenuitems[3].type = MENUITEM_CHECKBOX;
-    smallmenuitems[3].text = (char*)"Sqrt (in Xcas)";
+    smallmenuitems[3].text = (char*)((lang)?"\xc6\xbd\xb7\xbd\xb8\xf9 (Xcas)":"Sqrt (in Xcas)");
     smallmenuitems[4].text = (char *)"\xD6\xD0\xCE\xC4"; // GBK: 中文
     smallmenuitems[5].text = (char*)"English";
     smallmenuitems[6].text = (char *) ((lang)?"\xbf\xec\xbd\xdd\xbc\xfc (0)":"Shortcuts (0)");
@@ -16451,23 +16451,23 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 #ifdef NUMWORKS
       smallmenuitems[0].value = xthetat;
 #else
-      string dig("Digits (in Xcas): ");
+      string dig((lang)?"\xce\xbb\xca\xfd (Xcas): ":"Digits (in Xcas): ");
       dig += print_INT_(decimal_digits(contextptr));
       smallmenuitems[0].text = (char*)dig.c_str();
 #endif
       int p=python_compat(contextptr);
       if (p<0){
-	smallmenuitems[1].text = (char*)"Change syntax (QuickJS)";
+	smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (QuickJS)":"Change syntax (QuickJS)");
       } else {
 	if (p&4)
-	  smallmenuitems[1].text = (char*)"Change syntax (MicroPython)";
+	  smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (MicroPython)":"Change syntax (MicroPython)");
 	else {
 	  if (p==0)
-	    smallmenuitems[1].text = (char*)"Change syntax (Xcas)";
+	    smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas)":"Change syntax (Xcas)");
 	  if (p==1)
-	    smallmenuitems[1].text = (char*)"Change syntax (Xcas comp Python ^=**)";
+	    smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas \xbc\xe6\xc8\xdd Python ^=**)":"Change syntax (Xcas comp Python ^=**)");
 	  if (p==2)
-	    smallmenuitems[1].text = (char*)"Change syntax (Xcas comp Python ^=xor)";
+	    smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas \xbc\xe6\xc8\xdd Python ^=xor)":"Change syntax (Xcas comp Python ^=xor)");
 	}
       }
       smallmenuitems[2].value = giac::angle_radian(contextptr);
