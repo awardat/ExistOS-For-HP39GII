@@ -12,7 +12,7 @@
 #define PLL_FREQ_HZ (480000000UL)
 
 int g_slowdown_enable = 0;
-static uint8_t min_cpu_frac_sd = CPU_DIVIDE_IDLE_INTIAL;
+static uint8_t min_cpu_frac_sd = CPU_DIVIDE_SAVE_IDLE;
 
 static void PLLEnable(bool enable) {
     BF_SETV(CLKCTRL_PLLCTRL0, POWER, enable);
@@ -42,9 +42,13 @@ void setSlowDownMinCpuFrac(uint8_t frac)
 
 void enterSlowDown()
 {
-    if(g_slowdown_enable)
+    if(g_slowdown_enable == 1)
     {
-        setCPUDivider(min_cpu_frac_sd);
+        setCPUDivider(CPU_DIVIDE_STD_IDLE);
+    }else if(g_slowdown_enable == 2){
+        setCPUDivider(CPU_DIVIDE_SAVE_IDLE);
+    }else if(g_slowdown_enable == 3){
+        setCPUDivider(CPU_DIVIDE_BOOST_IDLE);
     }
 }
 
@@ -52,13 +56,13 @@ void exitSlowDown()
 {
     if(g_slowdown_enable == 1)
     {
-        setCPUDivider(CPU_DIVIDE_NORMAL);
+        setCPUDivider(CPU_DIVIDE_STD_BUSY);
     }else if(g_slowdown_enable == 2){
-        setCPUDivider(CPU_DIVIDE_PWRSAVE);
+        setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
     }else if(g_slowdown_enable == 3){
-        setCPUDivider(CPU_DIVIDE_BOOST);
+        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
     }else{
-        setCPUDivider(CPU_DIVIDE_NORMAL);
+        setCPUDivider(CPU_DIVIDE_STD_BUSY);
     }
     
 }
@@ -67,18 +71,14 @@ void exitSlowDown()
 void slowDownEnable(int mode)
 {
     g_slowdown_enable = mode;
-    if(g_slowdown_enable == 0)
+    if(g_slowdown_enable == 2)
     {
-        setCPUDivider(CPU_DIVIDE_NORMAL);
-    }else if(g_slowdown_enable == 1)
-    {
-        setCPUDivider(CPU_DIVIDE_NORMAL);
-    }else if(g_slowdown_enable == 2)
-    {
-        setCPUDivider(CPU_DIVIDE_PWRSAVE);
+        setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
     }else if(g_slowdown_enable == 3)
     {
-        setCPUDivider(CPU_DIVIDE_BOOST);
+        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
+    }else{
+        setCPUDivider(CPU_DIVIDE_STD_BUSY);
     }
 }
 

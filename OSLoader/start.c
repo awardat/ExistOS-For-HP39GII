@@ -246,7 +246,7 @@ void System(void *par) {
     for (int i = 150; i <= 180; ++i)
         DisplayFillBox(i - 2, 84, i, 92, 72);
 
-    setCPUDivider(CPU_DIVIDE_NORMAL);
+    setCPUDivider(CPU_DIVIDE_STD_BUSY);
     bootAddr += 4;
     atagsAddr = (uint32_t *)(VM_ROM_BASE + (4234 - 1984) * 2048);
     // 1984 is the System page in options of Updater
