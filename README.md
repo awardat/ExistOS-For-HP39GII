@@ -14,6 +14,12 @@
 
 [English readme](./README_en.md)
 
+## 键位映射
+
+按键定义详见 [docs/keymap.md](./docs/keymap.md)（代码实际键位：编码表 / KhiCAS 映射 / ExistOS UI 按键），原厂键位表见 [docs/keymap_org.md](./docs/keymap_org.md)。
+
+---
+
 一个开源的 HP39GII 固件项目
 
 ## 简介
