@@ -96,19 +96,12 @@ static void setCPUSpeed(uint32_t div, uint32_t frac)
         BF_WR(CLKCTRL_FRAC, CPUFRAC, frac);
         BF_CLR(CLKCTRL_FRAC, CLKGATECPU);
         setCPUDivider(div);
-        for (int i = 10000; i && (HW_CLKCTRL_CPU.R & (1U << 28)); i--) ;
+        for (int i = 10000; i && (HW_CLKCTRL_CPU.U & (1U << 28)); i--) ;
         BF_CLR(CLKCTRL_CLKSEQ, BYPASS_CPU);
         portDelayus(10);
     } else {
         setCPUDivider(div);
     }
-}
-
-// 设置 CPU 频率：div 整数分频 + frac 分数分频（frac=18 为整数模式）
-static void setCPUSpeed(uint32_t div, uint32_t frac)
-{
-    setCPUDivider(div);
-    setCPUFracDivider(frac);
 }
 
 
