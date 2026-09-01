@@ -10,6 +10,8 @@
 
 //!!
 #include "porting.h"
+
+extern int lang; // defined in kdisplay.cc
 #include <alloca.h> 
 using namespace giac;
 // FIXME!!!
@@ -205,7 +207,7 @@ int fileBrowserSub(char* browserbasepath, char* filename, char* filter, char* ti
   menu.subtitle = friendlypath;
   //menu.type = MENUTYPE_MULTISELECT;
   menu.scrollout=1;
-  menu.nodatamsg = (char*)"No Data";
+  menu.nodatamsg = (char*)((lang)?"\xce\xde\xca\xfd\xbe\xdd":"No Data");
   menu.title = title;
   menu.height=std::min(menu.numitems+1,MENUHEIGHT); // menu.numitems
   menu.width=30;

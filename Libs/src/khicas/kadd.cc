@@ -223,7 +223,7 @@ int do_mastermind(GIAC_CONTEXT){
       if (essai.size()==4){
         if (essai==solution){
           char buf[16]; sprint_int(buf,essais.size());
-          confirm(lang?"\xd5\xd2\xb5\xbd\xbd\xe2\xa3\xa1\xb3\xa2\xca\xd4\xb4\xce\xca\xfd\xa3\xba":"Vous avez trouve. Essais:",buf);
+          confirm(lang?"\xd5\xd2\xb5\xbd\xbd\xe2\xa3\xa1\xb3\xa2\xca\xd4\xb4\xce\xca\xfd\xa3\xba":"You found it. Attempts:",buf);
           return i;
         }
         fulldisp=true;
@@ -233,7 +233,7 @@ int do_mastermind(GIAC_CONTEXT){
           mastermind_disp(solution,essais,essai,true,contextptr);
           for (int i=0;i<solution.size();++i)
             draw_filled_circle(30+C20*i+C20/2,190+C20,C20/2,mmind_col[solution[i]],true,true,contextptr);
-          confirm(lang?"\xd3\xce\xcf\xb7\xbd\xe1\xca\xf8\xa3\xa1":"Vous avez perdu.",lang?"Solution was":"La solution etait",false,140);
+          confirm(lang?"\xd3\xce\xcf\xb7\xbd\xe1\xca\xf8\xa3\xa1":"You lost.",lang?"Solution was":"The solution was",false,140);
           return -1;
         }
       }
@@ -305,7 +305,7 @@ int do_fractale(GIAC_CONTEXT){
     Y=LCD_HEIGHT_PX-18,
 #endif
     Nmax=16,Nmaxmin=5,Nmaxmax=50;
-  bool mandel=do_confirm("EXE: Mandelbrot, Back: bassins racines");
+  bool mandel=do_confirm((lang)?"EXE: Mandelbrot, Back: \xb8\xf9\xc5\xe8\xb5\xd8":"EXE: Mandelbrot, Back: root basins");
   vecteur P; vector<complex<double>> p,Z;
   double np=0; complex<double> na;
   // if the polynomial is x^np+a=0
@@ -314,17 +314,17 @@ int do_fractale(GIAC_CONTEXT){
   bool real=true;
   if (!mandel){ // Input Julia
     string s;
-    inputline("Polynome (x^3-1)?","",s,false,65,contextptr);
+    inputline((lang)?"\xb6\xe0\xcf\xee\xca\xbd\x20\x28\x78\x5e\x33\x2d\x31\x29\x3f":"Polynomial (x^3-1)?","",s,false,65,contextptr);
     if (s.empty()) s="x^3-1";
     gen g(s,contextptr);
     g=_symb2poly(g,contextptr);
     if (g.type!=_VECT || g._VECTptr->size()<3 || g._VECTptr->size()>9){
-      do_confirm("Not a polynomial or degree<2 or degree>8");
+      do_confirm((lang)?"\xb2\xbb\xca\xc7\xb6\xe0\xcf\xee\xca\xbd\xbb\xf2\xb4\xce\xca\xfd\x3c\x32\x20\xbb\xf2\xb4\xce\xca\xfd\x3e\x38":"Not a polynomial or degree<2 or degree>8");
       return 0;
     }
     P=*g._VECTptr;
     if (!convert(P,p,true)){
-      do_confirm("Unable to convert");
+      do_confirm((lang)?"\xce\xde\xb7\xa8\xd7\xaa\xbb\xbb":"Unable to convert");
       return 0;
     }
     // detect x^n+a==0
@@ -348,7 +348,7 @@ int do_fractale(GIAC_CONTEXT){
     }
     gen R=_proot(P,contextptr);
     if (R.type==_VECT && !convert(*R._VECTptr,Z,true)){
-      do_confirm("Unable to find polynomial roots");
+      do_confirm((lang)?"\xd5\xd2\xb2\xbb\xb5\xbd\xb6\xe0\xcf\xee\xca\xbd\xb8\xf9":"Unable to find polynomial roots");
       return 0;
     }
   }
@@ -538,23 +538,23 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   smallmenu.height=MENUHEIGHT-1;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenu.title = (char *) (lang?(mode==-1?"Pret bancaire":"Epargne"):(mode==-1?"Mortgage":"Savings"));
+  smallmenu.title = (char *) (lang?(mode==-1?"\xb4\xfb\xbf\xee":"\xb4\xa2\xd0\xee"):(mode==-1?"Mortgage":"Savings"));
   smallmenu.type = MENUTYPE_NO_NUMBER;
   while(1) {
     drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
     string pvs,fvs,pms;
     if (mode==-1){
-      pvs=((lang)?"Somme due actuelle ":"Present due amount ");
-      fvs=((lang)?"Somme due future ":"Future due amount "); 
-      pms=((lang)?"Mensualite ":"Payment ");
+      pvs=((lang)?"\xb5\xb1\xc7\xb0\xd3\xa6\xb8\xb6\xbf\xee\xb6\xee ":"Present due amount ");
+      fvs=((lang)?"\xce\xb4\xc0\xb4\xd3\xa6\xb8\xb6\xbf\xee\xb6\xee ":"Future due amount "); 
+      pms=((lang)?"\xd4\xc2\xb9\xa9 ":"Payment ");
     } else {
-      pvs=((lang)?"Epargne actuelle ":"Present amount ");
-      fvs=((lang)?"Epargne future ":"Future amount ");
-      pms=((lang)?"Versement mensuel ":"Payment ");
+      pvs=((lang)?"\xb5\xb1\xc7\xb0\xb4\xa2\xd0\xee ":"Present amount ");
+      fvs=((lang)?"\xce\xb4\xc0\xb4\xb4\xa2\xd0\xee ":"Future amount ");
+      pms=((lang)?"\xd4\xc2\xbd\xc9\xbf\xee ":"Payment ");
     }
-    string irs=((lang)?"Taux d'interet annuel ":"Annual interest rate ");
-    string irpys=((lang)?"Paiements par an ":"Payments per year ");
-    string nbs=((lang)?"Nombre d'annees ":"Number of years ");
+    string irs=((lang)?"\xc4\xea\xc0\xfb\xc2\xca ":"Annual interest rate ");
+    string irpys=((lang)?"\xc4\xea\xb8\xb6\xbf\xee\xb4\xce\xca\xfd ":"Payments per year ");
+    string nbs=((lang)?"\xc4\xea\xca\xfd ":"Number of years ");
     string pvs1=pvs+giac::print_DOUBLE_((-mode)*pv,contextptr),
       fvs1=fvs+giac::print_DOUBLE_((-mode)*fv,contextptr),
       irs1=irs+giac::print_DOUBLE_(ir,contextptr)+"%",
@@ -564,7 +564,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
     char * tab[6]={(char*)pvs1.c_str(),(char*)fvs1.c_str(), (char*)irs1.c_str(),(char*)irpys1.c_str(), (char*)pms1.c_str(),(char*)nbs1.c_str()};
     for (int i=0;i<6;i++)
       smallmenuitems[i].text = tab[i];
-    smallmenuitems[6].text = (char*)((lang)?"Quitter ":"Quit ");
+    smallmenuitems[6].text = (char*)((lang)?"\xcd\xcb\xb3\xf6 ":"Quit ");
 #ifdef HP39
     os_draw_string_medium(0,114,solved?_BLACK:_WHITE,solved?_WHITE:_BLACK,"Ans solve|EXE change|Tool help");
 #else
@@ -578,17 +578,17 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
       xcas::textArea text;
       text.editable=false;
       text.clipline=-1;
-      text.title = (char*)((lang)?(mode==-1?"Calcul d'un pret":"Interet d'un placement"):"Finance help");
+      text.title = (char*)((lang)?(mode==-1?"\xb4\xfb\xbf\xee\xbc\xc6\xcb\xe3":"\xb4\xe6\xbf\xee\xc0\xfb\xcf\xa2"):"Finance help");
       text.allowF1=true;
       text.python=python_compat(contextptr);
       std::vector<xcas::textElement> & elem=text.elements;
       elem = std::vector<xcas::textElement> (2);
-      elem[0].s = (lang)?"Deplacez le curseur sur une ligne, tapez EXE/OK pour entrer une nouvelle valeur ou tapez sur Ans pour resoudre.":"Move cursor on a line, type EXE/OK to enter a new value or type Ans to solve";
+      elem[0].s = (lang)?"\xd2\xc6\xb6\xaf\xb9\xe2\xb1\xea\xb5\xbd\xc4\xb3\xd0\xd0\xa3\xac\xb0\xb4\x20\x45\x58\x45\x2f\x4f\x4b\x20\xca\xe4\xc8\xeb\xd0\xc2\xd6\xb5\xa3\xac\xbb\xf2\xb0\xb4\x20\x41\x6e\x73\x20\xc7\xf3\xbd\xe2\xa1\xa3":"Move cursor on a line, type EXE/OK to enter a new value or type Ans to solve";
       elem[0].newLine = 0;
       if (mode==-1)
-	elem[1].s = (lang)?"Par exemple entrez le montant de l'emprunt en 1, 0 en 2, le taux d'interet, le nombre d'annees puis placez le curseur en 5 et tapez Ans.":"For example, enter due amount in 1, 0 in 2, interest rate, number of years then move cursor on 5 and type Ans";
+	elem[1].s = (lang)?"\xc0\xfd\xc8\xe7\xa3\xba\xd4\xda\x20\x31\x20\xca\xe4\xc8\xeb\xb4\xfb\xbf\xee\xbd\xf0\xb6\xee\xa1\xa2\x32\x20\xca\xe4\xc8\xeb\x20\x30\xa1\xa2\xc0\xfb\xcf\xa2\xc2\xca\xa1\xa2\xc4\xea\xca\xfd\xa3\xac\xc8\xbb\xba\xf3\xbd\xab\xb9\xe2\xb1\xea\xd2\xc6\xb5\xbd\x20\x35\x20\xb0\xb4\x20\x41\x6e\x73\xa1\xa3":"For example, enter due amount in 1, 0 in 2, interest rate, number of years then move cursor on 5 and type Ans";
       else
-	elem[1].s = (lang)?"Pour calculer l'evolution d'un placement, entrer le montant place au debut, le taux d'interet, le nombre d'annees, 0 en 5 (paiement) puis deplacez le curseur en 2 et tapez Ans":"";
+	elem[1].s = (lang)?"\xbc\xc6\xcb\xe3\xb4\xa2\xd0\xee\xd4\xf6\xb3\xa4\xa3\xba\xbf\xaa\xca\xbc\xca\xb1\xca\xe4\xc8\xeb\xb1\xbe\xbd\xf0\xa1\xa2\xc0\xfb\xcf\xa2\xc2\xca\xa1\xa2\xc4\xea\xca\xfd\xa1\xa2\x35\x20\xca\xe4\xc8\xeb\x20\x30\xa3\xa8\xb8\xb6\xbf\xee\xa3\xa9\xa3\xac\xc8\xbb\xba\xf3\xbd\xab\xb9\xe2\xb1\xea\xd2\xc6\xb5\xbd\x20\x32\x20\xb0\xb4\x20\x41\x6e\x73":"";
       elem[1].newLine = 1;
       sres=doTextArea(&text,contextptr);
       continue;
@@ -682,11 +682,11 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenuitems[1].text = (char*)((lang)?"\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1":"Spreadsheet");
   smallmenuitems[2].text = (char*)((lang)?"\xd4\xaa\xcb\xd8\xd6\xdc\xc6\xda\xb1\xed":"Periodic table");
   smallmenuitems[3].text = (char*)((lang)?"\xb4\xfb\xbf\xee":"Mortgage");
-  smallmenuitems[4].text = (char*)((lang)?"Epargne":"TVM");
-  smallmenuitems[5].text = (char*)((lang)?"Table caracteres":"Char table");
-  smallmenuitems[6].text = (char*)((lang)?"Exemple simple: Syracuse":"Simple example; Syracuse");
-  smallmenuitems[7].text = (char*)((lang)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
-  smallmenuitems[8].text = (char*)((lang)?"Exemples de fractales":"Fractals examples");
+  smallmenuitems[4].text = (char*)((lang)?"\xb4\xa2\xd0\xee":"TVM");
+  smallmenuitems[5].text = (char*)((lang)?"\xd7\xd6\xb7\xfb\xb1\xed":"Char table");
+  smallmenuitems[6].text = (char*)((lang)?"\xbc\xf2\xb5\xa5\xca\xbe\xc0\xfd\xa3\xba\x53\x79\x72\x61\x63\x75\x73\x65":"Simple example; Syracuse");
+  smallmenuitems[7].text = (char*)((lang)?"\xd3\xce\xcf\xb7\xca\xbe\xc0\xfd\xa3\xba\x4d\x61\x73\x74\x65\x72\x6d\x69\x6e\x64":"Game example: Mastermind");
+  smallmenuitems[8].text = (char*)((lang)?"\xb7\xd6\xd0\xce\xca\xbe\xc0\xfd":"Fractals examples");
   // smallmenuitems[8].text = (char*)"Mon application"; // adjust numitem !
   // smallmenuitems[9].text = (char*)"Autre application";
   // smallmenuitems[10].text = (char*)"Encore une autre";
@@ -695,8 +695,8 @@ int khicas_addins_menu(GIAC_CONTEXT){
 #ifdef NUMWORKS
   smallmenuitems[smallmenu.numitems-3].text = (char*)((lang)?"\xd7\xd4\xb6\xa8\xd2\xe5\x20\x46\x6c\x61\x73\x68":"Customize flash");
 #endif
-  smallmenuitems[smallmenu.numitems-2].text = (char*)((lang)?"Quitter le menu":"Leave menu");
-  smallmenuitems[smallmenu.numitems-1].text = (char*)((lang)?"Quitter KhiCAS":"Leave KhiCAS");
+  smallmenuitems[smallmenu.numitems-2].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xb2\xcb\xb5\xa5":"Leave menu");
+  smallmenuitems[smallmenu.numitems-1].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53":"Leave KhiCAS");
   while(1) {
     int sres = doMenu(&smallmenu);
     if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
@@ -772,11 +772,11 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	// on entre la valeur de u0
 	double d; int i;
 	for (;;){
-	  inputdouble(gettext("Suite de Syracuse. u0?"),d,contextptr);
+	  inputdouble((lang)?"\xbf\xbc\xc0\xad\xd7\xc8\xd0\xf2\xc1\xd0\x20\x75\x30\x3f":gettext("Suite de Syracuse. u0?"),d,contextptr);
 	  i=(d);
 	  if (i==d)
 	    break;
-	  confirm(gettext("u0 doit etre entier!"),gettext("Recommencez"));
+	  confirm((lang)?"\x75\x30\x20\xb1\xd8\xd0\xeb\xca\xc7\xd5\xfb\xca\xfd\x21":gettext("u0 doit etre entier!"),(lang)?"\xd6\xd8\xca\xd4":gettext("Recommencez"));
 	}
 	i=max(i,1);
 	vecteur v(1,i); // initialise une liste avec u0
@@ -820,7 +820,7 @@ void flash_info(const char * buf,std::vector<fileinfo_t> &v,size_t & first_modif
   smallmenu.height=modif?11:12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenu.title = (char*)(lang?"\x46\x6c\x61\x73\x68\x20\xd0\xc5\xcf\xa2":"Flash Files");
+  smallmenu.title = (char*)(lang?"\x46\x6c\x61\x73\x68\x20\xce\xc4\xbc\xfe":"Flash Files");
   smallmenu.type = MENUTYPE_FKEYS;
   smallmenu.selection=initpos;
   if (modif){
@@ -940,7 +940,7 @@ void handle_flash(GIAC_CONTEXT){
   textArea text;
   text.editable=false;
   text.clipline=-1;
-  text.title =(lang)?"EXIT: annuler, EXE: ok":"EXIT: cancel, EXE: run";
+  text.title =(lang)?"EXIT: \xc8\xa1\xcf\xfb, EXE: \xd4\xcb\xd0\xd0":"EXIT: cancel, EXE: run";
   add(&text,(lang)?flash_fr:flash_en);
   int key=doTextArea(&text,contextptr);
   if (key!=1
@@ -1392,12 +1392,12 @@ void sheet_menu_setup(tableur & t,GIAC_CONTEXT){
   smallmenu.scrollout=1;
   smallmenu.title = (char*)(lang?"\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1\xc5\xe4\xd6\xc3":"Sheet config");
   smallmenuitems[3].type = MENUITEM_CHECKBOX;
-  smallmenuitems[3].text = (char*)"Reeval";
+  smallmenuitems[3].text = (char*)((lang)?"\xd6\xd8\xcb\xe3":"Reeval");
   smallmenuitems[4].type = MENUITEM_CHECKBOX;
   smallmenuitems[4].text = (char*)(lang?"\xbe\xd8\xd5\xf3\xa3\xba\xcc\xee\xb3\xe4\xb5\xa5\xd4\xaa\xb8\xf1":"Matrix: fill cells");
   smallmenuitems[5].type = MENUITEM_CHECKBOX;
   smallmenuitems[5].text = (char*)(lang?"\xcf\xf2\xcf\xc2\xd2\xc6\xb6\xaf":"Move down");
-  smallmenuitems[smallmenu.numitems-1].text = (char*) "Quit";
+  smallmenuitems[smallmenu.numitems-1].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6":"Quit");
   while(1) {
     string dig("Digits (in Xcas): ");
     dig += print_INT_(decimal_digits(contextptr));
@@ -1417,7 +1417,7 @@ void sheet_menu_setup(tableur & t,GIAC_CONTEXT){
     if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
       if (smallmenu.selection == 1){
 	double d=decimal_digits(contextptr);
-	if (inputdouble("Nombre de digits?",d,contextptr) && d==int(d) && d>0){
+	if (inputdouble((lang)?"\xca\xfd\xd7\xd6\xce\xbb\xca\xfd\x3f":"Number of digits?",d,contextptr) && d==int(d) && d>0){
 	  decimal_digits(d,contextptr);
 	}
 	continue;
@@ -1498,7 +1498,7 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
   smallmenuitems[9].text = (char*)(lang?"\xc9\xbe\xb3\xfd\xb5\xb1\xc7\xb0\xd0\xd0":"Remove current row");
   smallmenuitems[10].text = (char*)(lang?"\xc9\xbe\xb3\xfd\xb5\xb1\xc7\xb0\xc1\xd0":"Remove current column");
   smallmenuitems[11].text = (char*)(lang?"\xd3\xc3\x20\x30\x20\xcc\xee\xb3\xe4\xb1\xed\xb8\xf1":"Fill sheet with 0");
-  smallmenuitems[smallmenu.numitems-2].text = (char*) "Config";
+  smallmenuitems[smallmenu.numitems-2].text = (char*) ((lang)?"\xc5\xe4\xd6\xc3":"Config");
   smallmenuitems[smallmenu.numitems-1].text = (char*) (lang?"\xcd\xcb\xb3\xf6\xb5\xe7\xd7\xd3\xb1\xed\xb8\xf1":"Leave sheet");
   while(1) {
     int sres = doMenu(&smallmenu);
@@ -1803,7 +1803,7 @@ giac::gen sheet(GIAC_CONTEXT){
 	  t.cmd_row=-1;
 	continue;
       }
-      if (!t.changed || do_confirm("Quit?"))
+      if (!t.changed || do_confirm((lang)?"\xcd\xcb\xb3\xf6\x3f":"Quit?"))
 	return 0;
     }
     switch (key){
