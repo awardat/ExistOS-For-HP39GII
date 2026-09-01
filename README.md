@@ -14,12 +14,6 @@
 
 [English readme](./README_en.md)
 
-## 键位映射
-
-按键定义详见 [docs/keymap.md](./docs/keymap.md)（代码实际键位：编码表 / KhiCAS 映射 / ExistOS UI 按键），原厂键位表见 [docs/keymap_org.md](./docs/keymap_org.md)。
-
----
-
 一个开源的 HP39GII 固件项目
 
 ## 简介
@@ -139,6 +133,10 @@
   - 计算器将重新启动，此步骤会刷入 `ExistOS` 主系统
 4. 享受 ExistOS 吧
   - 如果遇到问题，或者有意参与本项目，您可以加入 QQ 群（942419621）。
+
+## 键位映射
+
+按键定义详见 [docs/keymap.md](./docs/keymap.md)（代码实际键位：编码表 / KhiCAS 映射 / ExistOS UI 按键），原厂键位表见 [docs/keymap_org.md](./docs/keymap_org.md)。
 
 ## 编译和安装
 
