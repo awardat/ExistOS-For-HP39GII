@@ -14,8 +14,6 @@
 int g_slowdown_enable = 0;
 static uint8_t min_cpu_frac_sd = CPU_DIVIDE_SAVE_IDLE;
 
-static void setCPUSpeed(uint32_t div, uint32_t frac);
-
 static void PLLEnable(bool enable) {
     BF_SETV(CLKCTRL_PLLCTRL0, POWER, enable);
     portDelayus(20);
@@ -46,11 +44,11 @@ void enterSlowDown()
 {
     if(g_slowdown_enable == 1)
     {
-        setCPUSpeed(CPU_DIVIDE_STD_IDLE, 18);
+        setCPUDivider(CPU_DIVIDE_STD_IDLE);
     }else if(g_slowdown_enable == 2){
-        setCPUSpeed(CPU_DIVIDE_SAVE_IDLE, 18);
+        setCPUDivider(CPU_DIVIDE_SAVE_IDLE);
     }else if(g_slowdown_enable == 3){
-        setCPUSpeed(CPU_DIVIDE_BOOST_IDLE, 18);
+        setCPUDivider(CPU_DIVIDE_BOOST_IDLE);
     }
 }
 
@@ -58,13 +56,13 @@ void exitSlowDown()
 {
     if(g_slowdown_enable == 1)
     {
-        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
+        setCPUDivider(CPU_DIVIDE_STD_BUSY);
     }else if(g_slowdown_enable == 2){
-        setCPUSpeed(CPU_DIVIDE_SAVE_BUSY, 18);
+        setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
     }else if(g_slowdown_enable == 3){
-        setCPUSpeed(CPU_DIVIDE_BOOST_BUSY, CPU_DIVIDE_BOOST_FRAC);
+        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
     }else{
-        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
+        setCPUDivider(CPU_DIVIDE_STD_BUSY);
     }
     
 }
@@ -75,12 +73,12 @@ void slowDownEnable(int mode)
     g_slowdown_enable = mode;
     if(g_slowdown_enable == 2)
     {
-        setCPUSpeed(CPU_DIVIDE_SAVE_BUSY, 18);
+        setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
     }else if(g_slowdown_enable == 3)
     {
-        setCPUSpeed(CPU_DIVIDE_BOOST_BUSY, CPU_DIVIDE_BOOST_FRAC);
+        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
     }else{
-        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
+        setCPUDivider(CPU_DIVIDE_STD_BUSY);
     }
 }
 
