@@ -108,11 +108,7 @@ void vTask2(void *par1) {
 }
 
 void vApplicationIdleHook(void) {
-    // 空闲降频 + WFI（省电：CPU 分频到 1/min_cpu_frac，停止到下次中断）
-    ll_cpu_slowdown_enter();
-    asm volatile("mov r0, #0");
-    asm volatile("mcr p15,0,r0,c7,c0,4":::"memory"); // WFI
-    ll_cpu_slowdown_exit();
+    ll_system_idle(); // OSLoader waitIRQ: 空闲降频(仅省电档) + WFI(INTERRUPT_WAIT 深睡眠)
 }
 
 void exp_exec(void *par);
