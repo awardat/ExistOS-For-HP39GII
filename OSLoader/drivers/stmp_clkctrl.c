@@ -14,6 +14,8 @@
 int g_slowdown_enable = 0;
 static uint8_t min_cpu_frac_sd = CPU_DIVIDE_SAVE_IDLE;
 
+static void setCPUSpeed(uint32_t div, uint32_t frac);
+
 static void PLLEnable(bool enable) {
     BF_SETV(CLKCTRL_PLLCTRL0, POWER, enable);
     portDelayus(20);
@@ -44,11 +46,11 @@ void enterSlowDown()
 {
     if(g_slowdown_enable == 1)
     {
-        setCPUDivider(CPU_DIVIDE_STD_IDLE);
+        setCPUSpeed(CPU_DIVIDE_STD_IDLE, 18);
     }else if(g_slowdown_enable == 2){
-        setCPUDivider(CPU_DIVIDE_SAVE_IDLE);
+        setCPUSpeed(CPU_DIVIDE_SAVE_IDLE, 18);
     }else if(g_slowdown_enable == 3){
-        setCPUDivider(CPU_DIVIDE_BOOST_IDLE);
+        setCPUSpeed(CPU_DIVIDE_BOOST_IDLE, 18);
     }
 }
 
@@ -56,13 +58,13 @@ void exitSlowDown()
 {
     if(g_slowdown_enable == 1)
     {
-        setCPUDivider(CPU_DIVIDE_STD_BUSY);
+        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
     }else if(g_slowdown_enable == 2){
-        setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
+        setCPUSpeed(CPU_DIVIDE_SAVE_BUSY, 18);
     }else if(g_slowdown_enable == 3){
-        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
+        setCPUSpeed(CPU_DIVIDE_BOOST_BUSY, CPU_DIVIDE_BOOST_FRAC);
     }else{
-        setCPUDivider(CPU_DIVIDE_STD_BUSY);
+        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
     }
     
 }
@@ -73,12 +75,32 @@ void slowDownEnable(int mode)
     g_slowdown_enable = mode;
     if(g_slowdown_enable == 2)
     {
-        setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
+        setCPUSpeed(CPU_DIVIDE_SAVE_BUSY, 18);
     }else if(g_slowdown_enable == 3)
     {
-        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
+        setCPUSpeed(CPU_DIVIDE_BOOST_BUSY, CPU_DIVIDE_BOOST_FRAC);
     }else{
-        setCPUDivider(CPU_DIVIDE_STD_BUSY);
+        setCPUSpeed(CPU_DIVIDE_STD_BUSY, 18);
+    }
+}
+
+// 设置 CPU 频率：div 整数分频 + frac 分数分频（frac=18 为整数模式）
+// FRAC 模式对齐 Linux plat-stmp3xxx cpu_set_rate 时序：
+//   预写 FRAC -> 切 24M 旁路 -> 等待 10us -> 旁路下写 FRAC + ungate -> 写 DIV -> 等 BUSY(位28) -> 切回 PLL -> 等待 10us
+static void setCPUSpeed(uint32_t div, uint32_t frac)
+{
+    if (frac != 18) {
+        BF_WR(CLKCTRL_FRAC, CPUFRAC, frac);
+        BF_SET(CLKCTRL_CLKSEQ, BYPASS_CPU);
+        portDelayus(10);
+        BF_WR(CLKCTRL_FRAC, CPUFRAC, frac);
+        BF_CLR(CLKCTRL_FRAC, CLKGATECPU);
+        setCPUDivider(div);
+        for (int i = 10000; i && (HW_CLKCTRL_CPU.R & (1U << 28)); i--) ;
+        BF_CLR(CLKCTRL_CLKSEQ, BYPASS_CPU);
+        portDelayus(10);
+    } else {
+        setCPUDivider(div);
     }
 }
 
