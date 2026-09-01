@@ -164,6 +164,16 @@ void volatile arm_do_swi(uint32_t SWINum, uint32_t *pRegFram) {
             break;
         }
 
+        case LL_FAST_SWI_SLOWDOWN_ENTER: {
+            enterSlowDown();
+            break;
+        }
+
+        case LL_FAST_SWI_SLOWDOWN_EXIT: {
+            exitSlowDown();
+            break;
+        }
+
         case LL_FAST_SWI_MEM_ENABLE_SWAP: {
 #if SEPARATE_VMM_CACHE
             extern bool mem_swap_enable;

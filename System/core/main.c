@@ -108,7 +108,11 @@ void vTask2(void *par1) {
 }
 
 void vApplicationIdleHook(void) {
-    ll_system_idle();
+    // 空闲降频 + WFI（省电：CPU 分频到 1/min_cpu_frac，停止到下次中断）
+    ll_cpu_slowdown_enter();
+    asm volatile("mov r0, #0");
+    asm volatile("mcr p15,0,r0,c7,c0,4":::"memory"); // WFI
+    ll_cpu_slowdown_exit();
 }
 
 void exp_exec(void *par);
@@ -158,6 +162,13 @@ void main_thread() {
     
     // 初始化崩溃日志系统
     crash_log_init();
+
+    // 应用省电配置：'S'=空闲降频, 'L'=强制低功耗, ' '=关闭
+    {
+        extern char config_get_power_save(void);
+        char ps = config_get_power_save();
+        ll_cpu_slowdown_enable(ps == 'S' ? 1 : (ps == 'L' ? 2 : 0));
+    }
 
     // StartKhiCAS();
 

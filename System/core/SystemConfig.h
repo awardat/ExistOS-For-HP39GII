@@ -12,7 +12,7 @@ extern "C" {
 
 // 配置项默认值
 #define DEFAULT_LANGUAGE UI_LANG_EN
-#define DEFAULT_POWER_SAVE ' '  // ' ' = 关闭, 'S' = 低功耗, 'L' = 超低功耗
+#define DEFAULT_POWER_SAVE 'S'  // ' ' = 关闭, 'S' = 空闲降频, 'L' = 强制低功耗
 #define DEFAULT_ENABLE_CHARGE false
 #define DEFAULT_ENABLE_MEM_SWAP false
 

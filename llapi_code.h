@@ -67,6 +67,8 @@
 #define LL_SWI_FLASH_PAGE_SIZE_B       (LL_SWI_BASE + 75)
 
 #define LL_FAST_SWI_SYSTEM_IDLE             (LL_FAST_SWI_BASE + 80)
+#define LL_FAST_SWI_SLOWDOWN_ENTER          (LL_FAST_SWI_BASE + 83)
+#define LL_FAST_SWI_SLOWDOWN_EXIT           (LL_FAST_SWI_BASE + 84)
 #define LL_FAST_SWI_CORE_CUR_FREQ           (LL_FAST_SWI_BASE + 81)
 
 
