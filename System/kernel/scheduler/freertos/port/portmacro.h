@@ -214,23 +214,11 @@ extern volatile uint32_t ulCriticalNesting;					\
 
 #else
 
-	#define portDISABLE_INTERRUPTS()	ll_enable_irq(false);										
-		
-		// __asm volatile (															\
-		// 	"STMDB	SP!, {R0}		\n\t"	/* Push R0.						*/	\
-		// 	"MRS	R0, CPSR		\n\t"	/* Get CPSR.					*/	\
-		// 	"ORR	R0, R0, #0xC0	\n\t"	/* Disable IRQ, FIQ.			*/	\
-		// 	"MSR	CPSR, R0		\n\t"	/* Write back modified value.	*/	\
-		// 	"LDMIA	SP!, {R0}			" )	/* Pop R0.						*/
+	#define portDISABLE_INTERRUPTS()	ll_enable_irq(false);
 
 	#define portENABLE_INTERRUPTS()	    ll_enable_irq(true);
 
-	// 	__asm volatile (															\
-	// 		"STMDB	SP!, {R0}		\n\t"	/* Push R0.						*/	\
-	// 		"MRS	R0, CPSR		\n\t"	/* Get CPSR.					*/	\
-	// 		"BIC	R0, R0, #0xC0	\n\t"	/* Enable IRQ, FIQ.				*/	\
-	// 		"MSR	CPSR, R0		\n\t"	/* Write back modified value.	*/	\
-	// 		"LDMIA	SP!, {R0}			" )	/* Pop R0.						*/
+	// Legacy asm implementation removed (kept in git history)
 
 #endif /* THUMB_INTERWORK */
 

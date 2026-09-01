@@ -1300,7 +1300,7 @@ namespace giac {
     unsigned childindex=2,holeindex=0;
     while (childindex<size){
       // find largest child until end of tab
-      register T * ptr=tab+childindex;
+      T * ptr=tab+childindex;
       if (*ptr<*(ptr-1)){
 	--childindex;
 	--ptr;
@@ -2724,7 +2724,7 @@ namespace giac {
       // find maincoeff of b
       std::vector< T_unsigned<T,U> > lcoeffb;
       for (cit=b.begin(),citend=b.end();cit!=citend;++cit){
-	register U u=cit->u;
+	U u=cit->u;
 	if (rstop>u)
 	  break;
 	lcoeffb.push_back(T_unsigned<T,U>(cit->g,u-rstop));

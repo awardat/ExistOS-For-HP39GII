@@ -103,7 +103,7 @@ void drawPage(int page);
 
 void getTimeStr(char *s) {
     uint32_t rtc_time_sec = ll_rtc_get_sec();
-    sprintf(s, "%02d:%02d:%02d", (rtc_time_sec / (60 * 60)) % 24, (rtc_time_sec / 60) % 60, rtc_time_sec % 60);
+sprintf(s, "%02d:%02d:%02d", (int)((rtc_time_sec / (60 * 60)) % 24), (int)((rtc_time_sec / 60) % 60), (int)(rtc_time_sec % 60));
 }
 
 static void timeChange(int hh, int mm, int ss) {
@@ -206,7 +206,6 @@ void UI_OOM() {
 }
 
 void pageUpdate() {
-    uint32_t clk_div[3];
     char timeStr[16];
     int line = 0;
 
@@ -225,12 +224,6 @@ void pageUpdate() {
         uidisp->draw_box(180, 0, 255, 11, -1, 0);
         uidisp->draw_printf(200, 0, 16, 255, -1, "%d/%d", page3Subpage + 1, CONF_SUBPAGES);
         if (page3Subpage == 0) {
-            ll_get_clkctrl_div(clk_div);
-
-            uint32_t cur_cpu_div = clk_div[0];
-            uint32_t cur_cpu_frac = clk_div[1];
-            uint32_t cur_hclk_div = clk_div[2];
-
             uint32_t Charging = ll_get_charge_status();
 
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "CPU:%3d/%d MHz, %s:%d `C", ll_get_cur_freq(), 480, UI_TEMPERRATURE, ll_get_core_temp());
@@ -454,7 +447,7 @@ void keyMsg(uint32_t key, int state) {
         if (curPage == 2 && (key == KEY_F1 || key == KEY_F2 || key == KEY_F6)) {
             f_closedir(&fileManagerDir);
 
-            for (int i = 0; i < *filesCount; i++) {
+            for (uint32_t i = 0; i < *filesCount; i++) {
                 free(dirItemNames[i]);
             }
             free(dirItemNames);
@@ -581,7 +574,7 @@ void keyMsg(uint32_t key, int state) {
 
                         dirItemNames = (TCHAR **)calloc(*filesCount, sizeof(TCHAR *));
                         dirItemInfos = (bool *)calloc(*filesCount, sizeof(bool));
-                        for (int i = 0; i < *filesCount; i++) {
+                        for (uint32_t i = 0; i < *filesCount; i++) {
                             dirItemNames[i] = (TCHAR *)calloc(255, sizeof(TCHAR));
                         }
 
@@ -1029,7 +1022,7 @@ void refreshFileNames(TCHAR *path, TCHAR **names, bool *info, unsigned long *cou
     DIR dir;
     FILINFO fno;
     f_opendir(&dir, path);
-    for (int i = 0; i < *counts; i++) {
+    for (uint32_t i = 0; i < *counts; i++) {
         if (f_readdir(&dir, &fno) == FR_OK) {
             strcat(names[i], fno.fname);
             if (fno.fattrib & AM_DIR) {
@@ -1045,7 +1038,7 @@ void refreshFileNames(TCHAR *path, TCHAR **names, bool *info, unsigned long *cou
 }
 
 void refreshDir() {
-    for (int i = 0; i < *filesCount; i++) {
+    for (uint32_t i = 0; i < *filesCount; i++) {
         free(dirItemNames[i]);
     }
     free(dirItemNames);
@@ -1062,7 +1055,7 @@ void refreshDir() {
 
             dirItemNames = (TCHAR **)calloc(*filesCount, sizeof(TCHAR *));
             dirItemInfos = (bool *)calloc(*filesCount, sizeof(bool));
-            for (int i = 0; i < *filesCount; i++) {
+            for (uint32_t i = 0; i < *filesCount; i++) {
                 dirItemNames[i] = (TCHAR *)calloc(255, sizeof(TCHAR));
             }
 
@@ -1181,7 +1174,6 @@ void UI_Task(void *) {
 
 void UI_keyScanner(void *_) {
     uint32_t key;
-    uint32_t keyVal = 0;
 
     uint32_t delay = 0;
     uint32_t delayRel = 0;

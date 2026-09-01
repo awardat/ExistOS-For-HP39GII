@@ -90,9 +90,7 @@ DRESULT disk_ioctl(
     BYTE cmd,  /* Control code */
     void *buff /* Buffer to send/receive control data */
 ) {
-    DRESULT res;
     DWORD val;
-    int result;
 
     switch (cmd) {
     case CTRL_SYNC:
@@ -113,12 +111,12 @@ DRESULT disk_ioctl(
         return RES_OK;
     case GET_SECTOR_COUNT: 
         val = ll_flash_get_pages();
-        printf("sc:%d\n", val);
+        printf("sc:%lu\n", (unsigned long)val);
         *((LBA_t *)buff) = val;
         return RES_OK;
     case GET_SECTOR_SIZE:
         val = ll_flash_get_page_size();
-        printf("ss:%d\n", val);
+        printf("ss:%lu\n", (unsigned long)val);
         //((BYTE *)buff)[0] = val & 0xFF;
         //((BYTE *)buff)[1] = (val>>8) & 0xFF;
         *((WORD *)buff) = val;

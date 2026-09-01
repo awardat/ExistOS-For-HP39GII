@@ -59,7 +59,7 @@ inline stdostream & operator << (stdostream & os,double d){
 
 inline stdostream & operator << (stdostream & os,clock_t t){
   char buf[32];
-  sprintf(buf,"%u",t);
+  sprintf(buf,"%lu",(unsigned long)t);
   dConsolePut(buf);
   return os;
 }

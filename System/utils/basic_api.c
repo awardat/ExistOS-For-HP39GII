@@ -51,7 +51,7 @@ void api_vram_put_char(int x0, int y0, char ch, int fg, int bg, int fontSize)
     int font_w;
     int font_h;
     const unsigned char *pCh;
-    unsigned int x = 0, y = 0, i = 0, j = 0;
+    unsigned int x = 0, y = 0;
 
     if ((ch < ' ') || (ch > '~' + 1)) {
         return;
@@ -80,14 +80,15 @@ void api_vram_put_char(int x0, int y0, char ch, int fg, int bg, int fontSize)
         return;
     }
 
-    while (y < font_h) {
-        while (x < font_w) {
-            if (((x0 + x) < 256) && ((y0 + y) < 127))
+    while (y < (unsigned int)font_h) {
+        while (x < (unsigned int)font_w) {
+            if (((x0 + x) < 256U) && ((y0 + y) < 127U)) {
                 if ((*pCh << x) & 0x80U) {
                     fbuff[(x0 + x) + 256 * (y0 + y)] = fg;
                 } else {
                     fbuff[(x0 + x) + 256 * (y0 + y)] = bg;
                 }
+            }
             x++;
         }
         x = 0;
@@ -101,8 +102,7 @@ void api_vram_put_string(int x0, int y0, char *s, int fg, int bg, int fontSize)
 {
     int font_w;
     int font_h;
-    int len = strlen(s);
-    int x = 0, y = 0;
+        int x = 0, y = 0;
 
     if (fontSize <= 16) {
         switch (fontSize) {

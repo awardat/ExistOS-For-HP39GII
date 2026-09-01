@@ -282,7 +282,7 @@ void crash_log_clear_all(void) {
             if (res != FR_OK || fno.fname[0] == '\0') break;
             
             if (strncmp(fno.fname, CRASH_LOG_FILE_PREFIX, strlen(CRASH_LOG_FILE_PREFIX)) == 0) {
-                char filepath[64];
+                char filepath[320];
                 snprintf(filepath, sizeof(filepath), "%s/%s", CRASH_LOG_DIR, fno.fname);
                 f_unlink(filepath);
             }

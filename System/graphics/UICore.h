@@ -2,6 +2,7 @@
 
 #include "UI_Config.h"
 #include "UI_Language.h"
+#include "../utils/gbk16.h"
 
 extern const unsigned char VGA_Ascii_5x8[];
 extern const unsigned char VGA_Ascii_6x12[];
@@ -23,7 +24,7 @@ private:
     void (*drawf)(uint8_t *buf, uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1);
     inline void buf_set(uint32_t x, uint32_t y, uint8_t c) {
         if (disp_buf) {
-            if ((x < this->disp_w) && (y < this->disp_h))
+            if ((x < (uint32_t)this->disp_w) && (y < (uint32_t)this->disp_h))
                 this->disp_buf[x + y * this->disp_w] = c;
         }
     }
@@ -62,13 +63,13 @@ public:
     }
     void draw_line(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1, uint8_t c) {
         if (y0 == y1) {
-            for (int x = x0; x <= x1; x++) {
+            for (uint32_t x = x0; x <= x1; x++) {
                 buf_set(x, y0, c);
             }
             goto draw_fin;
         }
         if (x0 == x1) {
-            for (int y = y0; y <= y1; y++) {
+            for (uint32_t y = y0; y <= y1; y++) {
                 buf_set(x0, y, c);
             }
             goto draw_fin;
@@ -94,7 +95,7 @@ public:
     }
     void draw_box(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1, int16_t borderColor, int16_t fillColor) {
         if (fillColor != -1) {
-            for (int y = y0; y <= y1; y++) {
+            for (uint32_t y = y0; y <= y1; y++) {
                 draw_line(x0, y, x1, y, fillColor);
             }
         }
@@ -108,8 +109,8 @@ public:
     }
 
     void draw_bmp(char *src, uint32_t x0, uint32_t y0, uint32_t w, uint32_t h) {
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
+        for (uint32_t y = 0; y < h; y++) {
+            for (uint32_t x = 0; x < w; x++) {
                 buf_set(x0 + x, y0 + y, src[x + y * w]);
             }
         }
@@ -121,7 +122,7 @@ public:
         int font_w;
         int font_h;
         const unsigned char *pCh;
-        unsigned int x = 0, y = 0, i = 0, j = 0;
+        unsigned int x = 0, y = 0;
 
         if ((ch < ' ') || (ch > '~' + 1)) {
             return;
@@ -149,10 +150,10 @@ public:
         default:
             return;
         }
-        char pix;
-        while (y < font_h) {
-            while (x < font_w) {
-                pix = ((*pCh << x) & 0x80U);
+        unsigned char pix;
+        while (y < (unsigned int)font_h) {
+            while (x < (unsigned int)font_w) {
+                pix = (unsigned char)((*pCh << x) & 0x80U);
                 if (pix) {
                     buf_set(x0 + x, y0 + y, fg);
                 } else {
@@ -170,20 +171,14 @@ public:
         this->drawf(&this->disp_buf[y0 * this->disp_w], 0, y0, this->disp_w - 1, y0 + font_h - 1);
     }
     void draw_char_GBK16(uint32_t x0, uint32_t y0, uint16_t c, uint8_t fg, int16_t bg) {
-        extern uint32_t fonts_hzk_start;
-        extern uint32_t fonts_hzk_end;
-        int lv = (c & 0xFF) - 0xa1;
-        int hv = (c >> 8) - 0xa1;
-        uint32_t offset = (uint32_t)(94 * hv + lv) * 32;
-        uint8_t *font_data = (uint8_t *)(((uint32_t)&fonts_hzk_start) + offset);
-        if ((uint32_t)font_data > (uint32_t)&fonts_hzk_end) {
+        uint8_t *font_data = (uint8_t *)gbk16_glyph((c >> 8) & 0xFF, c & 0xFF);
+        if (font_data == NULL) {
             return;
         }
 
         int x = x0, y = y0;
 
         for (int i = 0; i < 32; i += 2) {
-            uint8_t pix;
             for (int t = 0, pix = font_data[i]; t < 8; t++) {
                 if (pix & 0x80) {
                     buf_set(x, y, fg);
@@ -222,17 +217,17 @@ public:
         ret = vsnprintf(buffer, sizeof(buffer), format, aptr);
         va_end(aptr);
 
-        for (int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
+        for (unsigned int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
             if (buffer[i] < 0x80) {
                 draw_char_ascii(x, y0, buffer[i], fontSize, fg, bg);
                 x += fontSize == 16 ? 8 : 6;
-                if (x > disp_w) {
+                if (x > (unsigned int)this->disp_w) {
                     break;
                 }
             } else {
                 draw_char_GBK16(x, y0, buffer[i + 1] | (buffer[i] << 8), fg, bg);
                 x += 16;
-                if (x > disp_w) {
+                if (x > (unsigned int)this->disp_w) {
                     break;
                 }
                 i++;
@@ -484,7 +479,7 @@ public:
         if (this->content_y0 + this->content_height >= FUNCKEY_BAR_Y) {
             this->content_height = FUNCKEY_BAR_Y - WIN_DEFAULT_FONTSIZE;
             this->height = this->content_height + 1;
-            printf("Decrease H:%d\n", this->content_height);
+            printf("Decrease H:%d\n", (int)this->content_height);
         }
         funcKey_enable = enable;
         refreshFuncKeyBar();

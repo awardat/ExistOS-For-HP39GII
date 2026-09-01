@@ -9,6 +9,8 @@
 #include "kcasporing_gl.h"
 #include "sys_llapi.h"
 
+#include "../../../utils/gbk16.h"
+
 #include "porting.h"
 
 #include "keyboard_gii39.h"
@@ -198,15 +200,11 @@ void vGL_putChar(int x0, int y0, char ch, int fg, int bg, int fontSize) {
 
 }
 
-// 16x16 HZK16S 中文字库（链接脚本 Script/sys_ld.script .rodata 段，flash XIP 不占 RAM）
-extern const unsigned char fonts_hzk_start[];
-
-// 16x16 GB2312 字符渲染（b1/b2 为 GBK 高字节，区 1-87 位 1-94）
+// 16x16 GB2312 字符渲染（b1/b2 为 GBK 高字节，区 1-87 位 1-94，字形查找统一走 gbk16_glyph）
 void vGL_putChar16(int x0, int y0, unsigned char b1, unsigned char b2, int fg, int bg) {
-    if (b1 < 0xA1 || b1 > 0xF7 || b2 < 0xA1 || b2 > 0xFE)
+    const unsigned char *p = gbk16_glyph(b1, b2);
+    if (p == NULL)
         return;
-    int offset = ((b1 - 0xA1) * 94 + (b2 - 0xA1)) * 32;
-    const unsigned char *p = fonts_hzk_start + offset;
     for (int row = 0; row < 16; row++) {
         unsigned int line = (p[0] << 8) | p[1];
         for (int col = 0; col < 16; col++) {

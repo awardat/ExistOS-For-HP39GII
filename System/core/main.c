@@ -72,8 +72,8 @@ void printTaskList() {
     free /= 1024;
     total /= 1024;
 
-    printf("Allocate MEM:%d/%d KB\n", getHeapAllocateSize() / 1024, TotalAllocatableSize / 1024);
-    printf("ZRAM:%d/%d KB\n", total - free, total);
+    printf("Allocate MEM:%lu/%lu KB\n", (unsigned long)(getHeapAllocateSize() / 1024), (unsigned long)(TotalAllocatableSize / 1024));
+    printf("ZRAM:%lu/%lu KB\n", (unsigned long)(total - free), (unsigned long)total);
     printf("Compression_rate: %.2f\n", mem_cmpr);
     printf("SRAM Heap Pre-allocated: %d KB\n", getOnChipHeapAllocated() / 1024);
     printf("Swap Heap Pre-allocated: %d KB\n", getSwapMemHeapAllocated() / 1024);
@@ -101,7 +101,7 @@ void delay_ms(uint32_t ms) {
 void vTask2(void *par1) {
     uint32_t ticks = 0;
     while (1) {
-        printf("SYS Run Time: %d s\n", ticks);
+        printf("SYS Run Time: %lu s\n", (unsigned long)ticks);
         ticks++;
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -112,8 +112,6 @@ void vApplicationIdleHook(void) {
 }
 
 void exp_exec(void *par);
-static bool time_lable_refresh = true;
-
 #define EMU_DATA_PORT ((volatile uint8_t *)0x20000000)
 extern bool g_system_in_emulator;
 
@@ -200,7 +198,7 @@ void main() {
 
     printf("System Booting...\n");
 
-    printf("SP:%08x\n", getCurStackAdr());
+    printf("SP:%08lx\n", (unsigned long)getCurStackAdr());
 
     uint32_t free, total, total_comp;
     total_comp = ll_mem_phy_info(&free, &total);
@@ -255,7 +253,7 @@ void check_emulator_status() {
             uint32_t fsz = ((uint32_t *)(&EMU_DATA_PORT[4]))[0];
             printf("File send command detected.\n");
             printf("Receive file:%s\n", fname);
-            printf("file size:%d\n", fsz);
+            printf("file size:%lu\n", (unsigned long)fsz);
 
             fname--;
             *fname = '/';

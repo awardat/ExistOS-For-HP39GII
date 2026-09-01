@@ -56,10 +56,6 @@
         }                                               \
     } while (0)
 
-static char *msgbox_button[] = {"OK", "Cancel", ""};
-
-static uint8_t indicator = 0;
-
 //#define DISP_HOR_RES 256
 //#define VBUFFER_LINE 127
 

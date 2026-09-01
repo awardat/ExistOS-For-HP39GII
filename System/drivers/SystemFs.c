@@ -98,12 +98,8 @@ void *GetFsObj()
 }
 
 void SystemFSInit() {
-    uint32_t sel;
-    int err ;
-
 #if FS_TYPE == FS_FATFS
 
-    FRESULT fres;
     fs = pvPortMalloc(sizeof(FATFS));
 
 

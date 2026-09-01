@@ -67,6 +67,9 @@ target_compile_options(tjpgd PRIVATE -mtune=arm926ej-s -mcpu=arm926ej-s -mlittle
 target_compile_options(sys.elf PRIVATE -mtune=arm926ej-s -mcpu=arm926ej-s -mlittle-endian -mfloat-abi=soft -marm
 -Os -pipe 
 -DHP39
+-Wall -Wextra
+-Wno-multi-line -Wno-unused-parameter -Wno-main -Wno-strict-aliasing -Wno-unknown-pragmas
+-fstack-protector-strong
 #-ffunction-sections -fno-strict-aliasing -fomit-frame-pointer
 #-fcommon -fno-strict-aliasing -fomit-frame-pointer
 #-fpermissive  -fdata-sections

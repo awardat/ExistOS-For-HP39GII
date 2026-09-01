@@ -25,8 +25,8 @@ extern unsigned int __data_end;
 
 const char __attribute__((section(".sysinfo"))) system_build_time[] = _TIMEZ_;//__DATE__ " " __TIME__;
 extern uint32_t SYSTEM_STACK;
-void volatile _init() __attribute__((section(".init"))) __attribute__((naked));
-void volatile _init() {
+void _init() __attribute__((section(".init"))) __attribute__((naked));
+void _init() {
 
     __asm volatile(".word 0xEF5AE0EF");
     __asm volatile(".word 0xFECDAFDE");

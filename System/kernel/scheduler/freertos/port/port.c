@@ -75,7 +75,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 StackType_t *pxOriginalTOS;
 
 	pxOriginalTOS = pxTopOfStack;
-	printf("Start Stack:%08x, %d\n", pxOriginalTOS, pxOriginalTOS);
+	printf("Start Stack:%p, %p\n", (void *)pxOriginalTOS, (void *)pxOriginalTOS);
 	
 	/* To ensure asserts in tasks.c don't fail, although in this case the assert
 	is not really required. */
