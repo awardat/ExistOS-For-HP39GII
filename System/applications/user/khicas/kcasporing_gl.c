@@ -198,6 +198,25 @@ void vGL_putChar(int x0, int y0, char ch, int fg, int bg, int fontSize) {
 
 }
 
+// 16x16 HZK16S 中文字库（链接脚本 Script/sys_ld.script .rodata 段，flash XIP 不占 RAM）
+extern const unsigned char fonts_hzk_start[];
+
+// 16x16 GB2312 字符渲染（b1/b2 为 GBK 高字节，区 1-87 位 1-94）
+void vGL_putChar16(int x0, int y0, unsigned char b1, unsigned char b2, int fg, int bg) {
+    if (b1 < 0xA1 || b1 > 0xF7 || b2 < 0xA1 || b2 > 0xFE)
+        return;
+    int offset = ((b1 - 0xA1) * 94 + (b2 - 0xA1)) * 32;
+    const unsigned char *p = fonts_hzk_start + offset;
+    for (int row = 0; row < 16; row++) {
+        unsigned int line = (p[0] << 8) | p[1];
+        for (int col = 0; col < 16; col++) {
+            if (((x0 + col) < VIR_LCD_PIX_W) && ((y0 + row) < VIR_LCD_PIX_H))
+                vGL_set_pixel(x0 + col, y0 + row, (line >> (15 - col)) & 1 ? fg : bg);
+        }
+        p += 2;
+    }
+}
+
 void vGL_putString(int x0, int y0, const char *s, int fg, int bg, int fontSize) {
     int font_w;
     int font_h;
@@ -225,6 +244,17 @@ void vGL_putString(int x0, int y0, const char *s, int fg, int bg, int fontSize) 
 
         font_h = fontSize;
         while (*s) {
+            unsigned char b1 = (unsigned char)*s;
+            if (b1 >= 0xA1 && b1 <= 0xF7 && s[1]) {
+                unsigned char b2 = (unsigned char)s[1];
+                if (b2 >= 0xA1 && b2 <= 0xFE) {
+                    vGL_putChar16((x0 * STRING_X_SCALE) + x, (y0 * STRING_Y_SCALE) + y, b1, b2, fg, bg);
+                    s += 2;
+                    x += 16;
+                    if (x > VIR_LCD_PIX_W) { break; }
+                    continue;
+                }
+            }
             vGL_putChar((x0 * STRING_X_SCALE) + x, (y0 * STRING_Y_SCALE) + y, *s, fg, bg, fontSize);
             s++;
             x += font_w;

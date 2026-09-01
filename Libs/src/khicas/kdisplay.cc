@@ -586,9 +586,9 @@ namespace giac {
               }
               if (menu->items[curitem].isselected) {
                 if (menu->selection == curitem+1) {
-                  PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),"\xe6\x9b", TEXT_MODE_NORMAL);
+                  PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),"\xa1\xfa", TEXT_MODE_NORMAL);
                 } else {
-                  PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),"\xe6\x9b", TEXT_MODE_NORMAL);
+                  PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),"\xa1\xfa", TEXT_MODE_NORMAL);
                 }
               }
             }
