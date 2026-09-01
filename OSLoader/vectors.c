@@ -20,6 +20,7 @@
 #include "llapi_code.h"
 
 #include "rtc_up.h"
+#include "regsclkctrl.h"
 
 extern volatile void *pxCurrentTCB;
 extern volatile uint32_t ulCriticalNesting;
@@ -125,9 +126,11 @@ void volatile arm_do_swi(uint32_t SWINum, uint32_t *pRegFram) {
             waitIRQ(0);
             break;
 
-        case LL_FAST_SWI_CORE_CUR_FREQ:
-            pRegFram[0 + 2] = g_core_cur_freq_mhz;
+        case LL_FAST_SWI_CORE_CUR_FREQ: {
+            uint32_t div = HW_CLKCTRL_CPU.B.DIV_CPU;
+            pRegFram[0 + 2] = div ? (480000000UL / 1000000 / div) : 0;
             break;
+        }
 
         case LL_FAST_SWI_GET_CHARGE_STATUS:
             pRegFram[0 + 2] = g_chargeEnable;

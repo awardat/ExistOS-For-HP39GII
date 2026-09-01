@@ -93,10 +93,6 @@ void setCPUDivider(uint32_t div)
     //while (BF_RD(CLKCTRL_CPU, BUSY_REF_CPU));
     BF_CLRV(CLKCTRL_CPU, DIV_CPU, BF_RD(CLKCTRL_CPU, DIV_CPU) ^ div);
 
-    // 更新实际频率（UI ll_get_cur_freq 读取）
-    extern uint32_t g_core_cur_freq_mhz;
-    g_core_cur_freq_mhz = PLL_FREQ_HZ / 1000000 / div;
-
     //INFO("CPU new Div:%d\n", BF_RD(CLKCTRL_CPU, DIV_CPU));
 }
 
