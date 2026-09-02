@@ -93,11 +93,9 @@ void setCPUDivider(uint32_t div)
     if (!div) {
         return;
     }
-    for (int i = 0; i < 10000 && BF_RD(CLKCTRL_CPU, BUSY_REF_CPU); i++)
-        ; // 等待分频器就绪（写前）
+    // while (BF_RD(CLKCTRL_CPU, BUSY_REF_CPU)); // BUSY 等待：真机 div=1(480M) 时可能不降，回退注释态
     BF_SETV(CLKCTRL_CPU, DIV_CPU, div);
-    for (int i = 0; i < 10000 && BF_RD(CLKCTRL_CPU, BUSY_REF_CPU); i++)
-        ; // 等待分频生效（写后）
+    // while (BF_RD(CLKCTRL_CPU, BUSY_REF_CPU));
     BF_CLRV(CLKCTRL_CPU, DIV_CPU, BF_RD(CLKCTRL_CPU, DIV_CPU) ^ div);
 
     //INFO("CPU new Div:%d\n", BF_RD(CLKCTRL_CPU, DIV_CPU));
