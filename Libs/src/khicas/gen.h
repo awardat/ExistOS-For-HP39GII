@@ -765,7 +765,7 @@ namespace giac {
     
 #else // SMARTPTR64
     gen & operator = (const gen & a){
-      unsigned t=(type << _DECALAGE) | a.type;
+      register unsigned t=(type << _DECALAGE) | a.type;
       if (!t){
 	subtype=a.subtype;
 	val=a.val;

@@ -1083,10 +1083,6 @@ void getWholePath(TCHAR *ans) {
     struct strNode *nodeNow = pathList_firstNode;
 
     for (;;) {
-        if (strlen(ans) + strlen(nodeNow->str) >= 511) { // 有界拼接（防路径溢出）
-            strncat(ans, nodeNow->str, 511 - strlen(ans));
-            break;
-        }
         strcat(ans, nodeNow->str);
         if (nodeNow->next == nullptr) {
             break;
@@ -1097,21 +1093,18 @@ void getWholePath(TCHAR *ans) {
 }
 
 void getSuffix(TCHAR *ret, TCHAR *filename) {
-    ret[0] = 0;
-    if (filename == nullptr || filename[0] == 0) {
-        return; // null/空：先检查再 strlen（原实现顺序反了）
+    uint16_t dot = 0;
+    uint16_t len = strlen(filename);
+    if (filename != nullptr && len != 0) {
+        for (uint16_t i = 0; i < strlen(filename); i++) {
+            if (filename[i] == '.')
+                dot = i;
+        }
+        dot++;
+        strncpy(ret, filename + dot, len - dot);
+    } else {
+        strcpy(ret, "");
     }
-    size_t len = strlen(filename);
-    int32_t dot = -1;
-    for (size_t i = 0; i < len; i++) {
-        if (filename[i] == '.')
-            dot = (int32_t)i; // 取最后一个点
-    }
-    if (dot < 0 || (size_t)dot == len - 1) {
-        return; // 无点或点在末尾（隐藏文件）：无后缀（原实现 dot=0 会跳过头字符）
-    }
-    strncpy(ret, filename + dot + 1, len - dot - 1);
-    ret[len - dot - 1] = 0; // 强制 null 终止（strncpy 不保证）
 }
 
 void UI_Task(void *) {

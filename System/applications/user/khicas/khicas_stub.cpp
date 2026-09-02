@@ -1007,10 +1007,8 @@ int MB_ElementCount(const char *buf) // like strlen but for the graphical length
 {
     int n = 0;
     while (*buf) {
-      unsigned char b1 = (unsigned char)*buf;
-      unsigned char b2 = (unsigned char)buf[1];
-      if (b1 >= 0xA1 && b1 <= 0xF7 && b2 >= 0xA1 && b2 <= 0xFE) {
-        buf += 2; // GBK 双字节（与 vGL_putChar16 渲染判定一致）
+      if (((unsigned char)*buf >= 0x81 && (unsigned char)*buf <= 0xFE) && buf[1]) {
+        buf += 2;
       } else {
         buf++;
       }
