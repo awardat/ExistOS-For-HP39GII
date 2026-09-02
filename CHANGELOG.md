@@ -4,6 +4,15 @@
 
 ---
 
+## [build 130] - 2026-09-02 (开发中)
+
+### 规划
+- RPN39 RPN 计算器（42S 基准：4 层栈 + 四则 → 科学 → 绘图，见 docs/RPN39-design.md）
+- KhiCAS 全量帮助中文化（约 800 条）
+- D4 FTL_Sync 真机掉电测试
+
+---
+
 ## [build 129] - 2026-09-02 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-129))
 
 ### ⚠️ 风险警告
