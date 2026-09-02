@@ -413,11 +413,13 @@ void parseCDCCommand(char *cmd) {
 
     if (strcmp(cmd, "RESETDBUF") == 0) {
 
+        VMSuspend(); // binBuf 为 VM 缓存区，先挂起 VM 防并发刷缓存
         if (binBuf == NULL) {
             binBuf = (char *)VMMGR_GetCacheAddress();
         }
         printf("REC DATA BUF.\n");
         memset(binBuf, 0xFF, CDC_BINMODE_BUFSIZE);
+        VMResume();
         MscSetCmd("READY\n");
 
         return;
@@ -425,12 +427,14 @@ void parseCDCCommand(char *cmd) {
 
     if (strcmp(cmd, "BUFCHK") == 0) {
         uint8_t chk;
+        VMSuspend(); // binBuf 为 VM 缓存区，先挂起 VM 防并发刷缓存
         if (binBuf == NULL) {
             binBuf = (char *)VMMGR_GetCacheAddress();
         }
         char res[16];
 
         chk = blockChksum(binBuf, CDC_BINMODE_BUFSIZE);
+        VMResume();
         // printf("CHKSUM:%02x\n", chk);
         sprintf(res, "CHKSUM:%02x\n", chk);
         MscSetCmd(res);
@@ -467,6 +471,10 @@ void parseCDCCommand(char *cmd) {
         mtdInfo_t *nand_info = MTD_getDeviceInfo();
         if (CDC_BINMODE_BUFSIZE / 2048 > nand_info->Blocks * nand_info->PagesPerBlock || prog_page > nand_info->Blocks * nand_info->PagesPerBlock - CDC_BINMODE_BUFSIZE / 2048) {
             MscSetCmd("ERR:PG\n");
+            return;
+        }
+        if (binBuf == NULL) { // 数据缓冲未就绪（应先 RESETDBUF）
+            MscSetCmd("ERR:BUF\n");
             return;
         }
         printf("PROGP:%lu,%lu\n", prog_page, wrMeta);

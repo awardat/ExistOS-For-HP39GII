@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Initialize submodules
       run: |
         git submodule update --init
@@ -27,7 +27,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install libcrypto++-dev libusb-1.0-0-dev -y
-    - uses: actions/cache@v3
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: sbtools-cache
       with:
         path: tools/sbtools
@@ -38,7 +38,7 @@ jobs:
         cd tools/sbtools
         make
         cd ../..
-    - uses: actions/cache@v3
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: sys_signer-cache
       with:
         path: |
@@ -53,7 +53,7 @@ jobs:
         cmake --build .
         cp sysigner ../
         cd ../..
-    - uses: actions/cache@v3
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: mpy-cache
       with:
         path: Libs/src/micropython-master/ports/eoslib
@@ -64,7 +64,7 @@ jobs:
         cd Libs/src/micropython-master/ports/eoslib
         make
         cd ../../../../..
-    - uses: actions/cache@v3
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: khicas-cache
       with:
         path: |
@@ -87,6 +87,10 @@ jobs:
     - name : CMake build
       run: |
         cmake --build build
+    - name: Generate checksums
+      if: github.ref_name == 'main'
+      run: |
+        (cd build && sha256sum System/ExistOS.sys OSLoader/OSLoader.sb System/sys_symtab.txt > checksums.txt)
     - name: Create GitHub release
       if: github.ref_name == 'main'
       uses: marvinpinto/action-automatic-releases@919008c # v1.2.1 (repo archived, pin SHA)
@@ -99,12 +103,14 @@ jobs:
           build/System/ExistOS.sys
           build/OSLoader/OSLoader.sb
           build/System/sys_symtab.txt
+          build/checksums.txt
     - name: Upload Build outputs
       if: github.ref_name != 'main'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: Build-outputs
         path: |
           build/System/ExistOS.sys
           build/OSLoader/OSLoader.sb
           build/System/sys_symtab.txt
+          build/checksums.txt
