@@ -309,12 +309,13 @@ void drawPage(int page) {
         {
             int ix = mainw->content_x0 + 12 + 80, iy = mainw->content_y0 + 12;
             uidisp->draw_box(ix + 2, iy + 2, ix + 45, iy + 45, 45, -1);       // 机壳（深灰）
-            uidisp->draw_box(ix + 6, iy + 5, ix + 41, iy + 20, 235, -1);      // 屏幕（亮）
-            uidisp->draw_printf(ix + 8, iy + 6, 12, 0, 255, "RPN");           // 屏幕字
-            uidisp->draw_printf(ix + 7, iy + 16, 8, 0, 255, "4L-STK");        // 屏副字
-            for (int r = 0; r < 3; r++) {                                     // 键盘 3x4
+            uidisp->draw_box(ix + 6, iy + 4, ix + 41, iy + 26, 235, -1);      // 屏幕（亮，加高）
+            uidisp->draw_printf(ix + 11, iy + 4, 16, 0, 255, "RPN");          // 屏字 16px（3 字符居中）
+            // 屏副字 12px：48px 宽超出屏幕框线两端（居中，略微超框）
+            uidisp->draw_printf(ix + 1, iy + 20, 12, 0, 255, "4L-STK");
+            for (int r = 0; r < 3; r++) {                                     // 键盘 3x4（紧凑下移）
                 for (int c = 0; c < 4; c++)
-                    uidisp->draw_box(ix + 7 + c * 9, iy + 26 + r * 6, ix + 13 + c * 9, iy + 29 + r * 6, 190, -1);
+                    uidisp->draw_box(ix + 7 + c * 9, iy + 34 + r * 4, ix + 13 + c * 9, iy + 36 + r * 4, 190, -1);
             }
         }
         uidisp->draw_printf(mainw->content_x0 + 12 + 80,
