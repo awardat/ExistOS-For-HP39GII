@@ -370,12 +370,11 @@ void rpn39Task(void *_) {
                         } else {
                             clearConfirm = 1; // 第一次：进确认态
                         }
-                        drawRegList();
                     } else {
                         stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
                     }
                     shiftHeld = 0; ll_disp_set_indicator(0, -1);   // 动作完成自动退 shift
-                    if (rpnMode == 3) drawRegList();
+                    if (rpnMode == 3) drawRegList(); // 统一绘制（单次刷新）
                     else draw();
                 } else if (key == KEY_ON && shiftHeld) {
                     rpn39Running = 0; // Shift+ON 退出（不触发系统关机）
