@@ -4,6 +4,16 @@
 
 ---
 
+## [build 131] - 2026-09-02 (开发中)
+
+### 规划
+- RPN39 阶段 2：科学计算（MATH 菜单 + DEG/RAD）
+- RPN39 简单函数绘图（阶段 3）
+- KhiCAS 全量帮助中文化（约 800 条）
+- D4 FTL_Sync 真机掉电测试
+
+---
+
 ## [build 130] - 2026-09-02 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-130))
 
 ### 新增
@@ -22,12 +32,6 @@
 
 ### 发布惯例
 - **每次发布 OSLoader.sb 与 ExistOS.sys 一并附上**（无论单版本是否改动）
-
-### 规划（build 131+）
-- RPN39 阶段 2：科学计算（MATH 菜单 + DEG/RAD）
-- RPN39 简单函数绘图（阶段 3）
-- KhiCAS 全量帮助中文化（约 800 条）
-- D4 FTL_Sync 真机掉电测试
 
 ---
 
