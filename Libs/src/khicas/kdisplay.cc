@@ -428,8 +428,10 @@ namespace giac {
   int MB_ElementCount(const char * s){
     int n = 0;
     while (*s) {
-      if (((unsigned char)*s >= 0x81 && (unsigned char)*s <= 0xFE) && s[1]) {
-        s += 2;
+      unsigned char b1 = (unsigned char)*s;
+      unsigned char b2 = (unsigned char)s[1];
+      if (b1 >= 0xA1 && b1 <= 0xF7 && b2 >= 0xA1 && b2 <= 0xFE) {
+        s += 2; // GBK 双字节（与 vGL_putChar16 渲染判定一致）
       } else {
         s++;
       }

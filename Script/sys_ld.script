@@ -4,6 +4,10 @@ MEMORY
   vmROM    (rx ) : ORIGIN = 0x00100000, LENGTH = 6M
 }
 
+/* SysConf.h BASIC_RAM_SIZE(160K)+VRAM/ZRAM/页表等必须落在 vmRAM 200K 内（0x02004000-0x0207FFFF） */
+ASSERT(LENGTH(vmRAM) == 200K, "vmRAM length changed; verify SysConf.h BASIC_RAM_SIZE and VM page pool sizes")
+ASSERT(ORIGIN(vmRAM) == 0x02004000, "vmRAM origin changed; verify VM RAM layout")
+
 OUTPUT_ARCH(arm)
 ENTRY(_init)
 
