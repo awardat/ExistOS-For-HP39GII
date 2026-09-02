@@ -38,6 +38,7 @@ static int rpn39Running = 0;
 // ---- 寄存器（A-Z，42S STO/RCL）----
 static double regs[26] = {0};
 static int rpnMode = 0;       // 0=正常 1=STO 等字母 2=RCL 等字母 3=寄存器列表
+static int clearConfirm = 0;  // CLEAR ALL 确认态
 static int regSel = 0;        // 列表高亮（0-25）
 static int regTop = 0;        // 列表滚动顶
 
@@ -109,7 +110,7 @@ static const char *fmtNum(double v, char *buf) {
 }
 
 // 菜单项（F1-F6；无功能的显示占位）
-static const char *menuItems[6] = {"x<>y", "Rdn", "DROP", "STO", "RCL", ""};
+static const char *menuItems[6] = {"x<>y", "Rdn", "DROP", "", "", ""};
 
 static void drawXLine(void); // 前置声明（draw 内调用）
 
@@ -120,7 +121,14 @@ static void drawRegList(void) {
     uidisp->draw_printf(0, 0, 12, 0, 255, "VARS: UP/DOWN ENT=RCL ON=exit");
     for (int i = 0; i < 8; i++) {
         int idx = regTop + i;
-        if (idx >= 26) break;
+        if (idx >= 27) break;
+        if (idx == 26) { // CLEAR ALL 尾项
+            if (idx == regSel)
+                uidisp->draw_printf(0, 12 + i * 14, 12, 255, 0, "> CLEAR ALL");
+            else
+                uidisp->draw_printf(0, 12 + i * 14, 12, 0, 255, "  CLEAR ALL");
+            continue;
+        }
         char nm[2] = {(char)('A' + idx), 0};
         const char *val = fmtNum(regs[idx], buf);
         if (idx == regSel)
@@ -128,7 +136,10 @@ static void drawRegList(void) {
         else
             uidisp->draw_printf(0, 12 + i * 14, 12, 0, 255, "  %s: %s", nm, val);
     }
-    uidisp->draw_printf(0, 118, 12, 0, 255, "A-Z 26 regs");
+    if (clearConfirm)
+        uidisp->draw_printf(0, 118, 12, 255, 0, "Confirm? ENT=clear ON=cancel");
+    else
+        uidisp->draw_printf(0, 118, 12, 0, 255, "A-Z + CLEAR ALL");
     uidisp->flush();
 }
 
@@ -184,9 +195,20 @@ static int handleKey(int key) {
     // 寄存器列表模式（rpnMode==3）：方向键移动/ENT=RCL/VIEWS/ON 退出
     if (rpnMode == 3) {
         if (key == KEY_UP) { if (regSel > 0) { regSel--; if (regSel < regTop) regTop = regSel; } return 0; }
-        if (key == KEY_DOWN) { if (regSel < 25) { regSel++; if (regSel > regTop + 7) regTop = regSel - 7; } return 0; }
-        if (key == KEY_ENTER) { // ENT：RCL 选中寄存器（栈提升，42S）
-            double v = regs[regSel];
+        if (key == KEY_DOWN) { if (regSel < 26) { regSel++; if (regSel > regTop + 7) regTop = regSel - 7; } return 0; }
+        if (key == KEY_ENTER) { // ENT
+            if (regSel == 26) { // CLEAR ALL：先确认（再 ENT 清空，ON 取消）
+                if (clearConfirm) {
+                    memset(regs, 0, sizeof(regs));
+                    saveRegs();
+                    clearConfirm = 0;
+                    regSel = 0; regTop = 0;
+                } else {
+                    clearConfirm = 1;
+                }
+                return 0;
+            }
+            double v = regs[regSel]; // ENT：RCL 选中寄存器（栈提升，42S）
             if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
             lastX = stX;
             stackLift();
@@ -195,7 +217,7 @@ static int handleKey(int key) {
             rpnMode = 0;
             return 0;
         }
-        if (key == KEY_VIEWS || key == KEY_ON || key == KEY_HOME) { rpnMode = 0; return 0; }
+        if (key == KEY_VIEWS || key == KEY_ON || key == KEY_HOME) { rpnMode = 0; clearConfirm = 0; return 0; }
         return 0;
     }
     // STO/RCL 等待字母（rpnMode 1/2）
@@ -312,12 +334,6 @@ static int handleKey(int key) {
         case KEY_VARS: // VARS：寄存器列表
             rpnMode = 3;
             regSel = 0; regTop = 0;
-            break;
-        case KEY_F4: // 菜单 STO
-            rpnMode = 1;
-            break;
-        case KEY_F5: // 菜单 RCL
-            rpnMode = 2;
             break;
         case KEY_ON:
             if (entering) { entering = 0; inlen = 0; autoLift = 0; return 1; }
