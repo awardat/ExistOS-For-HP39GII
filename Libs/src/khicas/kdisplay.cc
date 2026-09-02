@@ -2795,8 +2795,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       if (key==KEY_SHUTDOWN)
 	return key;      
       // if (!giac::freeze) set_xcas_status();    
-      if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK || key==KEY_CHAR_CR)
+      if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK || key==KEY_CHAR_CR){
+	extern "C" void kcas_clear_key_status(void);
+	kcas_clear_key_status(); // 模态输入结束：清 alpha/shift 残留（防后续 quit 按键被吞）
 	return KEY_CTRL_EXE;
+      }
       if (key>=32 && key<128){
 	if (!numeric || key=='-' || (key>='0' && key<='9')){
 	  s.insert(s.begin()+pos,char(key));
@@ -2824,8 +2827,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	pos=0;
 	continue;
       }
-      if (key==KEY_CTRL_EXIT)
+      if (key==KEY_CTRL_EXIT){
+	extern "C" void kcas_clear_key_status(void);
+	kcas_clear_key_status(); // 同上：取消路径也清
 	return key;
+      }
       if (key==KEY_CTRL_RIGHT){
 	if (pos<s.size())
 	  ++pos;

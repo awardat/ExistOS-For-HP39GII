@@ -50,8 +50,16 @@ bool khicasRunning = false;
 char keyStatus = 0;
 int intBit = 0;
 int rshift = 0;
+void flush_indBit(); // 前置声明（kcas_clear_key_status 调用）
 
 void (*XcasExitCb)(void) = NULL;
+
+// 供 kdisplay（lib）在模态输入（inputline 等）返回后清除按键状态（防 alpha/shift 残留）
+extern "C" void kcas_clear_key_status(void) {
+    keyStatus = 0;
+    rshift = 0;
+    flush_indBit();
+}
 
 /*
 void dConsolePut(const char * S){
