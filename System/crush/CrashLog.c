@@ -76,6 +76,9 @@ uint32_t crash_log_get_stack_trace(uint8_t* buffer, uint32_t buffer_size) {
         stack_size = 256;
     }
     
+    if (sp < 0x02000000 || sp > 0x02080000 || sp + stack_size > 0x02080000) {
+        return 0; // SP 不在 SRAM 范围：拒绝复制（防非法地址崩溃）
+    }
     memcpy(buffer, (void*)sp, stack_size);
     return stack_size;
 }

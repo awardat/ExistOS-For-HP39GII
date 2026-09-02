@@ -9,8 +9,7 @@
 #if FS_TYPE == FS_FATFS
     #include "ff.h"
 #else
-    #include "filesystem/littlefs/lfs.h"
-#endif
+    #endif
 
 
 //#include "lvgl.h"
@@ -24,7 +23,6 @@
 #if FS_TYPE == FS_FATFS
     FATFS *fs;
 #else
-lfs_t lfs;
 
 static char read_buf[2048];
 static char write_buf[2048];
@@ -101,6 +99,10 @@ void SystemFSInit() {
 #if FS_TYPE == FS_FATFS
 
     fs = pvPortMalloc(sizeof(FATFS));
+    if (!fs) {
+        printf("SystemFSInit: no mem for FATFS\n");
+        return;
+    }
 
 
 /*
@@ -134,42 +136,6 @@ void SystemFSInit() {
     }
 
     */
-
-
-#else
-
-    lfs_cfg.block_size = ll_flash_get_page_size();
-    lfs_cfg.block_count = ll_flash_get_pages();
-
-mount_flash:
-
-    err = lfs_mount(&lfs, &lfs_cfg);
-
-    if (err) {
-
-        sprintf(textbuf, "Mount LittleFS Failed:-%d, would you like to format the flash?", err);
-        sel = SystemUIMsgBox(textbuf, "Mount " FS_FLASH_PATH " Failed", SYSTEMUI_MSGBOX_BUTTON_CANCAL | SYSTEMUI_MSGBOX_BUTTON_OK);
-        if (sel == 0) {
-
-            lv_obj_t *spinner = lv_spinner_create(lv_scr_act(), 1000, 60);
-            lv_obj_set_size(spinner, 50, 50);
-            lv_obj_center(spinner);
-
-            int fmt_err = lfs_format(&lfs, &lfs_cfg);
-            if (fmt_err == 0) {
-                err = lfs_mount(&lfs, &lfs_cfg);
-            }
-
-            if (fmt_err == 0 && err == 0) {
-                SystemUIMsgBox("Format " FS_FLASH_PATH " Succeeded.", "Format", 0);
-            } else {
-                SystemUIMsgBox("Format " FS_FLASH_PATH " Failed.", "Format", 0);
-            }
-        } else {
-            goto mount_flash;
-        }
-
-    }
 
 
 #endif
