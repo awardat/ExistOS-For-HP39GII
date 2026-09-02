@@ -1,33 +1,29 @@
 #!/usr/bin/env python3
 """TTF -> 1bpp C 位图字库（ExistOS 格式：每字符每行 ceil(宽/8) 字节，MSB 优先）
-用法: python3 ttf2c.py <font.ttf> <px> [--name NAME] [--glyphs ASCII范围]
-输出: tools/ 下生成 {name}.c，数组可直接替换 VGA_Ascii_* 使用（draw_char_ascii 加对应 case）
+用法: python3 ttf2c.py <font.ttf> <px> [--name NAME] [--pad N]
+  --pad 0/1：字符定宽 = 最大字形宽 + pad（等宽字体通常 1；非等宽如 Fira Sans 用 0 或 1）
+输出: tools/ 下生成 {name}.c，复制到 System/graphics/ 并加 aux 扫描即编译
 """
 import sys, os
 from PIL import Image, ImageDraw, ImageFont
 
-def render(font_path, px, chars):
-    """返回 (宽, 高, {ch: rows_byte_list})——等宽：取最大 advance 宽度"""
+def render(font_path, px, chars, pad, adv=None):
     f = ImageFont.truetype(font_path, px)
-    # 度量每字符宽度（advance），取整字宽（等宽字体一致，非等宽取最大）
-    widths = {}
     tmp = Image.new("1", (8, 8))
     d = ImageDraw.Draw(tmp)
-    for ch in chars:
-        bbox = d.textbbox((0, 0), ch, font=f)
-        widths[ch] = bbox[2] - bbox[0]
-    w = max(widths.values()) + 1  # 等宽宽 = 最大字形宽 + 1 间距
-    # 渲染
+    widths = {ch: d.textbbox((0, 0), ch, font=f)[2] for ch in chars}
+    if adv is not None:
+        w = adv
+    else:
+        w = max(widths.values()) + pad  # 字符定宽
     glyphs = {}
     for ch in chars:
         bbox = d.textbbox((0, 0), ch, font=f)
-        gw, gh = bbox[2] - bbox[0], bbox[3] - bbox[1]
         img = Image.new("1", (w, px + 4), 0)
         dd = ImageDraw.Draw(img)
         dd.text((0, -bbox[1]), ch, font=f, fill=1)
         rows = []
         for y in range(px):
-            byte = 0
             row = []
             for x in range(0, w, 8):
                 b = 0
@@ -47,16 +43,22 @@ def main():
     name = "FontAscii%d" % px
     if "--name" in sys.argv:
         name = sys.argv[sys.argv.index("--name") + 1]
+    pad = 1
+    if "--pad" in sys.argv:
+        pad = int(sys.argv[sys.argv.index("--pad") + 1])
+    adv = None
+    if "--advance" in sys.argv:  # 非等宽字体：按数字定宽（字母 M/W 可裁，仅数字/符号场景）
+        adv = int(sys.argv[sys.argv.index("--advance") + 1])
     chars = [chr(c) for c in range(32, 127)]
-    w, h, glyphs = render(font_path, px, chars)
+    w, h, glyphs = render(font_path, px, chars, pad, adv)
     nbytes = (w + 7) // 8
     out = []
-    out.append("// 由 tools/ttf2c.py 生成：%s %dpx（等宽 %dpx/字符，%d 字节/行）" % (os.path.basename(font_path), px, w, nbytes))
+    out.append("// 由 tools/ttf2c.py 生成：%s %dpx（定宽 %dpx/字符，%d 字节/行）" % (os.path.basename(font_path), px, w, nbytes))
     out.append("const unsigned char %s[] = {" % name)
     for ch in chars:
         out.append("    // '%c' (%d)" % (ch, ord(ch)))
         for row in glyphs[ch]:
-            out.append("    0x%02X," % row[0] if nbytes == 1 else "    " + ", ".join("0x%02X" % b for b in row) + ",")
+            out.append("    " + ", ".join("0x%02X" % b for b in row) + ",")
     out.append("};")
     out.append("// 字符宽 %d（font_w）、高 %d（font_h）；索引起点 = (ch - ' ') * %d" % (w, px, w * nbytes))
     c = "\n".join(out) + "\n"

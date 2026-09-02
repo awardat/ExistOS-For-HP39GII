@@ -4,8 +4,8 @@
 #include "UI_Language.h"
 #include "../utils/gbk16.h"
 
-extern const unsigned char FiraAscii20[]; // tools/ttf2c.py 生成（Fira Code 20px 等宽 14px，0 斜杠）
-extern const unsigned char FiraAscii32[]; // tools/ttf2c.py 生成（Fira Code 32px 等宽 21px，0 斜杠）
+extern const unsigned char FiraSansAscii20[]; // tools/ttf2c.py 生成（Fira Sans SemiBold 20px 定宽 13）
+extern const unsigned char FiraSansAscii32[]; // tools/ttf2c.py 生成（Fira Sans SemiBold 32px 定宽 20）
 
 extern const unsigned char VGA_Ascii_5x8[];
 extern const unsigned char VGA_Ascii_6x12[];
@@ -156,16 +156,16 @@ public:
             pCh = VGA_Ascii_8x16 + (ch - ' ') * font_h;
             break;
 
-        case 20: // Fira Code 20px 等宽字库（宽 14，2 字节/行）
-            font_w = 14;
+        case 20: // Fira Sans SemiBold 20px（定宽 13，2 字节/行）
+            font_w = 13;
             font_h = 20;
-            pCh = FiraAscii20 + (ch - ' ') * 40; // 20 行 x 2 字节
+            pCh = FiraSansAscii20 + (ch - ' ') * 40; // 20 行 x 2 字节
             break;
 
-        case 32: // Fira Code 32px 等宽字库（宽 21，3 字节/行）
-            font_w = 21;
+        case 32: // Fira Sans SemiBold 32px（定宽 20，3 字节/行）
+            font_w = 20;
             font_h = 32;
-            pCh = FiraAscii32 + (ch - ' ') * 96; // 32 行 x 3 字节
+            pCh = FiraSansAscii32 + (ch - ' ') * 96; // 32 行 x 3 字节
             break;
 
         default:
@@ -269,7 +269,7 @@ public:
         for (unsigned int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
             if (buffer[i] < 0x80) {
                 draw_char_ascii(x, y0, buffer[i], fontSize, fg, bg);
-                x += fontSize == 32 ? 21 : (fontSize == 20 ? 14 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6)));
+                x += fontSize == 32 ? 20 : (fontSize == 20 ? 13 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6)));
                 if (x > (unsigned int)this->disp_w) {
                     break;
                 }

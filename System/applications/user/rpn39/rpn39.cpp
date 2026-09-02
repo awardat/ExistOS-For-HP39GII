@@ -73,16 +73,15 @@ static void draw(void) {
     uidisp->flush();
 }
 
-// X 行：左侧标签 X:（20px，与其他行标一致）+ 数字左对齐（32px Fira）
+// X 行：42S 风格（无标签，32px 大字左对齐，最多 12 字符）
 static void drawXLine(void) {
     char buf[48], buf2[48];
     const char *num = entering ? inbuf : fmtNum(stX, buf);
-    if ((int)strlen(num) > 10) { // X 行数字上限 10 字符（32px 21px/字符 + X: 标签）
-        sprintf(buf2, "%.4e", stX); // 超宽科学计数压缩
+    if ((int)strlen(num) > 12) { // 12 字符 x 20px = 240px
+        sprintf(buf2, "%.6e", stX); // 超宽科学计数压缩
         num = buf2;
     }
-    uidisp->draw_printf(0, 76, 20, 0, 255, "X:");
-    uidisp->draw_printf(34, 76, 32, 0, 255, "%s", num); // 左对齐（标签后）
+    uidisp->draw_printf(0, 76, 32, 0, 255, "%s", num);
 }
 
 // X 行区域刷新（输入变化专用）
@@ -113,7 +112,7 @@ static int handleKey(int key) {
             if (autoLift) { stackLift(); autoLift = 0; } // 42S：计算后输入自动压栈（X->Y）
             entering = 1; inlen = 0; inbuf[0] = 0;
         }
-        if (inlen < 10) { inbuf[inlen++] = (char)('0' + d); inbuf[inlen] = 0; }
+        if (inlen < 12) { inbuf[inlen++] = (char)('0' + d); inbuf[inlen] = 0; }
         return 1;
     }
     switch (key) {
@@ -122,12 +121,12 @@ static int handleKey(int key) {
                 if (autoLift) { stackLift(); autoLift = 0; }
                 entering = 1; inlen = 0; inbuf[0] = 0;
             }
-            if (inlen < 10 && !strchr(inbuf, '.')) { inbuf[inlen++] = '.'; inbuf[inlen] = 0; }
+            if (inlen < 12 && !strchr(inbuf, '.')) { inbuf[inlen++] = '.'; inbuf[inlen] = 0; }
             return 1;
         case KEY_NEGATIVE:
             if (entering) {
                 if (inlen > 0 && inbuf[0] == '-') { memmove(inbuf, inbuf + 1, inlen); inlen--; }
-                else if (inlen < 10) { memmove(inbuf + 1, inbuf, inlen + 1); inbuf[0] = '-'; inlen++; }
+                else if (inlen < 12) { memmove(inbuf + 1, inbuf, inlen + 1); inbuf[0] = '-'; inlen++; }
             } else {
                 stX = -stX;
                 autoLift = 0;
