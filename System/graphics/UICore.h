@@ -124,6 +124,7 @@ public:
         this->drawf(&this->disp_buf[y0 * this->disp_w], 0, y0, this->disp_w - 1, y0 + h);
     }
 
+    extern const unsigned char HackAscii20[]; // tools/ttf2c.py 生成（Hack 20px 等宽 14px）
     void draw_char_ascii(uint32_t x0, uint32_t y0, char ch, uint8_t fontSize, uint8_t fg, int16_t bg) {
         int font_w;
         int font_h;
@@ -153,10 +154,10 @@ public:
             pCh = VGA_Ascii_8x16 + (ch - ' ') * font_h;
             break;
 
-        case 20: // 1.25 倍放大 16px 字库（VGA_Ascii_8x16，最近邻）
-            font_w = 10;
+        case 20: // Hack 20px 等宽字库（宽 14，2 字节/行）
+            font_w = 14;
             font_h = 20;
-            pCh = VGA_Ascii_8x16 + (ch - ' ') * 16;
+            pCh = HackAscii20 + (ch - ' ') * 40; // 20 行 x 2 字节
             break;
 
         case 32: // 2 倍放大 16px 字库（VGA_Ascii_8x16）
@@ -169,12 +170,10 @@ public:
             return;
         }
         unsigned char pix;
-        if (fontSize == 20) { // 20px：源 8x16 最近邻放大到 10x20
+        if (fontSize == 20) { // Hack 20px（14px 宽，2 字节/行，MSB 优先）
             for (int dy = 0; dy < 20; dy++) {
-                int sy = dy * 4 / 5;
-                for (int dx = 0; dx < 10; dx++) {
-                    int sx = dx * 4 / 5;
-                    pix = (unsigned char)((pCh[sy] << sx) & 0x80U);
+                for (int dx = 0; dx < 14; dx++) {
+                    pix = (unsigned char)((pCh[dy * 2 + dx / 8] << (dx % 8)) & 0x80U);
                     if (pix) {
                         buf_set(x0 + dx, y0 + dy, fg);
                     } else if (bg != -1) {
@@ -270,7 +269,7 @@ public:
         for (unsigned int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
             if (buffer[i] < 0x80) {
                 draw_char_ascii(x, y0, buffer[i], fontSize, fg, bg);
-                x += fontSize == 32 ? 16 : (fontSize == 20 ? 10 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6)));
+                x += fontSize == 32 ? 16 : (fontSize == 20 ? 14 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6)));
                 if (x > (unsigned int)this->disp_w) {
                     break;
                 }
