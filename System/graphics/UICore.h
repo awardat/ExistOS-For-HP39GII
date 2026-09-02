@@ -4,8 +4,8 @@
 #include "UI_Language.h"
 #include "../utils/gbk16.h"
 
-extern const unsigned char HackAscii20[]; // tools/ttf2c.py 生成（Hack 20px 等宽 14px）
-extern const unsigned char HackAscii32[]; // tools/ttf2c.py 生成（Hack 32px 等宽 21px）
+extern const unsigned char FiraAscii20[]; // tools/ttf2c.py 生成（Fira Code 20px 等宽 14px，0 斜杠）
+extern const unsigned char FiraAscii32[]; // tools/ttf2c.py 生成（Fira Code 32px 等宽 21px，0 斜杠）
 
 extern const unsigned char VGA_Ascii_5x8[];
 extern const unsigned char VGA_Ascii_6x12[];
@@ -156,23 +156,23 @@ public:
             pCh = VGA_Ascii_8x16 + (ch - ' ') * font_h;
             break;
 
-        case 20: // Hack 20px 等宽字库（宽 14，2 字节/行）
+        case 20: // Fira Code 20px 等宽字库（宽 14，2 字节/行）
             font_w = 14;
             font_h = 20;
-            pCh = HackAscii20 + (ch - ' ') * 40; // 20 行 x 2 字节
+            pCh = FiraAscii20 + (ch - ' ') * 40; // 20 行 x 2 字节
             break;
 
-        case 32: // Hack 32px 等宽字库（宽 21，3 字节/行）
+        case 32: // Fira Code 32px 等宽字库（宽 21，3 字节/行）
             font_w = 21;
             font_h = 32;
-            pCh = HackAscii32 + (ch - ' ') * 96; // 32 行 x 3 字节
+            pCh = FiraAscii32 + (ch - ' ') * 96; // 32 行 x 3 字节
             break;
 
         default:
             return;
         }
         unsigned char pix;
-        if (fontSize == 20) { // Hack 20px（14px 宽，2 字节/行，MSB 优先）
+        if (fontSize == 20) { // Fira 20px（14px 宽，2 字节/行，MSB 优先）
             for (int dy = 0; dy < 20; dy++) {
                 for (int dx = 0; dx < 14; dx++) {
                     pix = (unsigned char)((pCh[dy * 2 + dx / 8] << (dx % 8)) & 0x80U);
@@ -186,7 +186,7 @@ public:
             this->drawf(&this->disp_buf[y0 * this->disp_w], 0, y0, this->disp_w - 1, y0 + 19);
             return;
         }
-        if (fontSize == 32) { // Hack 32px（21px 宽，3 字节/行，MSB 优先）
+        if (fontSize == 32) { // Fira 32px（21px 宽，3 字节/行，MSB 优先）
             for (int dy = 0; dy < 32; dy++) {
                 for (int dx = 0; dx < 21; dx++) {
                     pix = (unsigned char)((pCh[dy * 3 + dx / 8] << (dx % 8)) & 0x80U);

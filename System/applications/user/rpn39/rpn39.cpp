@@ -36,12 +36,10 @@ static void stackDrop() { stX = stY; stY = stZ; stZ = stT; stT = 0; } // DROP：
 
 // ---- 数字格式化（整数直显，否则 10 位有效数字）----
 static const char *fmtNum(double v, char *buf) {
-    if (v > -1e10 && v < 1e10 && v == (double)(long long)v) // 范围先判（防 2^63 UB），整数 <=10 位直显
+    if (v > -1e9 && v < 1e9 && v == (double)(long long)v) // 范围先判（防 2^63 UB），整数 <=9 位直显
         sprintf(buf, "%lld", (long long)v);
     else
-        sprintf(buf, "%.12g", v);
-    if (strlen(buf) > 12) // 超宽（X 行 Hack32px 宽 21 x 12 字符 = 252px 上限）：科学计数压缩
-        sprintf(buf, "%.6e", v);
+        sprintf(buf, "%.12g", v); // YZT 行宽裕（14px x 15 字符=210px）；X 行超长由 drawXLine 压缩
     return buf;
 }
 
@@ -75,14 +73,18 @@ static void draw(void) {
     uidisp->flush();
 }
 
-// X 行：左侧小标签 X:（12px）+ 数字右对齐（32px Hack，HP RPN 惯例）
+// X 行：左侧标签 X:（20px，与其他行标一致）+ 数字右对齐（32px Fira）
 static void drawXLine(void) {
-    char buf[48];
+    char buf[48], buf2[48];
     const char *num = entering ? inbuf : fmtNum(stX, buf);
+    if ((int)strlen(num) > 10) { // X 行数字上限 10 字符（32px 21px/字符 + X: 标签）
+        sprintf(buf2, "%.4e", stX); // 超宽科学计数压缩
+        num = buf2;
+    }
     int len = (int)strlen(num);
-    int x = 256 - len * 21 - 1; // 32px Hack 字符宽 21，右对齐
-    if (x < 26) x = 26;         // 不遮标签
-    uidisp->draw_printf(0, 82, 12, 0, 255, "X:");
+    int x = 256 - len * 21 - 1; // 32px 字符宽 21，右对齐
+    if (x < 30) x = 30;         // 不遮标签
+    uidisp->draw_printf(0, 76, 20, 0, 255, "X:");
     uidisp->draw_printf(x, 76, 32, 0, 255, "%s", num);
 }
 
