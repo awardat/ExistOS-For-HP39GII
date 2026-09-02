@@ -948,9 +948,9 @@ void keyMsg(uint32_t key, int state) {
                 }
                 switch (key) {
                 case KEY_ENTER: { // 命令解析（help/clear；未知命令提示）
-                    char line[CONSW + 1];
+                    char line[32]; // CONSW=31（宏定义在后，此处字面）
                     int n = 0;
-                    while (n < CONSW && console->lin[console->cy].col[n] != 0)
+                    while (n < 31 && console->lin[console->cy].col[n] != 0)
                         n++;
                     while (n > 0 && console->lin[console->cy].col[n - 1] == ' ')
                         n--;
