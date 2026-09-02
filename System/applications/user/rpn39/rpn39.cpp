@@ -149,6 +149,7 @@ static void handleKey(int key) {
 // ---- 任务 ----
 void rpn39Task(void *_) {
     SystemUISuspend();
+    uidisp->emergencyBuffer(); // UI_Suspend 已释放 disp_buf（releaseBuffer），切到固定 RAM 缓冲
     rpn39Running = 1;
     draw();
     int lastKey = -1;

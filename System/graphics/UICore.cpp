@@ -305,8 +305,6 @@ void drawPage(int page) {
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "KhiCAS");
 
         // RPN39 应用（appPage_select==1 位置，与选择框对齐）
-        uidisp->draw_box(mainw->content_x0 + 12 + 80, mainw->content_y0 + 12,
-                         mainw->content_x0 + 12 + 80 + 48, mainw->content_y0 + 12 + 48, 0, -1);
         uidisp->draw_printf(mainw->content_x0 + 12 + 80 + 6, mainw->content_y0 + 12 + 16, 16, 0, 255, "RPN39");
         uidisp->draw_printf(mainw->content_x0 + 12 + 80,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
