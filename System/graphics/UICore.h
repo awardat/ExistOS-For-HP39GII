@@ -153,10 +153,32 @@ public:
             pCh = VGA_Ascii_8x16 + (ch - ' ') * font_h;
             break;
 
+        case 32: // 2 倍放大 16px 字库（VGA_Ascii_8x16）
+            font_w = 16;
+            font_h = 32;
+            pCh = VGA_Ascii_8x16 + (ch - ' ') * 16;
+            break;
+
         default:
             return;
         }
         unsigned char pix;
+        if (fontSize == 32) { // 32px：源 8x16 每像素放大 2x2
+            for (int sy = 0; sy < 16; sy++) {
+                for (int sx = 0; sx < 8; sx++) {
+                    pix = (unsigned char)((pCh[sy] << sx) & 0x80U);
+                    uint8_t c = pix ? fg : ((bg != -1) ? (uint8_t)bg : 255);
+                    if (pix || bg != -1) {
+                        buf_set(x0 + sx * 2, y0 + sy * 2, c);
+                        buf_set(x0 + sx * 2 + 1, y0 + sy * 2, c);
+                        buf_set(x0 + sx * 2, y0 + sy * 2 + 1, c);
+                        buf_set(x0 + sx * 2 + 1, y0 + sy * 2 + 1, c);
+                    }
+                }
+            }
+            this->drawf(&this->disp_buf[y0 * this->disp_w], 0, y0, this->disp_w - 1, y0 + 31);
+            return;
+        }
         while (y < (unsigned int)font_h) {
             while (x < (unsigned int)font_w) {
                 pix = (unsigned char)((*pCh << x) & 0x80U);
@@ -226,7 +248,7 @@ public:
         for (unsigned int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
             if (buffer[i] < 0x80) {
                 draw_char_ascii(x, y0, buffer[i], fontSize, fg, bg);
-                x += fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6);
+                x += fontSize == 32 ? 16 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6));
                 if (x > (unsigned int)this->disp_w) {
                     break;
                 }

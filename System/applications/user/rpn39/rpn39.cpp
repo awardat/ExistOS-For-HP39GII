@@ -59,9 +59,9 @@ static void draw(void) {
     uidisp->draw_printf(0, 32, 16, 0, 255, "Z: %s", fmtNum(stZ, buf));
     uidisp->draw_printf(0, 48, 16, 0, 255, "Y: %s", fmtNum(stY, buf));
     if (entering)
-        uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", inbuf);
+        uidisp->draw_printf(0, 64, 32, 0, 255, "X: %s", inbuf);
     else
-        uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", fmtNum(stX, buf));
+        uidisp->draw_printf(0, 64, 32, 0, 255, "X: %s", fmtNum(stX, buf));
     // 菜单行：黑底条 + 六段均分（每段 42px），空位显示占位
     uidisp->draw_box(0, 112, 255, 127, 255, 0);
     for (i = 1; i < 6; i++)
@@ -74,15 +74,15 @@ static void draw(void) {
     uidisp->flush();
 }
 
-// X 行区域刷新（16px 高，输入变化专用）
+// X 行区域刷新（32px 大字，输入变化专用）
 static void drawX(void) {
     char buf[48];
-    uidisp->draw_box(0, 64, 255, 79, 255, 255);
+    uidisp->draw_box(0, 64, 255, 95, 255, 255);
     if (entering)
-        uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", inbuf);
+        uidisp->draw_printf(0, 64, 32, 0, 255, "X: %s", inbuf);
     else
-        uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", fmtNum(stX, buf));
-    uidisp->flushRect(0, 64, 255, 79);
+        uidisp->draw_printf(0, 64, 32, 0, 255, "X: %s", fmtNum(stX, buf));
+    uidisp->flushRect(0, 64, 255, 95);
 }
 
 // ---- 按键处理（返回 1 = 仅 X 行变化（区域刷新），0 = 全屏刷新）----
