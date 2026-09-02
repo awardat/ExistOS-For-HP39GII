@@ -413,13 +413,11 @@ void parseCDCCommand(char *cmd) {
 
     if (strcmp(cmd, "RESETDBUF") == 0) {
 
-        VMSuspend(); // binBuf 为 VM 缓存区，先挂起 VM 防并发刷缓存
         if (binBuf == NULL) {
             binBuf = (char *)VMMGR_GetCacheAddress();
         }
         printf("REC DATA BUF.\n");
         memset(binBuf, 0xFF, CDC_BINMODE_BUFSIZE);
-        // 注意：会话中 VM 由 PING 挂起并保持（此处不恢复，恢复由会话结束路径处理）
         MscSetCmd("READY\n");
 
         return;
@@ -427,7 +425,6 @@ void parseCDCCommand(char *cmd) {
 
     if (strcmp(cmd, "BUFCHK") == 0) {
         uint8_t chk;
-        VMSuspend(); // binBuf 为 VM 缓存区，先挂起 VM 防并发刷缓存
         if (binBuf == NULL) {
             binBuf = (char *)VMMGR_GetCacheAddress();
         }
@@ -472,10 +469,7 @@ void parseCDCCommand(char *cmd) {
             MscSetCmd("ERR:PG\n");
             return;
         }
-        if (binBuf == NULL) { // 数据缓冲未就绪（应先 RESETDBUF）
-            MscSetCmd("ERR:BUF\n");
-            return;
-        }
+
         printf("PROGP:%lu,%lu\n", prog_page, wrMeta);
 
         if (wrMeta) {
