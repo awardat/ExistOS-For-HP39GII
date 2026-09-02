@@ -747,6 +747,12 @@ namespace giac {
       case KEY_CHAR_ANS: 
 	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_NO_NUMBER || menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on Fkeys
 	break;
+      case KEY_CTRL_QUIT: // Shift+View：等同 F6（Help）——FKEYS 类菜单（命令目录等）的菜单项帮助
+	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_NO_NUMBER || menu->type==MENUTYPE_MULTISELECT) {
+	  key = KEY_CTRL_F6; // 让调用方按 F6 帮助处理（如 doCatalogMenu 显示命令帮助）
+	  return key;
+	}
+	break;
       case KEY_CTRL_PASTE:
 	if (menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on paste
       case KEY_CTRL_OPTN:
