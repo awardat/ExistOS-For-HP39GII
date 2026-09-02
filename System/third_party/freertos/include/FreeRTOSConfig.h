@@ -65,7 +65,7 @@
 #define configTIMER_QUEUE_LENGTH        16
 #define configTIMER_TASK_STACK_DEPTH    configMINIMAL_STACK_SIZE
 
-#define configCHECK_FOR_STACK_OVERFLOW  0
+#define configCHECK_FOR_STACK_OVERFLOW  2
 
 #define configUSE_NEWLIB_REENTRANT	    1
 #define configGENERATE_RUN_TIME_STATS 	1

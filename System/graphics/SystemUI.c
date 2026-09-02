@@ -292,7 +292,7 @@ static TaskHandle_t pUITask;
 void SystemUIInit() {
 
     //UI_Init();
-    xTaskCreate(UI_Task, "UICore", 800, NULL, configMAX_CO_ROUTINE_PRIORITIES - 3, &pUITask); // 原样：-1 无符号后为最高优先级（UI 抢占恢复依赖此）
+    xTaskCreate(UI_Task, "UICore", 2048, NULL, configMAX_CO_ROUTINE_PRIORITIES - 3, &pUITask); // 栈 800->2048 字（退出 KhiCAS/RPN39 重绘峰值超 800，configCHECK=2 实证） // 原样：-1 无符号后为最高优先级（UI 抢占恢复依赖此）
 }
 
 void UI_Resume();
