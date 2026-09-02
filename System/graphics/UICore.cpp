@@ -301,12 +301,25 @@ void drawPage(int page) {
     case 0:
         uidisp->draw_bmp((char *)gImage_khicas_ico, mainw->content_x0 + 12, mainw->content_y0 + 12, 48, 48);
 
-        uidisp->draw_printf(mainw->content_x0 + 12,
+        // 名称在各自 80px 格子内居中（16px 字 8px/字符：6 字符=48px）
+        uidisp->draw_printf(mainw->content_x0 + 12 + (80 - 48) / 2,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "KhiCAS");
 
-        // RPN39 应用（appPage_select==1 位置，与选择框对齐）
-        uidisp->draw_printf(mainw->content_x0 + 12 + 80 + 6, mainw->content_y0 + 12 + 16, 16, 0, 255, "RPN39");
-        uidisp->draw_printf(mainw->content_x0 + 12 + 80,
+        // RPN39 图标（48x48：计算器机身 + 屏幕 + 键盘；灰度层次）
+        {
+            int ix = mainw->content_x0 + 12 + 80, iy = mainw->content_y0 + 12;
+            uidisp->draw_box(ix + 1, iy, ix + 46, iy + 47, 110, -1);          // 底衬（中灰）
+            uidisp->draw_box(ix, iy + 1, ix + 47, iy + 46, 160, -1);
+            uidisp->draw_box(ix + 3, iy + 3, ix + 44, iy + 44, 45, -1);       // 机壳（深灰）
+            uidisp->draw_box(ix + 7, iy + 6, ix + 40, iy + 21, 235, -1);      // 屏幕（亮）
+            uidisp->draw_printf(ix + 9, iy + 7, 12, 0, 255, "RPN");           // 屏幕字
+            uidisp->draw_printf(ix + 8, iy + 17, 8, 0, 255, "4L-STK");        // 屏副字
+            for (int r = 0; r < 3; r++) {                                     // 键盘 3x4
+                for (int c = 0; c < 4; c++)
+                    uidisp->draw_box(ix + 8 + c * 9, iy + 27 + r * 6, ix + 14 + c * 9, iy + 30 + r * 6, 190, -1);
+            }
+        }
+        uidisp->draw_printf(mainw->content_x0 + 12 + 80 + (80 - 48) / 2,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
 
         uidisp->draw_box((mainw->content_x0 + 12) + appPage_select * (48 + appPage_select * 32),
