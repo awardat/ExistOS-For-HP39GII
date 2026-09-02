@@ -216,3 +216,16 @@ int pressed = api_get_key(KEY_ENTER); // 非阻塞查询
 | `System/graphics/UICore.cpp` | ExistOS UI 按键处理 |
 | `System/utils/basic_api.c` | App SDK 按键 API |
 | `keymap_org.md` | **原厂键位表**（功能定义参考，不改动） |
+## 五、RPN39 键位设计（规划，build 129 后）
+
+| 键 | 功能 | 说明 |
+|------|------|------|
+| ON/C | **取消/后退**（短按）；Shift+ON/C 关机 | HP 原版 ON/C 语义（开机后为取消键） |
+| VIEWS | 系统/新计算器**无定义**（释放）；KhiCAS 保留（切换公式输入） | 原 View 的后退已转移至 ON/C |
+| MATH | **数学功能菜单**（原厂语义保留） | 替代 F6 菜单（F6 暂只放设置或留空） |
+| VARS | **寄存器列表**（26 个 A-Z 寄存器：名称+数值） | 选择 + ENTER = RCL（值压入 X，栈上移） |
+| F1-F6 | x<>y / R↓ / DROP / __ / __ / 设置（暂） | 无物理键的 RPN 操作 |
+| ( / ) | STO / RCL（存数/取数） | STO 后直接按字母（自动 ALPHA） |
+| ENTER | 输入中=压栈；非输入中=复制 X 压栈 | HP RPN 惯例 |
+| 数字区 | 0-9 . (-)CHS +−×÷ backspace | 原厂键位直接对齐 |
+| 函数键 | x² x^y 1/x √ SIN/COS/TAN+反三角 LN/LOG+指数 π ABS ! | 原厂键位直接对齐 |

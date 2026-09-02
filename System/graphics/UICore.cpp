@@ -434,6 +434,11 @@ void keyMsg(uint32_t key, int state) {
                 ll_power_off();
                 vTaskDelay(pdMS_TO_TICKS(500));
                 ll_power_off();
+            } else {
+                // ON/C：短按 = 取消/后退（HP 原版 ON/C 语义）——返回主页面
+                curPage = 0;
+                drawPage(curPage);
+                mainw->setFuncKeys(MAIN_WIN_FKEY_BAR);
             }
             break;
         }

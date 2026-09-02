@@ -378,10 +378,10 @@ int GetKey(int *key) {
                     //ll_power_off();
                 }
             }  
-            else if(rshift)  {*key = KEY_CTRL_AC;}  
-            else if(keyStatus & 4)  {*key = KEY_CTRL_AC;}  
-            else if(keyStatus & 8)  {*key = KEY_CTRL_AC;}  
-            else {*key = KEY_CTRL_AC;}  
+            else if(rshift)  {*key = KEY_CTRL_EXIT;}  
+            else if(keyStatus & 4)  {*key = KEY_CTRL_EXIT;}  
+            else if(keyStatus & 8)  {*key = KEY_CTRL_EXIT;}  
+            else {*key = KEY_CTRL_EXIT;}  
 
           break;
 
