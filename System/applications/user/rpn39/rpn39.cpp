@@ -48,6 +48,8 @@ static const char *fmtNum(double v, char *buf) {
 // 菜单项（F1-F6；无功能的显示占位）
 static const char *menuItems[6] = {"x<>y", "Rdn", "DROP", "", "", ""};
 
+static void drawXLine(void); // 前置声明（draw 内调用）
+
 // ---- 绘制（左对齐，寄存器/X 16px，菜单 12px 六段均分）----
 static void draw(void) {
     char buf[48];
