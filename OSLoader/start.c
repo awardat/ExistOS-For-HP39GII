@@ -419,7 +419,7 @@ void parseCDCCommand(char *cmd) {
         }
         printf("REC DATA BUF.\n");
         memset(binBuf, 0xFF, CDC_BINMODE_BUFSIZE);
-        VMResume();
+        // 注意：会话中 VM 由 PING 挂起并保持（此处不恢复，恢复由会话结束路径处理）
         MscSetCmd("READY\n");
 
         return;
@@ -434,7 +434,6 @@ void parseCDCCommand(char *cmd) {
         char res[16];
 
         chk = blockChksum(binBuf, CDC_BINMODE_BUFSIZE);
-        VMResume();
         // printf("CHKSUM:%02x\n", chk);
         sprintf(res, "CHKSUM:%02x\n", chk);
         MscSetCmd(res);
