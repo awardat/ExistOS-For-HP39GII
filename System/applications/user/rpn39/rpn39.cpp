@@ -60,10 +60,7 @@ static void draw(void) {
     uidisp->draw_printf(0, 16, 20, 0, 255, "T: %s", fmtNum(stT, buf));
     uidisp->draw_printf(0, 36, 20, 0, 255, "Z: %s", fmtNum(stZ, buf));
     uidisp->draw_printf(0, 56, 20, 0, 255, "Y: %s", fmtNum(stY, buf));
-    if (entering)
-        uidisp->draw_printf(0, 76, 32, 0, 255, "%s", inbuf);
-    else
-        uidisp->draw_printf(0, 76, 32, 0, 255, "%s", fmtNum(stX, buf));
+    drawXLine();
     // 菜单行：黑底条 + 六段均分（每段 42px），空位显示占位
     uidisp->draw_box(0, 112, 255, 127, 255, 0);
     for (i = 1; i < 6; i++)
@@ -76,14 +73,21 @@ static void draw(void) {
     uidisp->flush();
 }
 
-// X 行区域刷新（32px 大字，输入变化专用）
-static void drawX(void) {
+// X 行：左侧小标签 X:（12px）+ 数字右对齐（32px Hack，HP RPN 惯例）
+static void drawXLine(void) {
     char buf[48];
+    const char *num = entering ? inbuf : fmtNum(stX, buf);
+    int len = (int)strlen(num);
+    int x = 256 - len * 21 - 1; // 32px Hack 字符宽 21，右对齐
+    if (x < 26) x = 26;         // 不遮标签
+    uidisp->draw_printf(0, 82, 12, 0, 255, "X:");
+    uidisp->draw_printf(x, 76, 32, 0, 255, "%s", num);
+}
+
+// X 行区域刷新（输入变化专用）
+static void drawX(void) {
     uidisp->draw_box(0, 76, 255, 107, 255, 255);
-    if (entering)
-        uidisp->draw_printf(0, 76, 32, 0, 255, "%s", inbuf);
-    else
-        uidisp->draw_printf(0, 76, 32, 0, 255, "%s", fmtNum(stX, buf));
+    drawXLine();
     uidisp->flushRect(0, 76, 255, 107);
 }
 
