@@ -64,6 +64,8 @@ static void draw(void) {
         uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", fmtNum(stX, buf));
     // 菜单行：黑底条 + 六段均分（每段 42px），空位显示占位
     uidisp->draw_box(0, 112, 255, 127, 255, 0);
+    for (i = 1; i < 6; i++)
+        uidisp->draw_line(i * 42, 114, i * 42, 126, 255); // 段间隔竖线
     for (i = 0; i < 6; i++) {
         const char *t = menuItems[i];
         if (t[0] == 0) t = "_";
@@ -158,9 +160,18 @@ static int handleKey(int key) {
             autoLift = 1;         // 42S：计算后输入自动压栈
             break;
         }
-        case KEY_F1: { double t = stX; stX = stY; stY = t; autoLift = 0; break; } // x<>y
-        case KEY_F2: { double t = stT; stT = stZ; stZ = stY; stY = stX; stX = t; autoLift = 0; break; } // R↓
-        case KEY_F3: stackDrop(); autoLift = 0; break;              // DROP
+        case KEY_F1: // x<>y（输入中先收尾：值进 X）
+            if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
+            { double t = stX; stX = stY; stY = t; autoLift = 0; }
+            break;
+        case KEY_F2: // R↓
+            if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
+            { double t = stT; stT = stZ; stZ = stY; stY = stX; stX = t; autoLift = 0; }
+            break;
+        case KEY_F3: // DROP
+            if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
+            stackDrop(); autoLift = 0;
+            break;
         case KEY_F4: break; // 预留（CLx 移至 Shift+backspace）
         case KEY_ON:
             if (entering) { entering = 0; inlen = 0; autoLift = 0; return 1; }
@@ -187,11 +198,13 @@ void rpn39Task(void *_) {
         uint32_t kp = keys >> 16;
         uint32_t key = keys & 0xFFFF;
         if (kp) {
-            if (key == KEY_SHIFT) { // Shift 按下：置位 + 顶部指示器
-                shiftHeld = 1;
+            if (key == KEY_SHIFT) { // Shift 按下：置位 + 顶部指示器（仅状态变化时）
+                if (!shiftHeld) {
+                    shiftHeld = 1;
+                    ll_disp_set_indicator(INDICATE_LEFT, -1);
+                    draw();
+                }
                 lastKey = key;
-                ll_disp_set_indicator(INDICATE_LEFT, -1);
-                drawX();
             } else if (key != (uint32_t)lastKey) { // 按下沿（防重复）
                 lastKey = key;
                 if (key == KEY_BACKSPACE && shiftHeld) {
@@ -208,10 +221,10 @@ void rpn39Task(void *_) {
             }
         } else {
             lastKey = -1;
-            if (key == KEY_SHIFT) { // Shift 松开：清位 + 清指示器
+            if (key == KEY_SHIFT && shiftHeld) { // Shift 松开：清位 + 清指示器
                 shiftHeld = 0;
                 ll_disp_set_indicator(0, -1);
-                drawX();
+                draw();
             }
         }
         vTaskDelay(pdMS_TO_TICKS(10));
