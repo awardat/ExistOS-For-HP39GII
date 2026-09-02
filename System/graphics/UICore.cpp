@@ -304,6 +304,13 @@ void drawPage(int page) {
         uidisp->draw_printf(mainw->content_x0 + 12,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "KhiCAS");
 
+        // RPN39 应用（appPage_select==1 位置，与选择框对齐）
+        uidisp->draw_box(mainw->content_x0 + 12 + 80, mainw->content_y0 + 12,
+                         mainw->content_x0 + 12 + 80 + 48, mainw->content_y0 + 12 + 48, 0, -1);
+        uidisp->draw_printf(mainw->content_x0 + 12 + 80 + 6, mainw->content_y0 + 12 + 16, 16, 0, 255, "RPN39");
+        uidisp->draw_printf(mainw->content_x0 + 12 + 80,
+                            mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
+
         uidisp->draw_box((mainw->content_x0 + 12) + appPage_select * (48 + appPage_select * 32),
                          mainw->content_y0 + 12,
                          (mainw->content_x0 + 12) + 48 + appPage_select * (48 + appPage_select * 32),
@@ -705,6 +712,10 @@ void keyMsg(uint32_t key, int state) {
 
                     void StartKhiCAS();
                     StartKhiCAS();
+                } else if (appPage_select == 1) {
+
+                    void StartRPN39();
+                    StartRPN39();
                 }
             } else if (curPage == 1) {
                 goto CONSOLE_KEY_EVENT;

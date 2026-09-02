@@ -26,6 +26,7 @@ include_directories(./applications/user/khicas)
 include_directories(${CMAKE_SOURCE_DIR}/Libs/src/gmp/include/)
 
 
+aux_source_directory(./applications/user/rpn39                                    SYS_SRCS)
 aux_source_directory(./core                                          SYS_SRCS)
 aux_source_directory(./drivers                                       SYS_SRCS)
 aux_source_directory(./graphics                                      SYS_SRCS)

@@ -30,6 +30,9 @@ private:
     }
 
 public:
+    void flush() {
+        this->drawf(this->disp_buf, 0, 0, this->disp_w - 1, this->disp_h - 1);
+    }
     UI_Display(int display_width, int display_height, void (*drawf)(uint8_t *buf, uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1)) {
         printf("Create UI Display.\n");
         this->disp_buf = (uint8_t *)pvPortMalloc(display_width * display_height);
@@ -37,8 +40,7 @@ public:
         this->disp_w = display_width;
         this->disp_h = display_height;
         memset(this->disp_buf, 0xff, display_width * display_height);
-        this->drawf(this->disp_buf, 0, 0, this->disp_w - 1, this->disp_h - 1);
-    }
+        this->drawf(this->disp_buf, 0, 0, this->disp_w - 1, this->disp_h - 1);    }
 
     void emergencyBuffer() {
         disp_buf = (uint8_t *)(RAM_BASE + BASIC_RAM_SIZE - 33 * 1024);

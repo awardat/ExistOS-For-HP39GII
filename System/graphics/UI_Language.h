@@ -1,4 +1,5 @@
 #pragma once
+#ifndef EXCLUDE_UI_LANGUAGE
 #include "UI_Chinese.h"
 #include "UI_English.h"
 
@@ -37,3 +38,4 @@ const char *UI_Compression_rate   = UI_Compression_rate_EN;
 const char *UI_SRAM_Heap_Pre_Allocated = UI_SRAM_Heap_Pre_Allocated_EN;
 const char *UI_Swap_Heap_Pre_Allocated = UI_Swap_Heap_Pre_Allocated_EN;
 const char *UI_Enable_Mem_Swap = UI_Enable_Mem_Swap_EN;
+#endif
