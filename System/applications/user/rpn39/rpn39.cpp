@@ -76,12 +76,14 @@ static int regKeyToIdx(int key) {
     return -1;
 }
 
-// 掉电持久化（/rpn39_sto.dat：26 x double）
+// 掉电持久化（/rpn39_sto.dat：26 寄存器 + 4 栈 = 240B；旧版 208B 兼容——栈默认 0）
 static void saveRegs(void) {
     FIL f;
     if (f_open(&f, "/rpn39_sto.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw = 0;
-        f_write(&f, regs, sizeof(regs), &bw);
+        f_write(&f, regs, sizeof(regs), &bw);          // 26 regs
+        double stack[4] = {stX, stY, stZ, stT};
+        f_write(&f, stack, sizeof(stack), &bw);        // X Y Z T（HP：关机保留栈）
         f_close(&f);
     }
 }
@@ -90,9 +92,14 @@ static void loadRegs(void) {
     UINT br = 0;
     memset(regs, 0, sizeof(regs));
     if (f_open(&f, "/rpn39_sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) {
-        f_read(&f, regs, sizeof(regs), &br);
+        f_read(&f, regs, sizeof(regs), &br); // regs 区（br 出参）
+        if (br >= sizeof(regs)) {            // 有栈区（新版文件）
+            double stack[4] = {0};
+            UINT br2 = 0;
+            f_read(&f, stack, sizeof(stack), &br2);
+            if (br2 == sizeof(stack)) { stX = stack[0]; stY = stack[1]; stZ = stack[2]; stT = stack[3]; }
+        }
         f_close(&f);
-        if (br != sizeof(regs)) memset(regs, 0, sizeof(regs));
     }
 }
 
@@ -395,6 +402,8 @@ void rpn39Task(void *_) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     if (shiftHeld) { shiftHeld = 0; ll_disp_set_indicator(0, -1); }
+    if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; } // 输入中退出：先落值
+    saveRegs(); // 退出保存（寄存器 + 栈——HP 关机保留语义）
     entering = 0; inlen = 0; inbuf[0] = 0; // 清输入态（避免重进残留）
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
     uidisp->flush();
