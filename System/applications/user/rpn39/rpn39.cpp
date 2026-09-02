@@ -41,27 +41,20 @@ static const char *fmtNum(double v, char *buf) {
     return buf;
 }
 
-// 右侧对齐打印（fsize 16 -> 每字符 8px，8 -> 6px）
-static void printR(int y, int fsize, const char *s) {
-    int w = strlen(s) * (fsize == 16 ? 8 : 6);
-    if (w > 255) w = 255;
-    uidisp->draw_printf(255 - w, y, fsize, 0, 255, "%s", s);
-}
-
-// ---- 绘制 ----
+// ---- 绘制（左对齐，T/Z/Y 12px，X 16px，菜单 12px）----
 static void draw(void) {
     char buf[48];
     uidisp->draw_box(0, 0, 255, 127, 255, 255); // 白底
-    uidisp->draw_printf(0, 0, 8, 0, 255, "RPN39");
-    printR(16, 8, fmtNum(stT, buf));
-    printR(32, 8, fmtNum(stZ, buf));
-    printR(48, 8, fmtNum(stY, buf));
+    uidisp->draw_printf(0, 0, 12, 0, 255, "RPN39");
+    uidisp->draw_printf(0, 16, 12, 0, 255, "T: %s", fmtNum(stT, buf));
+    uidisp->draw_printf(0, 32, 12, 0, 255, "Z: %s", fmtNum(stZ, buf));
+    uidisp->draw_printf(0, 48, 12, 0, 255, "Y: %s", fmtNum(stY, buf));
     if (entering)
-        printR(64, 16, inbuf);
+        uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", inbuf);
     else
-        printR(64, 16, fmtNum(stX, buf));
+        uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", fmtNum(stX, buf));
     // 菜单行
-    uidisp->draw_printf(0, 112, 8, 255, 0, "x<>y |Rdn  |DROP |CLx  |     |");
+    uidisp->draw_printf(0, 112, 12, 255, 0, "x<>y |Rdn  |DROP |CLx  |     |");
     uidisp->flush();
 }
 
@@ -104,12 +97,15 @@ static void handleKey(int key) {
             break;
         case KEY_ENTER:
             if (entering) {
-                stackLift();
-                stX = atof(inbuf);
-                lastX = stX;
+                double v = atof(inbuf);
                 entering = 0; inlen = 0;
+                lastX = stX;
+                stX = v;
+                stackLift(); // Y=输入值（压栈）
+                stX = 0;     // X 清 0（老 HP 风格：压栈后 X 清零，等待新输入）
             } else {
-                stackLift(); // 复制 X 压栈（HP 惯例）
+                stackLift(); // 复制 X 压栈
+                stX = 0;
             }
             break;
         case KEY_PLUS:

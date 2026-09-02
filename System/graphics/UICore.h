@@ -222,7 +222,7 @@ public:
         for (unsigned int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
             if (buffer[i] < 0x80) {
                 draw_char_ascii(x, y0, buffer[i], fontSize, fg, bg);
-                x += fontSize == 16 ? 8 : 6;
+                x += fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6);
                 if (x > (unsigned int)this->disp_w) {
                     break;
                 }
