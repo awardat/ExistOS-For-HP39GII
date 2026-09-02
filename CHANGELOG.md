@@ -4,10 +4,28 @@
 
 ---
 
-## [build 130] - 2026-09-02 (开发中)
+## [build 130] - 2026-09-02 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-130))
 
-### 规划
-- RPN39 RPN 计算器（42S 基准：4 层栈 + 四则 → 科学 → 绘图，见 docs/RPN39-design.md）
+### 新增
+- **RPN39 RPN 计算器**（42S 基准，见 docs/RPN39-design.md）：
+  - 4 层栈 + 基础四则（ENTER 压栈/42S 自动栈提升/x<>y/R↓/DROP/CLx）
+  - **寄存器管理**：26 个 A-Z 寄存器（STO `(` / RCL `)` 等字母键；Vars 列表选择；Shift+backspace 清空全部）
+  - **掉电持久化**（/rpn39_sto.dat：寄存器 + 栈——HP 关机保留语义）
+  - 字体：Fira Code 24px（0 斜杠）+ ttf2c.py 字体转换工具（OFL 许可）
+- **KhiCAS**：
+  - ON/C 短按 = 返回/取消（原厂语义；AC 移至 Shift+backspace）
+  - 菜单内 Shift+View 打开当前菜单项帮助（FKEYS 类菜单等同 F6/Help）
+  - 模态输入（inputline）返回后清按键状态（修复保存 session 后 quit 卡住）
+- **E 组整改**：msc WRITE10 边界、getSuffix 三缺陷、路径拼接有界、MB_ElementCount 与渲染对齐、CrashLog SP 校验、链接器 ASSERT、主机工具修复、UI_Task 栈 800→2048（栈溢出检查重新启用）
+- **构建卫生**：-Wall/-Wextra + 栈保护 0 警告；flash.sh 单刷开关（osloader/existos）
+- 审核报告：build130 增量审核 + 用户决策 + 修复引入回归记录（docs/）
+
+### 发布惯例
+- **每次发布 OSLoader.sb 与 ExistOS.sys 一并附上**（无论单版本是否改动）
+
+### 规划（build 131+）
+- RPN39 阶段 2：科学计算（MATH 菜单 + DEG/RAD）
+- RPN39 简单函数绘图（阶段 3）
 - KhiCAS 全量帮助中文化（约 800 条）
 - D4 FTL_Sync 真机掉电测试
 
