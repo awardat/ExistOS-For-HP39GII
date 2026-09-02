@@ -33,7 +33,7 @@ uint32_t calc_sys_sym_hash() {
 
     int i = 0;
 
-    fr = sscanf((const char *)&buf_syself[i], "%08X %c %s", &addr, &type, s);
+    fr = sscanf((const char *)&buf_syself[i], "%08X %c %1023s", &addr, &type, s);
     while (fr == 3)
     {
         if ((type >= 'A') && type <= 'Z')
@@ -76,8 +76,10 @@ int main(int argc, char **argv) {
     if (argc != 3) {
         Usage();
     }
-    strcpy(path_syself, argv[1]);
-    strcpy(path_sysbin, argv[2]);
+    strncpy(path_syself, argv[1], sizeof(path_syself) - 1);
+    path_syself[sizeof(path_syself) - 1] = 0;
+    strncpy(path_sysbin, argv[2], sizeof(path_sysbin) - 1);
+    path_sysbin[sizeof(path_sysbin) - 1] = 0;
 
     f_syself = fopen(path_syself, "rb");
     if (!f_syself) {

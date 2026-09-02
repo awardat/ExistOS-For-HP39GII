@@ -1007,7 +1007,7 @@ void TaskUSBLog(void *_) {
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
-extern bool g_slowdown_enable;
+extern int g_slowdown_enable; // 与 stmp_clkctrl.c 定义类型一致（ODR）
 #include "regsclkctrl.h"
 void waitIRQ(int r) {
 

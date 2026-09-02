@@ -234,7 +234,7 @@ static struct elf_symbol_t *elf_add_symbol(struct elf_params_t *params)
 
 static struct elf_segment_t *elf_add_segment(struct elf_params_t *params)
 {
-    struct elf_segment_t *seg = xmalloc(sizeof(struct elf_section_t));
+    struct elf_segment_t *seg = xmalloc(sizeof(struct elf_segment_t));
     if(params->first_segment == NULL)
         params->first_segment = params->last_segment = seg;
     else

@@ -157,7 +157,7 @@ void main_thread() {
     // 初始化崩溃日志系统
     crash_log_init();
 
-    // 应用省电配置：' '=标准(120+空闲48MHz), 'S'=省电(80+空闲48), 'L'=旧配置兼容(80+空闲48), 'B'=加速(240+空闲48)
+    // 应用电源档位（main_thread 单点）：' '=标准(240/120), 'S'=省电(160/80), 'L'=兼容旧配置(160/80), 'B'=加速(480/240)
     {
         extern char config_get_power_save(void);
         char ps = config_get_power_save();
