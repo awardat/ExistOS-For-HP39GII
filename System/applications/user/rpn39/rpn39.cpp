@@ -57,9 +57,9 @@ static void draw(void) {
         uidisp->draw_printf(0, 0, 12, 255, 0, "RPN39 S");
     else
         uidisp->draw_printf(0, 0, 12, 0, 255, "RPN39");
-    uidisp->draw_printf(0, 16, 20, 0, 255, "T: %s", fmtNum(stT, buf));
-    uidisp->draw_printf(0, 36, 20, 0, 255, "Z: %s", fmtNum(stZ, buf));
-    uidisp->draw_printf(0, 56, 20, 0, 255, "Y: %s", fmtNum(stY, buf));
+    uidisp->draw_printf(0, 14, 24, 0, 255, "T: %s", fmtNum(stT, buf));
+    uidisp->draw_printf(0, 40, 24, 0, 255, "Z: %s", fmtNum(stZ, buf));
+    uidisp->draw_printf(0, 66, 24, 0, 255, "Y: %s", fmtNum(stY, buf));
     drawXLine();
     // 菜单行：黑底条 + 六段均分（每段 42px），空位显示占位
     uidisp->draw_box(0, 112, 255, 127, 255, 0);
@@ -73,22 +73,22 @@ static void draw(void) {
     uidisp->flush();
 }
 
-// X 行：42S 风格（无标签，32px 大字左对齐，最多 12 字符）
+// X 行：标签 X: + 数字（24px 等宽，最多 12 字符）
 static void drawXLine(void) {
     char buf[48], buf2[48];
     const char *num = entering ? inbuf : fmtNum(stX, buf);
-    if ((int)strlen(num) > 12) { // 12 字符 x 20px = 240px
+    if ((int)strlen(num) > 12) { // 12 字符 x 16px = 192px + 标签 32px
         sprintf(buf2, "%.6e", stX); // 超宽科学计数压缩
         num = buf2;
     }
-    uidisp->draw_printf(0, 76, 32, 0, 255, "%s", num);
+    uidisp->draw_printf(0, 92, 24, 0, 255, "X: %s", num);
 }
 
 // X 行区域刷新（输入变化专用）
 static void drawX(void) {
-    uidisp->draw_box(0, 76, 255, 107, 255, 255);
+    uidisp->draw_box(0, 92, 255, 115, 255, 255);
     drawXLine();
-    uidisp->flushRect(0, 76, 255, 107);
+    uidisp->flushRect(0, 92, 255, 115);
 }
 
 // ---- 按键处理（返回 1 = 仅 X 行变化（区域刷新），0 = 全屏刷新）----

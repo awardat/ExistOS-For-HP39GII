@@ -4,8 +4,8 @@
 #include "UI_Language.h"
 #include "../utils/gbk16.h"
 
+extern const unsigned char FiraCodeAscii24[]; // tools/ttf2c.py 生成（Fira Code 24px 等宽 16px，0 斜杠）
 extern const unsigned char FiraSansAscii20[]; // tools/ttf2c.py 生成（Fira Sans SemiBold 20px 定宽 13）
-extern const unsigned char FiraSansAscii32[]; // tools/ttf2c.py 生成（Fira Sans SemiBold 32px 定宽 20）
 
 extern const unsigned char VGA_Ascii_5x8[];
 extern const unsigned char VGA_Ascii_6x12[];
@@ -156,10 +156,10 @@ public:
             pCh = VGA_Ascii_8x16 + (ch - ' ') * font_h;
             break;
 
-        case 20: // Fira Sans SemiBold 20px（定宽 13，2 字节/行）
-            font_w = 13;
-            font_h = 20;
-            pCh = FiraSansAscii20 + (ch - ' ') * 40; // 20 行 x 2 字节
+        case 24: // Fira Code 24px 等宽（宽 16，2 字节/行）
+            font_w = 16;
+            font_h = 24;
+            pCh = FiraCodeAscii24 + (ch - ' ') * 48; // 24 行 x 2 字节
             break;
 
         case 32: // Fira Sans SemiBold 32px（定宽 20，3 字节/行）
@@ -172,7 +172,21 @@ public:
             return;
         }
         unsigned char pix;
-        if (fontSize == 20) { // Fira 20px（14px 宽，2 字节/行，MSB 优先）
+        if (fontSize == 24) { // Fira Code 24px（16px 宽，2 字节/行，MSB 优先）
+            for (int dy = 0; dy < 24; dy++) {
+                for (int dx = 0; dx < 16; dx++) {
+                    pix = (unsigned char)((pCh[dy * 2 + dx / 8] << (dx % 8)) & 0x80U);
+                    if (pix) {
+                        buf_set(x0 + dx, y0 + dy, fg);
+                    } else if (bg != -1) {
+                        buf_set(x0 + dx, y0 + dy, bg);
+                    }
+                }
+            }
+            this->drawf(&this->disp_buf[y0 * this->disp_w], 0, y0, this->disp_w - 1, y0 + 23);
+            return;
+        }
+        if (fontSize == 20) { // Fira Sans 20px（13px 宽，2 字节/行，MSB 优先）
             for (int dy = 0; dy < 20; dy++) {
                 for (int dx = 0; dx < 14; dx++) {
                     pix = (unsigned char)((pCh[dy * 2 + dx / 8] << (dx % 8)) & 0x80U);
@@ -269,7 +283,7 @@ public:
         for (unsigned int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
             if (buffer[i] < 0x80) {
                 draw_char_ascii(x, y0, buffer[i], fontSize, fg, bg);
-                x += fontSize == 32 ? 20 : (fontSize == 20 ? 13 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6)));
+                x += fontSize == 24 ? 16 : (fontSize == 32 ? 20 : (fontSize == 20 ? 13 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6))));
                 if (x > (unsigned int)this->disp_w) {
                     break;
                 }
