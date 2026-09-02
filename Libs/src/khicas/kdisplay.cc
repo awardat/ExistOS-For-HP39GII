@@ -17926,11 +17926,11 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 
   void chk_clearscreen(GIAC_CONTEXT){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
-    if (confirm((lang)?"Effacer l'historique?":"Clear history?",
+    if (confirm((lang)?"\xc7\xe5\xb3\xfd\xc0\xfa\xca\xb7?":"Clear history?",
 #ifdef NSPIRE_NEWLIB
 		(lang)?"\xbb\xd8\xb3\xb5\x3a\x20\xca\xc7\x2c\x20\x45\x53\x43\x3a\x20\xb1\xa3\xc1\xf4":"enter: yes, esc: keep",
 #else
-		(lang)?"OK: oui, Back: conserver":"OK: yes, Back: keep",
+		(lang)?"OK: \xca\xc7, Back: \xb1\xa3\xc1\xf4":"OK: yes, Back: keep",
 #endif
 		false)==KEY_CTRL_F1){
       Console_Init(contextptr);
@@ -20356,7 +20356,7 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 	return 0;
       }
       if (strcmp((const char *)expr,"restart")==0){
-	if (confirm((lang)?"Effacer variables?":"Clear variables?",
+	if (confirm((lang)?"\xc7\xe5\xb3\xfd\xb1\xe4\xc1\xbf?":"Clear variables?",
 #ifdef NSPIRE_NEWLIB
 		    (lang)?"enter: confirmer,  esc: annuler":"enter: confirm,  esc: cancel"
 #else
