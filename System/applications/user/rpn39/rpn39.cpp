@@ -42,20 +42,28 @@ static const char *fmtNum(double v, char *buf) {
     return buf;
 }
 
-// ---- 绘制（左对齐，T/Z/Y 12px，X 16px，菜单 12px）----
+// 菜单项（F1-F6；无功能的显示占位）
+static const char *menuItems[6] = {"x<>y", "Rdn", "DROP", "", "", ""};
+
+// ---- 绘制（左对齐，寄存器/X 16px，菜单 12px 六段均分）----
 static void draw(void) {
     char buf[48];
+    int i;
     uidisp->draw_box(0, 0, 255, 127, 255, 255); // 白底
     uidisp->draw_printf(0, 0, 12, 0, 255, "RPN39");
-    uidisp->draw_printf(0, 16, 12, 0, 255, "T: %s", fmtNum(stT, buf));
-    uidisp->draw_printf(0, 32, 12, 0, 255, "Z: %s", fmtNum(stZ, buf));
-    uidisp->draw_printf(0, 48, 12, 0, 255, "Y: %s", fmtNum(stY, buf));
+    uidisp->draw_printf(0, 16, 16, 0, 255, "T: %s", fmtNum(stT, buf));
+    uidisp->draw_printf(0, 32, 16, 0, 255, "Z: %s", fmtNum(stZ, buf));
+    uidisp->draw_printf(0, 48, 16, 0, 255, "Y: %s", fmtNum(stY, buf));
     if (entering)
         uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", inbuf);
     else
         uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", fmtNum(stX, buf));
-    // 菜单行
-    uidisp->draw_printf(0, 112, 12, 255, 0, "x<>y |Rdn  |DROP |CLx  |     |");
+    // 菜单行：六段均分（每段 42px），空位显示占位
+    for (i = 0; i < 6; i++) {
+        const char *t = menuItems[i];
+        if (t[0] == 0) t = "_";
+        uidisp->draw_printf(i * 42 + 2, 112, 12, 255, 0, "%s", t);
+    }
     uidisp->flush();
 }
 
@@ -137,7 +145,7 @@ static void handleKey(int key) {
         case KEY_F1: { double t = stX; stX = stY; stY = t; autoLift = 0; break; } // x<>y
         case KEY_F2: { double t = stT; stT = stZ; stZ = stY; stY = stX; stX = t; autoLift = 0; break; } // R↓
         case KEY_F3: stackDrop(); autoLift = 0; break;              // DROP
-        case KEY_F4: stX = 0; entering = 0; inlen = 0; autoLift = 0; break; // CLx
+        case KEY_F4: break; // 预留（CLx 移至 Shift+backspace）
         case KEY_ON:
             if (entering) { entering = 0; inlen = 0; autoLift = 0; }
             else { rpn39Running = 0; }
@@ -157,18 +165,25 @@ void rpn39Task(void *_) {
     rpn39Running = 1;
     draw();
     int lastKey = -1;
+    int shiftHeld = 0;
     while (rpn39Running) {
         uint32_t keys = ll_vm_check_key();
         uint32_t kp = keys >> 16;
         uint32_t key = keys & 0xFFFF;
         if (kp) {
-            if (key != (uint32_t)lastKey) { // 按下沿（防重复）
+            if (key == KEY_SHIFT) { shiftHeld = 1; lastKey = key; }
+            else if (key != (uint32_t)lastKey) { // 按下沿（防重复）
                 lastKey = key;
-                handleKey((int)key);
+                if (key == KEY_BACKSPACE && shiftHeld) {
+                    stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
+                } else {
+                    handleKey((int)key);
+                }
                 draw();
             }
         } else {
             lastKey = -1;
+            shiftHeld = 0;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
