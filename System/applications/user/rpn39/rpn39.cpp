@@ -36,10 +36,12 @@ static void stackDrop() { stX = stY; stY = stZ; stZ = stT; stT = 0; } // DROP：
 
 // ---- 数字格式化（整数直显，否则 10 位有效数字）----
 static const char *fmtNum(double v, char *buf) {
-    if (v == (double)(long long)v && v > -1e15 && v < 1e15)
-        sprintf(buf, "%lld", (long long)v);
+    if (v == (double)(long long)v && v > -1e11 && v < 1e11)
+        sprintf(buf, "%lld", (long long)v); // 整数 <=11 位直显
     else
         sprintf(buf, "%.12g", v);
+    if (strlen(buf) > 13) // 超宽（32px 行 13 字符上限）：科学计数压缩
+        sprintf(buf, "%.9e", v);
     return buf;
 }
 
@@ -55,13 +57,13 @@ static void draw(void) {
         uidisp->draw_printf(0, 0, 12, 255, 0, "RPN39 S");
     else
         uidisp->draw_printf(0, 0, 12, 0, 255, "RPN39");
-    uidisp->draw_printf(0, 16, 16, 0, 255, "T: %s", fmtNum(stT, buf));
-    uidisp->draw_printf(0, 32, 16, 0, 255, "Z: %s", fmtNum(stZ, buf));
-    uidisp->draw_printf(0, 48, 16, 0, 255, "Y: %s", fmtNum(stY, buf));
+    uidisp->draw_printf(0, 16, 20, 0, 255, "T: %s", fmtNum(stT, buf));
+    uidisp->draw_printf(0, 36, 20, 0, 255, "Z: %s", fmtNum(stZ, buf));
+    uidisp->draw_printf(0, 56, 20, 0, 255, "Y: %s", fmtNum(stY, buf));
     if (entering)
-        uidisp->draw_printf(0, 64, 32, 0, 255, "X: %s", inbuf);
+        uidisp->draw_printf(0, 76, 32, 0, 255, "X: %s", inbuf);
     else
-        uidisp->draw_printf(0, 64, 32, 0, 255, "X: %s", fmtNum(stX, buf));
+        uidisp->draw_printf(0, 76, 32, 0, 255, "X: %s", fmtNum(stX, buf));
     // 菜单行：黑底条 + 六段均分（每段 42px），空位显示占位
     uidisp->draw_box(0, 112, 255, 127, 255, 0);
     for (i = 1; i < 6; i++)
@@ -77,12 +79,12 @@ static void draw(void) {
 // X 行区域刷新（32px 大字，输入变化专用）
 static void drawX(void) {
     char buf[48];
-    uidisp->draw_box(0, 64, 255, 95, 255, 255);
+    uidisp->draw_box(0, 76, 255, 107, 255, 255);
     if (entering)
-        uidisp->draw_printf(0, 64, 32, 0, 255, "X: %s", inbuf);
+        uidisp->draw_printf(0, 76, 32, 0, 255, "X: %s", inbuf);
     else
-        uidisp->draw_printf(0, 64, 32, 0, 255, "X: %s", fmtNum(stX, buf));
-    uidisp->flushRect(0, 64, 255, 95);
+        uidisp->draw_printf(0, 76, 32, 0, 255, "X: %s", fmtNum(stX, buf));
+    uidisp->flushRect(0, 76, 255, 107);
 }
 
 // ---- 按键处理（返回 1 = 仅 X 行变化（区域刷新），0 = 全屏刷新）----
@@ -106,7 +108,7 @@ static int handleKey(int key) {
             if (autoLift) { stackLift(); autoLift = 0; } // 42S：计算后输入自动压栈（X->Y）
             entering = 1; inlen = 0; inbuf[0] = 0;
         }
-        if (inlen < 30) { inbuf[inlen++] = (char)('0' + d); inbuf[inlen] = 0; }
+        if (inlen < 13) { inbuf[inlen++] = (char)('0' + d); inbuf[inlen] = 0; }
         return 1;
     }
     switch (key) {
@@ -115,12 +117,12 @@ static int handleKey(int key) {
                 if (autoLift) { stackLift(); autoLift = 0; }
                 entering = 1; inlen = 0; inbuf[0] = 0;
             }
-            if (inlen < 30 && !strchr(inbuf, '.')) { inbuf[inlen++] = '.'; inbuf[inlen] = 0; }
+            if (inlen < 13 && !strchr(inbuf, '.')) { inbuf[inlen++] = '.'; inbuf[inlen] = 0; }
             return 1;
         case KEY_NEGATIVE:
             if (entering) {
                 if (inlen > 0 && inbuf[0] == '-') { memmove(inbuf, inbuf + 1, inlen); inlen--; }
-                else if (inlen < 30) { memmove(inbuf + 1, inbuf, inlen + 1); inbuf[0] = '-'; inlen++; }
+                else if (inlen < 13) { memmove(inbuf + 1, inbuf, inlen + 1); inbuf[0] = '-'; inlen++; }
             } else {
                 stX = -stX;
                 autoLift = 0;
