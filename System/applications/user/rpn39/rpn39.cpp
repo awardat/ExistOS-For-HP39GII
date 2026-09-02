@@ -9,6 +9,11 @@
 #define EXCLUDE_UI_LANGUAGE
 #include "FreeRTOS.h"
 #include "task.h"
+#if FS_TYPE == FS_FATFS
+    #include "filesystem/fatfs/ff.h"
+#else
+    #include "filesystem/littlefs/lfs.h"
+#endif
 #include "../../../core/SystemConfig.h"
 #include "../../../third_party/freertos/include/SysConf.h"
 #include "../../graphics/UICore.h"
@@ -30,6 +35,66 @@ static char inbuf[40];
 static int inlen = 0;
 static int rpn39Running = 0;
 
+// ---- 寄存器（A-Z，42S STO/RCL）----
+static double regs[26] = {0};
+static int rpnMode = 0;       // 0=正常 1=STO 等字母 2=RCL 等字母 3=寄存器列表
+static int regSel = 0;        // 列表高亮（0-25）
+static int regTop = 0;        // 列表滚动顶
+
+// 字母键映射（key 码 -> 寄存器索引）：VARS=a MATH=b ABC=c XTPHIN=d SIN=e COS=f TAN=g LN=h LOG=i
+// X2=j XY=k ( =l )=m / =n , =o 7=p 8=q 9=r x=s 4=t 5=u 6=v -=w 1=x 2=y 3=z
+static int regKeyToIdx(int key) {
+    switch (key) {
+        case KEY_VARS: return 0;            // a
+        case KEY_MATH: return 1;            // b
+        case KEY_ABC: return 2;             // c
+        case KEY_XTPHIN: return 3;          // d
+        case KEY_SIN: return 4;             // e
+        case KEY_COS: return 5;             // f
+        case KEY_TAN: return 6;             // g
+        case KEY_LN: return 7;              // h
+        case KEY_LOG: return 8;             // i
+        case KEY_X2: return 9;              // j
+        case KEY_XY: return 10;             // k
+        case KEY_LEFTBRACKET: return 11;    // l
+        case KEY_RIGHTBRACKET: return 12;   // m
+        case KEY_DIVISION: return 13;       // n
+        case KEY_COMMA: return 14;          // o
+        case KEY_7: return 15;              // p
+        case KEY_8: return 16;              // q
+        case KEY_9: return 17;              // r
+        case KEY_MULTIPLICATION: return 18; // s
+        case KEY_4: return 19;              // t
+        case KEY_5: return 20;              // u
+        case KEY_6: return 21;              // v
+        case KEY_SUBTRACTION: return 22;    // w
+        case KEY_1: return 23;              // x
+        case KEY_2: return 24;              // y
+        case KEY_3: return 25;              // z
+    }
+    return -1;
+}
+
+// 掉电持久化（/rpn39_sto.dat：26 x double）
+static void saveRegs(void) {
+    FIL f;
+    if (f_open(&f, "/rpn39_sto.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+        UINT bw = 0;
+        f_write(&f, regs, sizeof(regs), &bw);
+        f_close(&f);
+    }
+}
+static void loadRegs(void) {
+    FIL f;
+    UINT br = 0;
+    memset(regs, 0, sizeof(regs));
+    if (f_open(&f, "/rpn39_sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) {
+        f_read(&f, regs, sizeof(regs), &br);
+        f_close(&f);
+        if (br != sizeof(regs)) memset(regs, 0, sizeof(regs));
+    }
+}
+
 // ---- 栈操作（HP RPN 语义）----
 static void stackLift() { stT = stZ; stZ = stY; stY = stX; }
 static void stackDrop() { stX = stY; stY = stZ; stZ = stT; stT = 0; } // DROP：X 丢弃，栈上移，T 清空
@@ -44,16 +109,39 @@ static const char *fmtNum(double v, char *buf) {
 }
 
 // 菜单项（F1-F6；无功能的显示占位）
-static const char *menuItems[6] = {"x<>y", "Rdn", "DROP", "", "", ""};
+static const char *menuItems[6] = {"x<>y", "Rdn", "DROP", "STO", "RCL", ""};
 
 static void drawXLine(void); // 前置声明（draw 内调用）
+
+// ---- 寄存器列表绘制（rpnMode==3）----
+static void drawRegList(void) {
+    char buf[48];
+    uidisp->draw_box(0, 0, 255, 127, 255, 255);
+    uidisp->draw_printf(0, 0, 12, 0, 255, "VARS: UP/DOWN ENT=RCL ON=exit");
+    for (int i = 0; i < 8; i++) {
+        int idx = regTop + i;
+        if (idx >= 26) break;
+        char nm[2] = {(char)('A' + idx), 0};
+        const char *val = fmtNum(regs[idx], buf);
+        if (idx == regSel)
+            uidisp->draw_printf(0, 12 + i * 14, 12, 255, 0, "> %s: %s", nm, val); // 反色高亮
+        else
+            uidisp->draw_printf(0, 12 + i * 14, 12, 0, 255, "  %s: %s", nm, val);
+    }
+    uidisp->draw_printf(0, 118, 12, 0, 255, "A-Z 26 regs");
+    uidisp->flush();
+}
 
 // ---- 绘制（左对齐，寄存器/X 16px，菜单 12px 六段均分）----
 static void draw(void) {
     char buf[48];
     int i;
     uidisp->draw_box(0, 0, 255, 127, 255, 255); // 白底
-    if (shiftHeld)
+    if (rpnMode == 1)
+        uidisp->draw_printf(0, 0, 12, 255, 0, "STO _");
+    else if (rpnMode == 2)
+        uidisp->draw_printf(0, 0, 12, 255, 0, "RCL _");
+    else if (shiftHeld)
         uidisp->draw_printf(0, 0, 12, 255, 0, "RPN39 S");
     else
         uidisp->draw_printf(0, 0, 12, 0, 255, "RPN39");
@@ -93,6 +181,42 @@ static void drawX(void) {
 
 // ---- 按键处理（返回 1 = 仅 X 行变化（区域刷新），0 = 全屏刷新）----
 static int handleKey(int key) {
+    // 寄存器列表模式（rpnMode==3）：方向键移动/ENT=RCL/VIEWS/ON 退出
+    if (rpnMode == 3) {
+        if (key == KEY_UP) { if (regSel > 0) { regSel--; if (regSel < regTop) regTop = regSel; } return 0; }
+        if (key == KEY_DOWN) { if (regSel < 25) { regSel++; if (regSel > regTop + 7) regTop = regSel - 7; } return 0; }
+        if (key == KEY_ENTER) { // ENT：RCL 选中寄存器（栈提升，42S）
+            double v = regs[regSel];
+            if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
+            lastX = stX;
+            stackLift();
+            stX = v;
+            autoLift = 0;
+            rpnMode = 0;
+            return 0;
+        }
+        if (key == KEY_VIEWS || key == KEY_ON || key == KEY_HOME) { rpnMode = 0; return 0; }
+        return 0;
+    }
+    // STO/RCL 等待字母（rpnMode 1/2）
+    if (rpnMode == 1 || rpnMode == 2) {
+        int mode = rpnMode; // 保存（下面清 rpnMode）
+        int idx = regKeyToIdx(key);
+        rpnMode = 0; // 无论是否命中先退出等待态（非字母=取消）
+        if (idx >= 0) {
+            if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
+            if (mode == 1) {          // STO：存 X 到寄存器
+                regs[idx] = stX;
+                saveRegs();
+            } else {                  // RCL：寄存器值压栈（42S stack lift）
+                lastX = stX;
+                stackLift();
+                stX = regs[idx];
+                autoLift = 0;
+            }
+        }
+        return 0;
+    }
     int d = -1;
     switch (key) {
         case KEY_0: d = 0; break;
@@ -178,7 +302,23 @@ static int handleKey(int key) {
             if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
             stackDrop(); autoLift = 0;
             break;
-        case KEY_F4: break; // 预留（CLx 移至 Shift+backspace）
+        case KEY_LEFTBRACKET: // ( : STO（等字母）
+            if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
+            rpnMode = 1;
+            break;
+        case KEY_RIGHTBRACKET: // ) : RCL（等字母）
+            rpnMode = 2;
+            break;
+        case KEY_VARS: // VARS：寄存器列表
+            rpnMode = 3;
+            regSel = 0; regTop = 0;
+            break;
+        case KEY_F4: // 菜单 STO
+            rpnMode = 1;
+            break;
+        case KEY_F5: // 菜单 RCL
+            rpnMode = 2;
+            break;
         case KEY_ON:
             if (entering) { entering = 0; inlen = 0; autoLift = 0; return 1; }
             break; // ON 短按非输入无操作（退出用 Shift+ON 或 HOME）
@@ -196,6 +336,7 @@ void rpn39Task(void *_) {
     SystemUISuspend();
     uidisp->restoreBuffer(); // UI_Suspend 已释放 disp_buf（releaseBuffer），重新分配堆缓冲（panic 尝试：避开 emergencyBuffer 固定区）
     rpn39Running = 1;
+    loadRegs();
     draw();
     int lastKey = -1;
     shiftHeld = 0;
@@ -226,8 +367,9 @@ void rpn39Task(void *_) {
                         ll_disp_set_indicator(0, -1);
                         draw();
                     } else {
-                        if (r) drawX();  // 输入变化：X 行区域刷新
-                        else draw();     // 栈/菜单变化：全屏刷新
+                        if (rpnMode == 3) drawRegList(); // 列表模式全屏
+                        else if (r) drawX();             // 输入变化：X 行区域刷新
+                        else draw();                     // 栈/菜单变化：全屏刷新
                     }
                 }
             }
