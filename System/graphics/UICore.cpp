@@ -945,7 +945,32 @@ void keyMsg(uint32_t key, int state) {
                     K(KEY_PLUS, "+", "+", " ", " ")
                     K(KEY_DOT, ".", "=", ":", ":")
                     K(KEY_NEGATIVE, "_", "|", ";", ";")
-                    K(KEY_ENTER, "\n", "\n", "\n", "\n")
+                }
+                switch (key) {
+                case KEY_ENTER: { // 命令解析（help/clear；未知命令提示）
+                    char line[CONSW + 1];
+                    int n = 0;
+                    while (n < CONSW && console->lin[console->cy].col[n] != 0)
+                        n++;
+                    while (n > 0 && console->lin[console->cy].col[n - 1] == ' ')
+                        n--;
+                    memcpy(line, console->lin[console->cy].col, n);
+                    line[n] = 0;
+                    console->puts("\n");
+                    if (n > 0 && strcmp(line, "help") == 0) {
+                        console->puts("ExistOS Console commands:\n"
+                                      "  help    - show this list\n"
+                                      "  clear   - clear screen\n"
+                                      "  cls     - alias of clear\n");
+                    } else if (n > 0 && (strcmp(line, "clear") == 0 || strcmp(line, "cls") == 0)) {
+                        console->clear();
+                        console->refresh();
+                    } else if (n > 0) {
+                        console->puts("Unknown command: ");
+                        console->puts(line);
+                        console->puts("\nTry `help` for commands\n");
+                    }
+                } break;
                 }
             }
 #undef K
