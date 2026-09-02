@@ -39,7 +39,7 @@ static const char *fmtNum(double v, char *buf) {
     if (v == (double)(long long)v && v > -1e15 && v < 1e15)
         sprintf(buf, "%lld", (long long)v);
     else
-        sprintf(buf, "%.10g", v);
+        sprintf(buf, "%.12g", v);
     return buf;
 }
 
