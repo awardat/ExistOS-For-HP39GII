@@ -32,7 +32,7 @@ static int rpn39Running = 0;
 
 // ---- 栈操作（HP RPN 语义）----
 static void stackLift() { stT = stZ; stZ = stY; stY = stX; }
-static void stackDrop() { stX = stY; stY = stZ; stZ = stT; }
+static void stackDrop() { stX = stY; stY = stZ; stZ = stT; stT = 0; } // DROP：X 丢弃，栈上移，T 清空
 
 // ---- 数字格式化（整数直显，否则 10 位有效数字）----
 static const char *fmtNum(double v, char *buf) {
@@ -198,10 +198,10 @@ void rpn39Task(void *_) {
         uint32_t kp = keys >> 16;
         uint32_t key = keys & 0xFFFF;
         if (kp) {
-            if (key == KEY_SHIFT) { // Shift 按下：置位 + 顶部指示器（仅状态变化时）
-                if (!shiftHeld) {
-                    shiftHeld = 1;
-                    ll_disp_set_indicator(INDICATE_LEFT, -1);
+            if (key == KEY_SHIFT) { // Shift 按下沿：切换（按一次开，再按关）
+                if (key != (uint32_t)lastKey) {
+                    shiftHeld = !shiftHeld;
+                    ll_disp_set_indicator(shiftHeld ? INDICATE_LEFT : 0, -1);
                     draw();
                 }
                 lastKey = key;
@@ -220,12 +220,7 @@ void rpn39Task(void *_) {
                 }
             }
         } else {
-            lastKey = -1;
-            if (key == KEY_SHIFT && shiftHeld) { // Shift 松开：清位 + 清指示器
-                shiftHeld = 0;
-                ll_disp_set_indicator(0, -1);
-                draw();
-            }
+            lastKey = -1; // 松开：仅复位边沿检测（shift 为切换模式，不随松开清）
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
