@@ -125,17 +125,10 @@ static void drawXLine(void); // 前置声明（draw 内调用）
 static void drawRegList(void) {
     char buf[48];
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
-    uidisp->draw_printf(0, 0, 12, 0, 255, "VARS: UP/DOWN ENT=RCL ON=exit");
+    uidisp->draw_printf(0, 0, 12, 0, 255, "VARS: UP/DOWN ENT=RCL");
     for (int i = 0; i < 8; i++) {
         int idx = regTop + i;
-        if (idx >= 27) break;
-        if (idx == 26) { // CLEAR ALL 尾项
-            if (idx == regSel)
-                uidisp->draw_printf(0, 12 + i * 14, 12, 255, 0, "> CLEAR ALL");
-            else
-                uidisp->draw_printf(0, 12 + i * 14, 12, 0, 255, "  CLEAR ALL");
-            continue;
-        }
+        if (idx >= 26) break;
         char nm[2] = {(char)('A' + idx), 0};
         const char *val = fmtNum(regs[idx], buf);
         if (idx == regSel)
@@ -144,9 +137,9 @@ static void drawRegList(void) {
             uidisp->draw_printf(0, 12 + i * 14, 12, 0, 255, "  %s: %s", nm, val);
     }
     if (clearConfirm)
-        uidisp->draw_printf(0, 118, 12, 255, 0, "Confirm? ENT=clear ON=cancel");
+        uidisp->draw_printf(0, 118, 12, 255, 0, "Confirm? Shift+BKSP clear, ON cancel");
     else
-        uidisp->draw_printf(0, 118, 12, 0, 255, "A-Z + CLEAR ALL");
+        uidisp->draw_printf(0, 118, 12, 0, 255, "A-Z; Shift+BKSP = clear all");
     uidisp->flush();
 }
 
@@ -202,20 +195,9 @@ static int handleKey(int key) {
     // 寄存器列表模式（rpnMode==3）：方向键移动/ENT=RCL/VIEWS/ON 退出
     if (rpnMode == 3) {
         if (key == KEY_UP) { if (regSel > 0) { regSel--; if (regSel < regTop) regTop = regSel; } return 0; }
-        if (key == KEY_DOWN) { if (regSel < 26) { regSel++; if (regSel > regTop + 7) regTop = regSel - 7; } return 0; }
-        if (key == KEY_ENTER) { // ENT
-            if (regSel == 26) { // CLEAR ALL：先确认（再 ENT 清空，ON 取消）
-                if (clearConfirm) {
-                    memset(regs, 0, sizeof(regs));
-                    saveRegs();
-                    clearConfirm = 0;
-                    regSel = 0; regTop = 0;
-                } else {
-                    clearConfirm = 1;
-                }
-                return 0;
-            }
-            double v = regs[regSel]; // ENT：RCL 选中寄存器（栈提升，42S）
+        if (key == KEY_DOWN) { if (regSel < 25) { regSel++; if (regSel > regTop + 7) regTop = regSel - 7; } return 0; }
+        if (key == KEY_ENTER) { // ENT：RCL 选中寄存器（栈提升，42S）
+            double v = regs[regSel];
             if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
             lastX = stX;
             stackLift();
@@ -378,7 +360,19 @@ void rpn39Task(void *_) {
             } else if (key != (uint32_t)lastKey) { // 按下沿（防重复）
                 lastKey = key;
                 if (key == KEY_BACKSPACE && shiftHeld) {
-                    stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
+                    if (rpnMode == 3) { // Vars 列表：Shift+backspace = CLEAR ALL（带确认）
+                        if (clearConfirm) {
+                            memset(regs, 0, sizeof(regs));
+                            saveRegs();
+                            clearConfirm = 0;
+                            regSel = 0; regTop = 0;
+                        } else {
+                            clearConfirm = 1; // 第一次：进确认态
+                        }
+                        drawRegList();
+                    } else {
+                        stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
+                    }
                     shiftHeld = 0; ll_disp_set_indicator(0, -1);   // 动作完成自动退 shift
                     draw();
                 } else if (key == KEY_ON && shiftHeld) {
