@@ -6,6 +6,7 @@
 
 extern const unsigned char FiraCodeAscii24[]; // tools/ttf2c.py 生成（Fira Code 24px 等宽 16px，0 斜杠）
 extern const unsigned char FiraSansAscii20[]; // tools/ttf2c.py 生成（Fira Sans SemiBold 20px 定宽 13）
+extern const unsigned char FiraSansAscii32[]; // tools/ttf2c.py 生成（Fira Sans SemiBold 32px 定宽 20）
 
 extern const unsigned char VGA_Ascii_5x8[];
 extern const unsigned char VGA_Ascii_6x12[];
