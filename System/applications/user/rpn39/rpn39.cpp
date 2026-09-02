@@ -198,10 +198,10 @@ void rpn39Task(void *_) {
         uint32_t kp = keys >> 16;
         uint32_t key = keys & 0xFFFF;
         if (kp) {
-            if (key == KEY_SHIFT) { // Shift 按下沿：切换（按一次开，再按关）
+            if (key == KEY_SHIFT) { // Shift 按下沿：激活（指示 + 标题 S）
                 if (key != (uint32_t)lastKey) {
-                    shiftHeld = !shiftHeld;
-                    ll_disp_set_indicator(shiftHeld ? INDICATE_LEFT : 0, -1);
+                    shiftHeld = 1;
+                    ll_disp_set_indicator(INDICATE_LEFT, -1);
                     draw();
                 }
                 lastKey = key;
@@ -209,18 +209,24 @@ void rpn39Task(void *_) {
                 lastKey = key;
                 if (key == KEY_BACKSPACE && shiftHeld) {
                     stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
-                    drawX();
+                    shiftHeld = 0; ll_disp_set_indicator(0, -1);   // 动作完成自动退 shift
+                    draw();
                 } else if (key == KEY_ON && shiftHeld) {
                     rpn39Running = 0; // Shift+ON 退出（不触发系统关机）
                 } else {
-                    if (handleKey((int)key))
-                        drawX();  // 输入变化：X 行区域刷新
-                    else
-                        draw();   // 栈/菜单变化：全屏刷新
+                    int r = handleKey((int)key);
+                    if (shiftHeld) { // shift + 普通键：动作后自动退 shift
+                        shiftHeld = 0;
+                        ll_disp_set_indicator(0, -1);
+                        draw();
+                    } else {
+                        if (r) drawX();  // 输入变化：X 行区域刷新
+                        else draw();     // 栈/菜单变化：全屏刷新
+                    }
                 }
             }
         } else {
-            lastKey = -1; // 松开：仅复位边沿检测（shift 为切换模式，不随松开清）
+            lastKey = -1; // 松开：仅复位边沿检测（shift 保持到动作完成）
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
