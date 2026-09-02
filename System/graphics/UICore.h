@@ -4,6 +4,8 @@
 #include "UI_Language.h"
 #include "../utils/gbk16.h"
 
+extern const unsigned char HackAscii20[]; // tools/ttf2c.py 生成（Hack 20px 等宽 14px）
+
 extern const unsigned char VGA_Ascii_5x8[];
 extern const unsigned char VGA_Ascii_6x12[];
 extern const unsigned char VGA_Ascii_8x16[];
@@ -124,7 +126,6 @@ public:
         this->drawf(&this->disp_buf[y0 * this->disp_w], 0, y0, this->disp_w - 1, y0 + h);
     }
 
-    extern const unsigned char HackAscii20[]; // tools/ttf2c.py 生成（Hack 20px 等宽 14px）
     void draw_char_ascii(uint32_t x0, uint32_t y0, char ch, uint8_t fontSize, uint8_t fg, int16_t bg) {
         int font_w;
         int font_h;
