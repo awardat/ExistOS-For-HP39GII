@@ -2768,6 +2768,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return stringtodouble(s1,d);
   }
   
+extern "C" void kcas_clear_key_status(void); // stub 提供：清 keyStatus（模态输入结束防残留）
   int inputline(const char * msg1,const char * msg2,string & s,bool numeric,int ypos,GIAC_CONTEXT){
     //s=msg2;
     int pos=s.size(),beg=0;
@@ -2796,7 +2797,6 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	return key;      
       // if (!giac::freeze) set_xcas_status();    
       if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK || key==KEY_CHAR_CR){
-	extern "C" void kcas_clear_key_status(void);
 	kcas_clear_key_status(); // 模态输入结束：清 alpha/shift 残留（防后续 quit 按键被吞）
 	return KEY_CTRL_EXE;
       }
@@ -2828,7 +2828,6 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	continue;
       }
       if (key==KEY_CTRL_EXIT){
-	extern "C" void kcas_clear_key_status(void);
 	kcas_clear_key_status(); // 同上：取消路径也清
 	return key;
       }
