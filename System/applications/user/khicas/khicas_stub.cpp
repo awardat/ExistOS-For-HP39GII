@@ -386,10 +386,7 @@ int GetKey(int *key) {
                     //ll_power_off();
                 }
             }  
-            else if(rshift)  {*key = KEY_CTRL_AC;}  
-            else if(keyStatus & 4)  {*key = KEY_CTRL_AC;}  
-            else if(keyStatus & 8)  {*key = KEY_CTRL_AC;}  
-            else {*key = KEY_CTRL_AC;}  
+            else {*key = KEY_CTRL_EXIT;}  // ON 短按 = 返回/取消（原厂 ON/C 取消语义；AC 在 Shift+backspace）
 
           break;
 
