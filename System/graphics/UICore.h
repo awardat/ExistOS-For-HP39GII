@@ -5,6 +5,7 @@
 #include "../utils/gbk16.h"
 
 extern const unsigned char HackAscii20[]; // tools/ttf2c.py 生成（Hack 20px 等宽 14px）
+extern const unsigned char HackAscii32[]; // tools/ttf2c.py 生成（Hack 32px 等宽 21px）
 
 extern const unsigned char VGA_Ascii_5x8[];
 extern const unsigned char VGA_Ascii_6x12[];
@@ -36,7 +37,7 @@ public:
         this->drawf(this->disp_buf, 0, 0, this->disp_w - 1, this->disp_h - 1);
     }
     void flushRect(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
-        // 底层 portDispFlushAreaBuf 按行连续读 buf（每行宽 = 区域宽），buf 必须指向区域起始
+        // 注意：仅当 x0=0 且区域宽 = disp_w（整行宽）时正确；子宽区域会错位（底层按每行连续读区域宽）
         this->drawf(this->disp_buf + y0 * this->disp_w + x0, x0, y0, x1, y1);
     }
     UI_Display(int display_width, int display_height, void (*drawf)(uint8_t *buf, uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1)) {
@@ -161,10 +162,10 @@ public:
             pCh = HackAscii20 + (ch - ' ') * 40; // 20 行 x 2 字节
             break;
 
-        case 32: // 2 倍放大 16px 字库（VGA_Ascii_8x16）
-            font_w = 16;
+        case 32: // Hack 32px 等宽字库（宽 21，3 字节/行）
+            font_w = 21;
             font_h = 32;
-            pCh = VGA_Ascii_8x16 + (ch - ' ') * 16;
+            pCh = HackAscii32 + (ch - ' ') * 96; // 32 行 x 3 字节
             break;
 
         default:
@@ -185,16 +186,14 @@ public:
             this->drawf(&this->disp_buf[y0 * this->disp_w], 0, y0, this->disp_w - 1, y0 + 19);
             return;
         }
-        if (fontSize == 32) { // 32px：源 8x16 每像素放大 2x2
-            for (int sy = 0; sy < 16; sy++) {
-                for (int sx = 0; sx < 8; sx++) {
-                    pix = (unsigned char)((pCh[sy] << sx) & 0x80U);
-                    uint8_t c = pix ? fg : ((bg != -1) ? (uint8_t)bg : 255);
-                    if (pix || bg != -1) {
-                        buf_set(x0 + sx * 2, y0 + sy * 2, c);
-                        buf_set(x0 + sx * 2 + 1, y0 + sy * 2, c);
-                        buf_set(x0 + sx * 2, y0 + sy * 2 + 1, c);
-                        buf_set(x0 + sx * 2 + 1, y0 + sy * 2 + 1, c);
+        if (fontSize == 32) { // Hack 32px（21px 宽，3 字节/行，MSB 优先）
+            for (int dy = 0; dy < 32; dy++) {
+                for (int dx = 0; dx < 21; dx++) {
+                    pix = (unsigned char)((pCh[dy * 3 + dx / 8] << (dx % 8)) & 0x80U);
+                    if (pix) {
+                        buf_set(x0 + dx, y0 + dy, fg);
+                    } else if (bg != -1) {
+                        buf_set(x0 + dx, y0 + dy, bg);
                     }
                 }
             }
@@ -270,7 +269,7 @@ public:
         for (unsigned int i = 0, x = x0; (i < sizeof(buffer)) && (buffer[i]); i++) {
             if (buffer[i] < 0x80) {
                 draw_char_ascii(x, y0, buffer[i], fontSize, fg, bg);
-                x += fontSize == 32 ? 16 : (fontSize == 20 ? 14 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6)));
+                x += fontSize == 32 ? 21 : (fontSize == 20 ? 14 : (fontSize == 16 ? 8 : (fontSize == 12 ? 8 : 6)));
                 if (x > (unsigned int)this->disp_w) {
                     break;
                 }

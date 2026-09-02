@@ -335,7 +335,8 @@ void __attribute__((target("thumb"))) LLAPI_Task_thumb_entry() {
             case LL_SWI_GET_CONTEXT: {
                 uint32_t *to_addr = (uint32_t *)currentCall.para0;
 
-                if (!vmMgr_checkAddressValid(currentCall.para0, PERM_W)) {
+                if ((!vmMgr_checkAddressValid(currentCall.para0, PERM_W)) ||
+                    (!vmMgr_checkAddressValid(currentCall.para0 + 68 - 1, PERM_W))) {
                     INFO("FAIL TO GET CONTEXT: MEM CAN NOT WRITE!\n");
                     break;
                 }
@@ -354,7 +355,8 @@ void __attribute__((target("thumb"))) LLAPI_Task_thumb_entry() {
                                 memcpy(&moved[1], &from_addr[0], 16 * 4);
                                 vm_load_context(moved);
                 */
-                if (!vmMgr_checkAddressValid(currentCall.para0, PERM_R)) {
+                if ((!vmMgr_checkAddressValid(currentCall.para0, PERM_R)) ||
+                    (!vmMgr_checkAddressValid(currentCall.para0 + 68 - 1, PERM_R))) {
                     INFO("FAIL TO RESTORE CONTEXT: MEM CAN NOT READ!\n");
                     break;
                 }

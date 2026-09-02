@@ -465,7 +465,7 @@ void parseCDCCommand(char *cmd) {
             return;
         }
         mtdInfo_t *nand_info = MTD_getDeviceInfo();
-        if (prog_page + CDC_BINMODE_BUFSIZE / 2048 > nand_info->Blocks * nand_info->PagesPerBlock) {
+        if (CDC_BINMODE_BUFSIZE / 2048 > nand_info->Blocks * nand_info->PagesPerBlock || prog_page > nand_info->Blocks * nand_info->PagesPerBlock - CDC_BINMODE_BUFSIZE / 2048) {
             MscSetCmd("ERR:PG\n");
             return;
         }

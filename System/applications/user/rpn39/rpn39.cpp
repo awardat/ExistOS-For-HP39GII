@@ -36,12 +36,12 @@ static void stackDrop() { stX = stY; stY = stZ; stZ = stT; stT = 0; } // DROP：
 
 // ---- 数字格式化（整数直显，否则 10 位有效数字）----
 static const char *fmtNum(double v, char *buf) {
-    if (v == (double)(long long)v && v > -1e11 && v < 1e11)
-        sprintf(buf, "%lld", (long long)v); // 整数 <=11 位直显
+    if (v > -1e10 && v < 1e10 && v == (double)(long long)v) // 范围先判（防 2^63 UB），整数 <=10 位直显
+        sprintf(buf, "%lld", (long long)v);
     else
         sprintf(buf, "%.12g", v);
-    if (strlen(buf) > 13) // 超宽（32px 行 13 字符上限）：科学计数压缩
-        sprintf(buf, "%.9e", v);
+    if (strlen(buf) > 12) // 超宽（X 行 Hack32px 宽 21 x 12 字符 = 252px 上限）：科学计数压缩
+        sprintf(buf, "%.6e", v);
     return buf;
 }
 
@@ -61,9 +61,9 @@ static void draw(void) {
     uidisp->draw_printf(0, 36, 20, 0, 255, "Z: %s", fmtNum(stZ, buf));
     uidisp->draw_printf(0, 56, 20, 0, 255, "Y: %s", fmtNum(stY, buf));
     if (entering)
-        uidisp->draw_printf(0, 76, 32, 0, 255, "X: %s", inbuf);
+        uidisp->draw_printf(0, 76, 32, 0, 255, "%s", inbuf);
     else
-        uidisp->draw_printf(0, 76, 32, 0, 255, "X: %s", fmtNum(stX, buf));
+        uidisp->draw_printf(0, 76, 32, 0, 255, "%s", fmtNum(stX, buf));
     // 菜单行：黑底条 + 六段均分（每段 42px），空位显示占位
     uidisp->draw_box(0, 112, 255, 127, 255, 0);
     for (i = 1; i < 6; i++)
@@ -81,9 +81,9 @@ static void drawX(void) {
     char buf[48];
     uidisp->draw_box(0, 76, 255, 107, 255, 255);
     if (entering)
-        uidisp->draw_printf(0, 76, 32, 0, 255, "X: %s", inbuf);
+        uidisp->draw_printf(0, 76, 32, 0, 255, "%s", inbuf);
     else
-        uidisp->draw_printf(0, 76, 32, 0, 255, "X: %s", fmtNum(stX, buf));
+        uidisp->draw_printf(0, 76, 32, 0, 255, "%s", fmtNum(stX, buf));
     uidisp->flushRect(0, 76, 255, 107);
 }
 
@@ -233,6 +233,7 @@ void rpn39Task(void *_) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     if (shiftHeld) { shiftHeld = 0; ll_disp_set_indicator(0, -1); }
+    entering = 0; inlen = 0; inbuf[0] = 0; // 清输入态（避免重进残留）
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
     uidisp->flush();
     SystemUIResume();
