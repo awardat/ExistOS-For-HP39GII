@@ -19,7 +19,9 @@ extern "C" {
 uint32_t ll_vm_check_key();
 void SystemUISuspend();
 void SystemUIResume();
+void ll_disp_set_indicator(uint32_t bit, int state);
 }
+static int shiftHeld = 0; // Shift 状态（全局，供绘制显示）
 
 static double stX = 0, stY = 0, stZ = 0, stT = 0; // 4 层栈
 static double lastX = 0;                          // LAST X
@@ -50,7 +52,10 @@ static void draw(void) {
     char buf[48];
     int i;
     uidisp->draw_box(0, 0, 255, 127, 255, 255); // 白底
-    uidisp->draw_printf(0, 0, 12, 0, 255, "RPN39");
+    if (shiftHeld)
+        uidisp->draw_printf(0, 0, 12, 255, 0, "RPN39 S");
+    else
+        uidisp->draw_printf(0, 0, 12, 0, 255, "RPN39");
     uidisp->draw_printf(0, 16, 16, 0, 255, "T: %s", fmtNum(stT, buf));
     uidisp->draw_printf(0, 32, 16, 0, 255, "Z: %s", fmtNum(stZ, buf));
     uidisp->draw_printf(0, 48, 16, 0, 255, "Y: %s", fmtNum(stY, buf));
@@ -58,11 +63,12 @@ static void draw(void) {
         uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", inbuf);
     else
         uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", fmtNum(stX, buf));
-    // 菜单行：六段均分（每段 42px），空位显示占位
+    // 菜单行：黑底条 + 六段均分（每段 42px），空位显示占位
+    uidisp->draw_box(0, 112, 255, 127, 255, 0);
     for (i = 0; i < 6; i++) {
         const char *t = menuItems[i];
         if (t[0] == 0) t = "_";
-        uidisp->draw_printf(i * 42 + 2, 112, 12, 255, 0, "%s", t);
+        uidisp->draw_printf(i * 42 + 2, 114, 12, 255, 0, "%s", t);
     }
     uidisp->flush();
 }
@@ -176,14 +182,18 @@ void rpn39Task(void *_) {
     rpn39Running = 1;
     draw();
     int lastKey = -1;
-    int shiftHeld = 0;
+    shiftHeld = 0;
     while (rpn39Running) {
         uint32_t keys = ll_vm_check_key();
         uint32_t kp = keys >> 16;
         uint32_t key = keys & 0xFFFF;
         if (kp) {
-            if (key == KEY_SHIFT) { shiftHeld = 1; lastKey = key; }
-            else if (key != (uint32_t)lastKey) { // 按下沿（防重复）
+            if (key == KEY_SHIFT) { // Shift 按下：置位 + 顶部指示器
+                shiftHeld = 1;
+                lastKey = key;
+                ll_disp_set_indicator(INDICATE_LEFT, -1);
+                drawX();
+            } else if (key != (uint32_t)lastKey) { // 按下沿（防重复）
                 lastKey = key;
                 if (key == KEY_BACKSPACE && shiftHeld) {
                     stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
@@ -199,10 +209,15 @@ void rpn39Task(void *_) {
             }
         } else {
             lastKey = -1;
-            shiftHeld = 0;
+            if (key == KEY_SHIFT) { // Shift 松开：清位 + 清指示器
+                shiftHeld = 0;
+                ll_disp_set_indicator(0, -1);
+                drawX();
+            }
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+    if (shiftHeld) { shiftHeld = 0; ll_disp_set_indicator(0, -1); }
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
     uidisp->flush();
     SystemUIResume();
