@@ -292,7 +292,7 @@ static TaskHandle_t pUITask;
 void SystemUIInit() {
 
     //UI_Init();
-    xTaskCreate(UI_Task, "UICore", 800, NULL, configMAX_PRIORITIES - 2, &pUITask); // 优先级 3（原 -1 负数异常）
+    xTaskCreate(UI_Task, "UICore", 800, NULL, configMAX_CO_ROUTINE_PRIORITIES - 3, &pUITask); // 原样：-1 无符号后为最高优先级（UI 抢占恢复依赖此）
 }
 
 void UI_Resume();
