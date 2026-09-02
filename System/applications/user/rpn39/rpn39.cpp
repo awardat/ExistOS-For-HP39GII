@@ -24,6 +24,7 @@ void SystemUIResume();
 static double stX = 0, stY = 0, stZ = 0, stT = 0; // 4 层栈
 static double lastX = 0;                          // LAST X
 static int entering = 0;                          // 数字输入中
+static int autoLift = 0;                           // 栈提升标志（42S：计算后输入数字自动压栈）
 static char inbuf[40];
 static int inlen = 0;
 static int rpn39Running = 0;
@@ -75,13 +76,19 @@ static void handleKey(int key) {
         default: break;
     }
     if (d >= 0) {
-        if (!entering) { entering = 1; inlen = 0; inbuf[0] = 0; }
+        if (!entering) {
+            if (autoLift) { stackLift(); autoLift = 0; } // 42S：计算后输入自动压栈（X->Y）
+            entering = 1; inlen = 0; inbuf[0] = 0;
+        }
         if (inlen < 30) { inbuf[inlen++] = (char)('0' + d); inbuf[inlen] = 0; }
         return;
     }
     switch (key) {
         case KEY_DOT:
-            if (!entering) { entering = 1; inlen = 0; inbuf[0] = 0; }
+            if (!entering) {
+                if (autoLift) { stackLift(); autoLift = 0; }
+                entering = 1; inlen = 0; inbuf[0] = 0;
+            }
             if (inlen < 30 && !strchr(inbuf, '.')) { inbuf[inlen++] = '.'; inbuf[inlen] = 0; }
             break;
         case KEY_NEGATIVE:
@@ -90,6 +97,7 @@ static void handleKey(int key) {
                 else if (inlen < 30) { memmove(inbuf + 1, inbuf, inlen + 1); inbuf[0] = '-'; inlen++; }
             } else {
                 stX = -stX;
+                autoLift = 0;
             }
             break;
         case KEY_BACKSPACE:
@@ -101,12 +109,11 @@ static void handleKey(int key) {
                 entering = 0; inlen = 0;
                 lastX = stX;
                 stX = v;
-                stackLift(); // Y=输入值（压栈）
-                stX = 0;     // X 清 0（老 HP 风格：压栈后 X 清零，等待新输入）
+                stackLift(); // Y=输入值（压栈），X 保持（42S）
             } else {
-                stackLift(); // 复制 X 压栈
-                stX = 0;
+                stackLift(); // 复制 X 压栈（42S：X 保持）
             }
+            autoLift = 0;
             break;
         case KEY_PLUS:
         case KEY_SUBTRACTION:
@@ -124,14 +131,15 @@ static void handleKey(int key) {
             }
             stX = r;
             stY = stZ; stZ = stT; // Y 被消费，栈下移
+            autoLift = 1;         // 42S：计算后输入自动压栈
             break;
         }
-        case KEY_F1: { double t = stX; stX = stY; stY = t; break; } // x<>y
-        case KEY_F2: { double t = stT; stT = stZ; stZ = stY; stY = stX; stX = t; break; } // R↓
-        case KEY_F3: stackDrop(); break;                            // DROP
-        case KEY_F4: stX = 0; entering = 0; inlen = 0; break;       // CLx
+        case KEY_F1: { double t = stX; stX = stY; stY = t; autoLift = 0; break; } // x<>y
+        case KEY_F2: { double t = stT; stT = stZ; stZ = stY; stY = stX; stX = t; autoLift = 0; break; } // R↓
+        case KEY_F3: stackDrop(); autoLift = 0; break;              // DROP
+        case KEY_F4: stX = 0; entering = 0; inlen = 0; autoLift = 0; break; // CLx
         case KEY_ON:
-            if (entering) { entering = 0; inlen = 0; }
+            if (entering) { entering = 0; inlen = 0; autoLift = 0; }
             else { rpn39Running = 0; }
             break;
         case KEY_HOME:
@@ -145,7 +153,7 @@ static void handleKey(int key) {
 // ---- 任务 ----
 void rpn39Task(void *_) {
     SystemUISuspend();
-    uidisp->emergencyBuffer(); // UI_Suspend 已释放 disp_buf（releaseBuffer），切到固定 RAM 缓冲
+    uidisp->restoreBuffer(); // UI_Suspend 已释放 disp_buf（releaseBuffer），重新分配堆缓冲（panic 尝试：避开 emergencyBuffer 固定区）
     rpn39Running = 1;
     draw();
     int lastKey = -1;
