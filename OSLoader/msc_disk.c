@@ -276,6 +276,7 @@ bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, boo
 }
 
 extern char *binBuf;
+#define CDC_BINMODE_BUFSIZE 32768 // 与 start.c binBuf 缓冲一致
 // Callback invoked when received READ10 command.
 // Copy disk's data to buffer (up to bufsize) and return number of copied bytes.
 int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize) {
@@ -393,7 +394,13 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *
         if (binBuf != NULL) {
             // 104 - 167
             if ((lba >= 104) && (lba <= 167)) {
-                memcpy(&binBuf[512 * (lba - 104)], buffer, bufsize);
+                uint32_t off = 512 * (lba - 104);
+                if (off < CDC_BINMODE_BUFSIZE) {
+                    uint32_t sz = bufsize;
+                    if (sz > CDC_BINMODE_BUFSIZE - off)
+                        sz = CDC_BINMODE_BUFSIZE - off; // 不越出 binBuf
+                    memcpy(&binBuf[off], buffer, sz);
+                }
             }
         }
         break;
