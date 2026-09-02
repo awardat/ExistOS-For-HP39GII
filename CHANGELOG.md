@@ -27,7 +27,7 @@
   - 菜单内 Shift+View 打开当前菜单项帮助（FKEYS 类菜单等同 F6/Help）
   - 模态输入（inputline）返回后清按键状态（修复保存 session 后 quit 卡住）
 - **E 组整改**：msc WRITE10 边界、getSuffix 三缺陷、路径拼接有界、MB_ElementCount 与渲染对齐、CrashLog SP 校验、链接器 ASSERT、主机工具修复、UI_Task 栈 800→2048（栈溢出检查重新启用）
-- **构建卫生**：-Wall/-Wextra + 栈保护 0 警告；flash.sh 单刷开关（osloader/existos）
+- **构建卫生**：-Wall/-Wextra + 栈保护 0 警告；刷写支持 OSLoader/ExistOS 单独更新
 - 审核报告：build130 增量审核 + 用户决策 + 修复引入回归记录（docs/）
 
 ### 发布惯例
