@@ -4,11 +4,33 @@
 
 ---
 
-## [build 129] - 2026-09-01 (开发中)
+## [build 129] - 2026-09-02 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-129))
 
-### 进行中
-- 阶段 B/C/D 安全加固（CDC flash 最小防御、VM 沙箱、FTL 等）待实施
-- KhiCAS 全量帮助中文化（约 800 条）待实施
+### ⚠️ 风险警告
+- **加速模式（480MHz）超出 STMP3770 文档上限（380MHz）**：可能导致**耗电剧增、发热、设备损坏**。请谨慎使用，长时间使用建议标准（240MHz）或省电（160MHz）模式
+- 320MHz（FRAC 分频）真机两次尝试失败（频率异常/挂死），已回退搁置，详见 docs/boost-320-frac-issue.md
+
+### 新增
+- **电源三档变频**：标准 120~240 / 省电 80~160 / 加速 240~480（空闲自动降频，空闲 WFI 省电）
+- **安全加固**：
+  - CDC flash 命令参数校验（ERASEB/PROGP/MKNCB：解析失败拒绝、块/页上界检查，不再有危险默认值）
+  - VM 沙箱收紧：低 512K 仅读（防 VM 写内核区）；FLASH_PAGE_READ 权限方向修正；SET_CONTEXT/MEM_PHY_INFO 指针验证
+  - 日志缓冲竞态修复（数据先写、索引后更 + 消费侧快照）
+- **FTL_Sync 入队**：文件系统同步与 FTL 读写队列串行（消除映射并发竞态，掉电保护更可靠）
+- **ZRAM OOM 降级**：压缩池满不再 NULL 崩溃（与 MINILZO 分支对齐返回错误）
+- **GBK 字形查找统一**：gbk16_glyph() 统一范围/边界检查（修复 UICore.h 下溢与 vGL 越界），两套渲染后端共用
+- **构建卫生**：-Wall -Wextra 告警清零、-fstack-protector-strong 栈保护、清理 .bak 残留
+
+### 修复
+- **ON/C 键承担取消/后退**（HP 原版语义）：KhiCAS ON 短按=取消（AC，菜单里=返回、编辑器=清空）；UI ON 短按=返回主页面；Shift+ON/C 关机不变
+- View 键释放（系统/新计算器无定义）；KhiCAS 保留切换公式输入
+- KhiCAS: 清除历史/清除变量确认框法语汉化（"Effacer l'historique?"→清除历史?、"OK: oui, Back: conserver"→OK: 是, Back: 保留、"Effacer variables?"→清除变量?）
+- 键位表 ON 统一为 ON/C（原版 ROM 开机后为取消键；口语仍称 ON）
+
+### 待完成
+- KhiCAS 全量帮助中文化（约 800 条）
+- RPN39 计算器（42S 基准：4 层栈 + 四则 → 科学 → 绘图）
+- D4 FTL_Sync 真机掉电测试
 
 ---
 
