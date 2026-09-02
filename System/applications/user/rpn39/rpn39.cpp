@@ -354,7 +354,8 @@ void rpn39Task(void *_) {
                 if (key != (uint32_t)lastKey) {
                     shiftHeld = 1;
                     ll_disp_set_indicator(INDICATE_LEFT, -1);
-                    draw();
+                    if (rpnMode == 3) drawRegList(); // 列表模式保持列表视图
+                    else draw();
                 }
                 lastKey = key;
             } else if (key != (uint32_t)lastKey) { // 按下沿（防重复）
@@ -374,7 +375,8 @@ void rpn39Task(void *_) {
                         stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
                     }
                     shiftHeld = 0; ll_disp_set_indicator(0, -1);   // 动作完成自动退 shift
-                    draw();
+                    if (rpnMode == 3) drawRegList();
+                    else draw();
                 } else if (key == KEY_ON && shiftHeld) {
                     rpn39Running = 0; // Shift+ON 退出（不触发系统关机）
                 } else {
