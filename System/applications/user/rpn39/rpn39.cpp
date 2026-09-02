@@ -19,7 +19,6 @@ extern "C" {
 uint32_t ll_vm_check_key();
 void SystemUISuspend();
 void SystemUIResume();
-void ll_disp_set_indicator(uint32_t bit, int state);
 }
 static int shiftHeld = 0; // Shift 状态（全局，供绘制显示）
 
