@@ -67,8 +67,19 @@ static void draw(void) {
     uidisp->flush();
 }
 
-// ---- 按键处理 ----
-static void handleKey(int key) {
+// X 行区域刷新（16px 高，输入变化专用）
+static void drawX(void) {
+    char buf[48];
+    uidisp->draw_box(0, 64, 255, 79, 255, 255);
+    if (entering)
+        uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", inbuf);
+    else
+        uidisp->draw_printf(0, 64, 16, 0, 255, "X: %s", fmtNum(stX, buf));
+    uidisp->flushRect(0, 64, 255, 79);
+}
+
+// ---- 按键处理（返回 1 = 仅 X 行变化（区域刷新），0 = 全屏刷新）----
+static int handleKey(int key) {
     int d = -1;
     switch (key) {
         case KEY_0: d = 0; break;
@@ -89,7 +100,7 @@ static void handleKey(int key) {
             entering = 1; inlen = 0; inbuf[0] = 0;
         }
         if (inlen < 30) { inbuf[inlen++] = (char)('0' + d); inbuf[inlen] = 0; }
-        return;
+        return 1;
     }
     switch (key) {
         case KEY_DOT:
@@ -98,7 +109,7 @@ static void handleKey(int key) {
                 entering = 1; inlen = 0; inbuf[0] = 0;
             }
             if (inlen < 30 && !strchr(inbuf, '.')) { inbuf[inlen++] = '.'; inbuf[inlen] = 0; }
-            break;
+            return 1;
         case KEY_NEGATIVE:
             if (entering) {
                 if (inlen > 0 && inbuf[0] == '-') { memmove(inbuf, inbuf + 1, inlen); inlen--; }
@@ -107,9 +118,9 @@ static void handleKey(int key) {
                 stX = -stX;
                 autoLift = 0;
             }
-            break;
+            return 1;
         case KEY_BACKSPACE:
-            if (entering && inlen > 0) { inlen--; inbuf[inlen] = 0; }
+            if (entering && inlen > 0) { inlen--; inbuf[inlen] = 0; return 1; }
             break;
         case KEY_ENTER:
             if (entering) {
@@ -147,15 +158,15 @@ static void handleKey(int key) {
         case KEY_F3: stackDrop(); autoLift = 0; break;              // DROP
         case KEY_F4: break; // 预留（CLx 移至 Shift+backspace）
         case KEY_ON:
-            if (entering) { entering = 0; inlen = 0; autoLift = 0; }
-            else { rpn39Running = 0; }
-            break;
+            if (entering) { entering = 0; inlen = 0; autoLift = 0; return 1; }
+            break; // ON 短按非输入无操作（退出用 Shift+ON 或 HOME）
         case KEY_HOME:
             rpn39Running = 0;
             break;
         default:
             break;
     }
+    return 0;
 }
 
 // ---- 任务 ----
@@ -176,10 +187,15 @@ void rpn39Task(void *_) {
                 lastKey = key;
                 if (key == KEY_BACKSPACE && shiftHeld) {
                     stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
+                    drawX();
+                } else if (key == KEY_ON && shiftHeld) {
+                    rpn39Running = 0; // Shift+ON 退出（不触发系统关机）
                 } else {
-                    handleKey((int)key);
+                    if (handleKey((int)key))
+                        drawX();  // 输入变化：X 行区域刷新
+                    else
+                        draw();   // 栈/菜单变化：全屏刷新
                 }
-                draw();
             }
         } else {
             lastKey = -1;

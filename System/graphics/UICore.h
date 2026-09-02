@@ -33,6 +33,9 @@ public:
     void flush() {
         this->drawf(this->disp_buf, 0, 0, this->disp_w - 1, this->disp_h - 1);
     }
+    void flushRect(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
+        this->drawf(this->disp_buf, x0, y0, x1, y1);
+    }
     UI_Display(int display_width, int display_height, void (*drawf)(uint8_t *buf, uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1)) {
         printf("Create UI Display.\n");
         this->disp_buf = (uint8_t *)pvPortMalloc(display_width * display_height);
