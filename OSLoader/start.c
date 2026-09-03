@@ -893,9 +893,7 @@ void vBatteryMon(void *__n) {
     int n = 0;
 
     uint32_t show_bat_val;
-    static uint32_t chargeStartTick = 0; // 充电开始（12h 定时+CHRGSTS 轮询，2026-09-03 数据手册增强）
-    static uint32_t chargeLastCheck = 0;
-    static int chargeFullCount = 0;
+    static uint32_t chargeStartTick = 0; // 充电开始（12h 定时，2026-09-03 数据手册增强；CHRGSTS 轮询仅 Li-Ion 用——镍氢不适用已移除）
 
     for (;;) {
 
@@ -907,24 +905,12 @@ void vBatteryMon(void *__n) {
         extern bool g_chargeEnable;
         if (g_chargeEnable) {
             uint32_t now = xTaskGetTickCount();
-            if (chargeStartTick == 0) { chargeStartTick = now; chargeFullCount = 0; }
+            if (chargeStartTick == 0) { chargeStartTick = now; }
             // 手册 §29.7：NiMH 0.1C 慢充 12 小时后必须停止（软件职责）
-            if (now - chargeStartTick >= 43200000UL) { // 12h
+            if (now - chargeStartTick >= 43200000UL) { // 12h（镍氢标准停充；CHRGSTS 轮询仅 Li-Ion，不适用于镍氢）
                 portChargeEnable(false);
                 printf("Charge stop (12h)\n");
-                chargeStartTick = 0; chargeFullCount = 0;
-            }
-            // 手册：充满检测 = CHRGSTS 轮询（1s 间隔，连续两次低）
-            if (chargeLastCheck == 0 || (now - chargeLastCheck) >= 1000) {
-                chargeLastCheck = now;
-                if (!HW_POWER_STS.B.CHRGSTS) {
-                    chargeFullCount++;
-                    if (chargeFullCount >= 2) {
-                        portChargeEnable(false);
-                        printf("Charge stop (full)\n");
-                        chargeStartTick = 0; chargeFullCount = 0;
-                    }
-                } else chargeFullCount = 0;
+                chargeStartTick = 0;
             }
             if (batt_voltage >= 1420) {
 
