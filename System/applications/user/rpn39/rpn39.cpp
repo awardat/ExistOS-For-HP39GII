@@ -229,7 +229,7 @@ static const char *fmtFrac(double v, char *out) {
         if (rem < 1e-15) break;
         d = 1.0 / rem;
     }
-    sprintf(out, "%.6e", v); // 转不出（√2/π）自动保持小数
+    sprintf(out, "%.12g", v); // 转不出（√2/π 等）保持 12 位小数显示
     return out;
 }
 
@@ -391,7 +391,16 @@ static void drawX(void) {
 
 // ---- MATH 菜单处理（rpnMode==4，先于其他分支）----
 static int mathKey(int key) {
-    if (key >= KEY_F1 && key <= KEY_F6) { mathExec(key - KEY_F1); rpnMode = 0; return 0; }
+    // KEY_F1-F6 物理码不连续（0/9/1/2/3/11），必须显式映射 slot
+    switch (key) {
+        case KEY_F1: mathExec(0); rpnMode = 0; return 0;
+        case KEY_F2: mathExec(1); rpnMode = 0; return 0;
+        case KEY_F3: mathExec(2); rpnMode = 0; return 0;
+        case KEY_F4: mathExec(3); rpnMode = 0; return 0;
+        case KEY_F5: mathExec(4); rpnMode = 0; return 0;
+        case KEY_F6: mathExec(5); rpnMode = 0; return 0;
+        default: break;
+    }
     if (key == KEY_LEFT || key == KEY_UP) { if (mathPage > 0) mathPage--; return 0; }
     if (key == KEY_RIGHT || key == KEY_DOWN) { if (mathPage < 4) mathPage++; return 0; }
     if (key == KEY_ON || key == KEY_VIEWS || key == KEY_HOME) { rpnMode = 0; return 0; }
