@@ -517,6 +517,16 @@ static int handleKey(int key, int shift) {
             return 1;
         case KEY_BACKSPACE:
             if (entering && inlen > 0) { inlen--; inbuf[inlen] = 0; return 1; }
+            if (!entering) { // 非输入态：从当前 X 开始编辑（退格再继续）
+                char tmp[40];
+                sprintf(tmp, "%.12g", stX);
+                strcpy(inbuf, tmp);
+                inlen = (int)strlen(inbuf);
+                entering = 1;
+                if (inlen > 0) { inlen--; inbuf[inlen] = 0; }
+                autoLift = 0;
+                return 1;
+            }
             break;
         case KEY_ENTER:
             if (entering) {
