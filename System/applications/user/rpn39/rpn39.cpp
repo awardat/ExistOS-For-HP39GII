@@ -147,6 +147,7 @@ static void unaryOp(double (*f)(double), int angIn, int angOut) {
     if (angIn) x = toRad(x);
     double r = f(x);
     if (!valid(r)) r = 0;
+    if (angIn && fabs(r) < 1e-13) r = 0; // 二转十噪声舍去（90° cos → 0）
     if (angOut) r = fromRad(r);
     lastX = stX;
     stX = r;
@@ -237,7 +238,7 @@ static const char *fmtFrac(double v, char *out) {
 static const char *mathTitles[5] = {"ANGLE", "CONST/BASIC", "HYPERBOLIC", "PROB/CALC", "POWER"};
 static const char *mathItems[5][6] = {
     {"DEG", "RAD", "GRAD", "", "", ""},
-    {"e", "abs", "sign", "round", "floor", "ceil"},
+    {"e", "sign", "round", "floor", "ceil", ""},
     {"sinh", "cosh", "tanh", "asinh", "acosh", "atanh"},
     {"nCr", "nPr", "RAND", "", "", ""},
     {"x3", "10^x", "2^x", "", "", ""}
@@ -250,13 +251,12 @@ static void mathExec(int slot) {
             else if (slot == 1) { angMode = 1; saveRegs(); }
             else if (slot == 2) { angMode = 2; saveRegs(); }
             break;
-        case 1: // e/abs/sign/round/floor/ceil
+        case 1: // e/sign/round/floor/ceil（abs 已移到 Shift+(-) 物理键）
             if (slot == 0) pushConst(M_E);
-            else if (slot == 1) unaryOp(f_abs, 0, 0);
-            else if (slot == 2) unaryOp(f_sign, 0, 0);
-            else if (slot == 3) unaryOp(f_round, 0, 0);
-            else if (slot == 4) unaryOp(floor, 0, 0);
-            else if (slot == 5) unaryOp(ceil, 0, 0);
+            else if (slot == 1) unaryOp(f_sign, 0, 0);
+            else if (slot == 2) unaryOp(f_round, 0, 0);
+            else if (slot == 3) unaryOp(floor, 0, 0);
+            else if (slot == 4) unaryOp(ceil, 0, 0);
             break;
         case 2: // 双曲
             if (slot == 0) unaryOp(sinh, 0, 0);
@@ -459,6 +459,7 @@ static int handleKey(int key, int shift) {
             case KEY_XY:  binaryOp(g_yroot);    return 0; // X 的 Y 次根
             case KEY_DIVISION: unaryOp(f_rec, 0, 0); return 0; // 1/X
             case KEY_MULTIPLICATION: unaryOp(f_fact, 0, 0); return 0; // X!
+            case KEY_NEGATIVE: unaryOp(f_abs, 0, 0); return 0; // ABS（原厂 Shift+(-) = ABS）
             case KEY_3:  pushConst(M_PI);       return 0; // π 压栈
             default: return 0;                            // 未定义 shift 组合忽略
         }
@@ -559,7 +560,8 @@ static int handleKey(int key, int shift) {
         case KEY_MATH: // MATH 数学功能菜单（翻页）
             rpnMode = 4; mathPage = 0;
             return 0;
-        case KEY_ABC: // a b/c：小数/分数显示切换（仅 X 行）
+        case KEY_ABC: // a b/c：小数/分数显示切换（仅 X 行；输入中先收尾）
+            if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
             fracMode = !fracMode;
             return 1;
         case KEY_F1: // x<>y（输入中先收尾：值进 X）
