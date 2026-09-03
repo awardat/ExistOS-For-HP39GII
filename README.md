@@ -25,64 +25,49 @@
 
 参见[仅安装](#仅安装)节以获取安装教程。
 
-# 注：以下特性主要适用于Build 70及之前的版本
-
 ## 目录
 
 | | 使用者指引 | |
 | :---: | :---: | :---: |
-| [目前工作进展](#目前工作进展) | | [实验性功能](#实验性功能) |
+| [目前工作进展](#目前工作进展) | | |
 | | **[安装教程](#仅安装)** | |
 | 适用 Win10/11 | [使用 ExistOS Updater 安装](#windows-下使用-existos-updater-刷入) | (推荐新手使用) |
 | Win/Linux 通用 | [使用 OS_Loader 和 EDB 安装](#通用方法) | |
-| Windows | [模拟器使用](#模拟器使用) | (可体验 ExistOS) |
 | | **[使用教程](#固件基本使用)** | |
 | [初始化](#初次使用) | [系统快捷键](#系统快捷键) | [访问内部存储](#内部存储的访问) |
 | **[KhiCAS 基本使用](#khicas-的基本使用)** | [基本计算](#基本计算) | [示例 1: 绘图](#示例1-绘图) |
 | | [示例 2: 不定积分](#示例2-不定积分) | [示例 3: 定积分](#示例3-定积分) |
 | | [示例 4: 编程绘制 Logistic 方程映射 Feigenbaum 分岔图](#示例4-编程绘制-logistic-方程映射-feigenbaum-分岔图) | |
-| **[实验性功能](#实验性功能说明)** | [充电功能（未完全测试）](#充电功能未完全测试) | |
 | **[如何卸载并刷回原生系统](#系统卸载并刷回原生系统)** | **[本项目贡献者](#贡献者)** | **[开源许可证](#许可协议)** |
 
 | | 开发者指引 | |
 | :---: | :---: | :---: |
-| [目前工作进展](#目前工作进展) | | [实验性功能](#实验性功能) |
+| [目前工作进展](#目前工作进展) | | |
 | | **[编译与安装教程](#编译和安装)** | |
 | [准备环境](#准备环境) | [编译系统](#编译系统) | [固件安装](#固件安装) |
 | | **贡献代码** | |
-| 文档 (待补) | [第三方 APP 开发](#第三方-app-开发) | [代码提交规范](#代码提交规范) |
+| 文档 (待补) | [代码提交规范](#代码提交规范) |
 | **[如何卸载并刷回原生系统](#系统卸载并刷回原生系统)** | **[本项目贡献者](#贡献者)** | **[开源许可证](#许可协议)** |
 
-## 目前工作进展
+## 目前工作进展（build 126 起，详见 CHANGELOG.md）
 
-- [x] Boot
-- [x] 调试串口
-- [x] LCD 256 级灰度 屏幕驱动
-- [x] STMP3770 中断控制器
-- [x] 键盘驱动（GPIO 轮询）
-- [x] 定时器驱动
-- [x] CPU 频率设定
-- [x] RTC 时钟
-- [x] USB 大容量存储模式
-- [x] USB 串口控制台
-- [x] USB 模拟键盘鼠标
-- [x] USB 功能动态配置
-- [x] FLASH 驱动
-- [x] FATFS 文件系统
-- [x] 多任务
-- [x] 虚拟内存
-- [x] APP 加载
-- [x] 最小化 MicroPython 实现
-- [x] 用户界面 GUI
-- [x] 基本电源管理
-- [ ] 完全电源管理
-- [x] 完全脱离官方刷机工具的固件升级
+### build 131（开发中）
+- [x] **RPN39 阶段 2 科学计算**（角度模式 DEG/RAD/GRAD 持久化、直接键位函数、Shift 层、MATH 菜单 5 页、a b/c 分数显示、EEX）
 
-### 实验性功能
+### build 130（2026-09-02 已发布）
+- [x] **RPN39 RPN 计算器**（42S 基准）：4 层栈 + 四则 + 寄存器（STO/RCL/VARS）+ 掉电持久化 + 自动栈提升
+- [x] KhiCAS 帮助/ON/C 语义、E 组整改 15 项
+- [x] 构建卫生（-Wall/-Wextra 0 警告）、CI 供应链加固
 
-- [x] USB 输入镍氢电池充电功能
+### build 129（2026-09-02 已发布）
+- [x] 电源三档变频（标准/省电/加速）
+- [x] 安全加固（CDC 参数校验/VM 沙箱）、FTL_Sync、GBK 统一
 
-目前工作进展：如上。关于具体用户界面 GUI 等还在讨论中，如有宝贵意见可于 Issues 提出。
+### build 128（2026-09-01 已发布）
+- [x] KhiCAS 菜单中文显示/错位/quit 修复 + 汉化
+
+### build 127 / 126（2026-08-30 已发布）
+- [x] 安装修复；25 项 Bug 修复 + 文档
 
 ## 仅安装
 
@@ -90,7 +75,7 @@
 
 您需要准备好：
 
-- 固件：从[此处](https://github.com/ExistOS-Team/ExistOS-For-HP39GII/releases)下载
+- 固件：从[此处](https://github.com/awardat/ExistOS-For-HP39GII/releases)（本仓库）下载
   - 请下载 `OSLoader.sb` 和 `ExistOS.sys`
 - 刷机工具：从[此处](https://github.com/ExistOS-Team/ExistOS_Updater_v2/releases)下载
   - 仅支持 Windows 10，Windows 11
@@ -101,7 +86,7 @@
 
 您需要准备好：
 
-- 固件：从[此处](https://github.com/ExistOS-Team/ExistOS-For-HP39GII/releases)下载
+- 固件：从[此处](https://github.com/awardat/ExistOS-For-HP39GII/releases)（本仓库）下载
   - 请下载 `OSLoader.sb` 和 `ExistOS.sys`
 - sb_loader：用于将 OSLoader 载入计算器 RAM，若您的 HP39gii 上没有安装 ExistOS 则需要使用。
   - Windows 用户请从[此处](../../raw/main/tools/sbtools_win/sb_loader.exe)下载二进制文件；
@@ -144,8 +129,8 @@
 
 请先克隆本仓库到本地：
 ```bash
-git clone https://github.com/ExistOS-Team/ExistOS-For-HP39GII.git # https
-git clone git@github.com:ExistOS-Team/ExistOS-For-HP39GII.git # ssh
+git clone https://github.com/awardat/ExistOS-For-HP39GII.git # https
+git clone git@github.com:awardat/ExistOS-For-HP39GII.git # ssh
 ```
 然后进入目录：
 ```bash
@@ -293,22 +278,6 @@ Windows 系统下可以查看设备管理器是否出现一个名为 “USB 输�
 
 刷入 ExistOS 后计算器会自动重启，此时已刷入新的系统并可以使用。
 
-## 模拟器使用
-
-可以通过 Windows 平台上的 ExistOS Emulator 模拟器体验系统。
-
-![Emulator](Image/46.png)
-
-模拟器下载地址：https://github.com/ExistOS-Team/ExistOS-Emulator/releases/tag/Latest
-
-### 模拟器文件传输
-
-在模拟器进入系统主界面后直接将 PC 上的文件拖入模拟器窗口后即可完成文件发送。
-
-### 模拟器系统更新
-
-直接替换 ExistOS.sys。
-
 ## 固件基本使用
 
 ### 初次使用
@@ -325,7 +294,7 @@ Windows 系统下可以查看设备管理器是否出现一个名为 “USB 输�
 
 ![Sys1](Image/4.png)
 
-Files 选项卡为当前文件浏览器，可以浏览目录、打开 jpg 格式图片、播放 mjpeg 编码 avi 格式视频以及执行.exp 格式的 Exist APP 应用，目前暂未实现其它文件管理功能。
+Files 选项卡为当前文件浏览器，可以浏览目录、打开 jpg 格式图片、播放 mjpeg 编码 avi 格式视频，目前暂未实现其它文件管理功能。
 
 ![Sys1](Image/4-1.png)
 
@@ -497,35 +466,11 @@ def f():
 
 ![Sys1](Image/35.png)
 
-## 实验性功能说明
-
-### 充电功能（未完全测试）
-
-目前固件支持通过控制 SoC 内部 DCDC 和线性稳压器从 USB 取电，降压到 1.4V 后输出给电池仓进行充电，因此使用该功能时务必使用可充电电池，以防发生危险。
-
-使用方法：接入 USB 线后切换到`Status`界面，滚动至最底部勾选`Enable Charge`后电池仓开始输出电流，查看上面显示信息可以看到核心温度上升至 50℃ 左右，这是因为充电相关的升降压电路是和 CPU 集成在同一芯片内。
-
-![Sys1](Image/41.png)
-
-以下是使用一节标称 400mAh 1.2V AAAA 电池测试充电时绘制的系统状况曲线（充电时间：6 小时）：
-
-![Sys1](Image/42.png)
-
-以下是使用一节标称 400mAh 1.2V AAAA 电池测试放电时绘制的系统状况曲线（放电时间：2 小时）：
-
-![Sys1](Image/43.png)
-
 ## 系统卸载并刷回原生系统
 
 刷入原生系统前需要将全片 Flash 擦除，否则使用原生刷机工具时会卡在格式化环节。
 
 Flash 全盘擦除方法：在刷入 OS Loader 后或 Exist OS 系统运行时，按下`ON`+`F5`界面进入数据清空界面，随后选择全盘格式化，请注意，全盘数据擦除操作不可撤销，当显示“Operation Finish.”后操作完成，Flash 数据将全部清除且不可恢复，此时重新上电计算器并在 Win7/XP 环境下使用原生刷机工具即可刷入。
-
-## 第三方 APP 开发
-
-ExistOS APP 开发见如下仓库：
-
-https://github.com/ExistOS-Team/ExistOS-App-demo
 
 ## 代码提交规范
 
