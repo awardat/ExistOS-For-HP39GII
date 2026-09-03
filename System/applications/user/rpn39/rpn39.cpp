@@ -309,7 +309,9 @@ static void mathExec(int slot) {
             else if (slot == 2) {
                 double x = (entering ? atof(inbuf) : stX);
                 if (entering) { entering = 0; inlen = 0; }
-                srand((unsigned)(x * 1e6) + 1);
+                static uint32_t randCtr = 0;
+                randCtr = randCtr * 1664525 + 1013904223; // LCG 递推（计数器熵，防同 X 恒同值）
+                srand((unsigned)(xTaskGetTickCount() ^ (unsigned)(x * 1e6) ^ randCtr)); // tick+X+计数器混合种子
                 lastX = stX;
                 stX = rand() / (RAND_MAX + 1.0);
                 autoLift = 1;
