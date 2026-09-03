@@ -74,7 +74,9 @@ row 10 │ ON/C  │       │       │       │       │
 | UP / DOWN | 光标上/下 | 上/下一页（PAGEUP/PAGEDOWN） |
 | LEFT / RIGHT | 光标左/右 | 选择左/右（SHIFT_LEFT/RIGHT） |
 | VIEWS | **KEY_CTRL_EXIT**（输入行→打开脚本编辑器；历史区→跳回输入行） | **KEY_CTRL_QUIT**（命令目录/帮助） |
-| HOME | KEY_CTRL_INS | 同普通 |
+| HOME | ~~KEY_CTRL_INS~~ → **已释放**（2026-09-03：去除原 Home→file-quit 路径；INPUT_TRANSLATE 中注释） | — |
+
+> **6 视图按键规划（待做）**：重新定义 6 个视图/功能按键（HOME、PLOT、VIEWS、NUM、SYMB、VARS 族）——HOME 已释放待分配；具体方案后续讨论（见 CHANGELOG 131 规划）。
 | NUM | KEY_CTRL_OPTN | KEY_SHIFT_OPTN |
 | SYMB | KEY_CTRL_SETUP | 同普通 |
 | VARS | KEY_CTRL_VARS | KEY_CTRL_INS |

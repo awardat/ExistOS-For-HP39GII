@@ -18,8 +18,9 @@
 
 ### 规划
 - **RPN39**：阶段 3 计算功能扩展（候选：复数/矩阵/统计/金融/工程常量——已取消绘图）
-- **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；giac 桌面版（2.0.0）有限移植（差异概览见 docs/giac-snapshot-diff.md）
+- **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；**去除 Home→file-quit**（已完成，HOME 释放）+ **重新定义 6 个视图按键**（规划中）；giac 桌面版（2.0.0）有限移植（差异概览见 docs/giac-snapshot-diff.md）
 - D4 FTL_Sync 真机掉电测试
+- **C 组待办**（build 132）：OSLoader 侧栈溢出检查开启（=2，需刷 OSLoader 验证）；字体母本唯一权威源标注（tools/ vs System/graphics/）；RAND 种子策略（固定池或文档化）
 
 ---
 
