@@ -105,7 +105,7 @@ static void loadRegs(void) {
             UINT br2 = 0;
             f_read(&f, st, sizeof(st), &br2);
             if (br2 >= 4 * sizeof(double)) { stX = st[0]; stY = st[1]; stZ = st[2]; stT = st[3]; }
-            if (br2 >= 5 * sizeof(double)) angMode = (int)st[4]; // 角度模式（含 31 值新版）
+            if (br2 >= 5 * sizeof(double)) { angMode = (int)st[4]; if (angMode < 0 || angMode > 2) angMode = 0; } // 角度模式（含 31 值新版；坏文件钳制）
         }
         f_close(&f);
     }
@@ -120,7 +120,8 @@ static const char *fmtNum(double v, char *buf) {
     if (v > -1e9 && v < 1e9 && v == (double)(long long)v) // 范围先判（防 2^63 UB），整数 <=9 位直显
         sprintf(buf, "%lld", (long long)v);
     else
-        sprintf(buf, "%.12g", v); // YZT 行宽裕；X 行超长由 drawXLine 压缩
+        sprintf(buf, "%.12g", v);
+    if ((int)strlen(buf) > 13) sprintf(buf, "%.6e", v); // 显示预算统一：超 13 字符压缩（T/Z/Y 与 X 同阈值）
     return buf;
 }
 
@@ -188,11 +189,19 @@ static double f_fact (double x) { double r = tgamma(x + 1); return valid(r) ? r 
 static double f_round(double x) { return round(x); }
 static double f_sign (double x) { return x > 0 ? 1.0 : (x < 0 ? -1.0 : 0.0); }
 static double g_pow  (double y, double x) { double r = pow(y, x); return valid(r) ? r : 0; }
-static double g_yroot(double y, double x) { double r = pow(x, 1.0 / y); return valid(r) ? r : 0; }
+static double g_yroot(double y, double x) {
+    double r = pow(x, 1.0 / y);
+    if (!valid(r) && x < 0) {                 // 负数奇次根：pow 返 NaN，补 -pow(-x)
+        long long yi = (long long)y;
+        if (y == (double)yi && (yi & 1)) r = -pow(-x, 1.0 / y);
+    }
+    return valid(r) ? r : 0;
+}
 static double g_nCr  (double y, double x) {
     long long n = (long long)y, k = (long long)x;
     if (n != y || k != x || n < 0 || k < 0 || k > n) return 0;
     if (k > n - k) k = n - k;
+    if (k > 10000000) return 0; // 迭代上限（防大参数循环冻结 UI）
     double r = 1;
     for (long long i = 1; i <= k; i++) r = r * (n - k + i) / i;
     return valid(r) ? r : 0;
@@ -200,6 +209,7 @@ static double g_nCr  (double y, double x) {
 static double g_nPr  (double y, double x) {
     long long n = (long long)y, k = (long long)x;
     if (n != y || k != x || n < 0 || k < 0 || k > n) return 0;
+    if (k > 10000000) return 0; // 迭代上限
     double r = 1;
     for (long long i = 0; i < k; i++) r *= (n - i);
     return valid(r) ? r : 0;
@@ -402,9 +412,14 @@ static void drawXLine(void) {
     if (entering) num = inbuf;
     else if (fracMode) { num = fmtFrac(stX, fbuf); }
     else num = fmtNum(stX, buf);
-    if ((int)strlen(num) > 13) { // 13 字符 x 16px = 208px + 标签 36px
-        sprintf(buf2, "%.6e", stX); // 超宽自动科学计数压缩
-        num = buf2;
+    if ((int)strlen(num) > 13) { // 13 字符 x 16px = 208px + 标签 48px
+        if (entering) { // 编辑态超长：截前 12 字符保留可读性（非渲染旧栈值）
+            memcpy(buf2, inbuf, 12); buf2[12] = 0;
+            num = buf2;
+        } else { // 非编辑态：科学计数压缩
+            sprintf(buf2, "%.6e", stX);
+            num = buf2;
+        }
     }
     uidisp->draw_printf(0, 92, 24, 0, 255, "X: %s", num);
 }

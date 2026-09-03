@@ -134,7 +134,7 @@ public:
         const unsigned char *pCh;
         unsigned int x = 0, y = 0;
 
-        if ((ch < ' ') || (ch > '~' + 1)) {
+        if ((ch < ' ') || (ch > '~')) { // '~'=126，排除 DEL(127)（字库仅 95 字形 32-126）
             return;
         }
 
@@ -189,7 +189,7 @@ public:
         }
         if (fontSize == 20) { // Fira Sans 20px（13px 宽，2 字节/行，MSB 优先）
             for (int dy = 0; dy < 20; dy++) {
-                for (int dx = 0; dx < 14; dx++) {
+                for (int dx = 0; dx < 13; dx++) { // 定宽 13（列数对齐）
                     pix = (unsigned char)((pCh[dy * 2 + dx / 8] << (dx % 8)) & 0x80U);
                     if (pix) {
                         buf_set(x0 + dx, y0 + dy, fg);
@@ -203,7 +203,7 @@ public:
         }
         if (fontSize == 32) { // Fira 32px（21px 宽，3 字节/行，MSB 优先）
             for (int dy = 0; dy < 32; dy++) {
-                for (int dx = 0; dx < 21; dx++) {
+                for (int dx = 0; dx < 20; dx++) { // 定宽 20（列数对齐）
                     pix = (unsigned char)((pCh[dy * 3 + dx / 8] << (dx % 8)) & 0x80U);
                     if (pix) {
                         buf_set(x0 + dx, y0 + dy, fg);
