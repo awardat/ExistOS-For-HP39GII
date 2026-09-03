@@ -667,7 +667,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 #ifdef NUMWORKS
   smallmenu.numitems=12; // INCREMENT IF YOU ADD AN APPLICATION
 #else
-  smallmenu.numitems=11; // INCREMENT IF YOU ADD AN APPLICATION
+  smallmenu.numitems=10; // INCREMENT IF YOU ADD AN APPLICATION（2026-09-03：删除"退出 KhiCAS"项）
 #endif  
   // and uncomment first smallmenuitems[app_number].text="Reserved"
   // replace by your application name
@@ -695,8 +695,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 #ifdef NUMWORKS
   smallmenuitems[smallmenu.numitems-3].text = (char*)((lang)?"\xd7\xd4\xb6\xa8\xd2\xe5\x20\x46\x6c\x61\x73\x68":"Customize flash");
 #endif
-  smallmenuitems[smallmenu.numitems-2].text = (char*)((lang)?"\xb7\xb5\xbb\xd8":"Back");
-  smallmenuitems[smallmenu.numitems-1].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\x20\x4b\x68\x69\x43\x41\x53":"Leave KhiCAS");
+  smallmenuitems[smallmenu.numitems-1].text = (char*)((lang)?"\xb7\xb5\xbb\xd8":"Back"); // 2026-09-03：删除原"退出 KhiCAS"项（最后一条），Back 成为末项
   while(1) {
     int sres = doMenu(&smallmenu);
     if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
@@ -704,7 +703,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	return KEY_CTRL_MENU;
       }
 #ifndef NUMWORKS
-      if (smallmenu.selection==smallmenu.numitems-2) // Back
+      if (smallmenu.selection==smallmenu.numitems-1) // Back（末项，2026-09-03 删除退出项后）
 	break;
 #endif
 #ifdef NUMWORKS

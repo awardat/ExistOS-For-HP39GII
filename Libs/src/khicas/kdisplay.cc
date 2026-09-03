@@ -14207,9 +14207,9 @@ void draw_editor_menu(bool textgr,bool textpython){
 #ifdef HP39
     drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_BLACK);
     if (textgr)
-      PrintMini(0,114,"pnts | lines| undo| cmds| A<>a | File",4);
+      PrintMini(0,114,"pnts | lines| undo| cmds| App  | File",4);
     else
-      PrintMiniMini(0,114,"tests|struct| undo| cmds| A<>a | File",4);
+      PrintMiniMini(0,114,"tests|struct| undo| cmds| App  | File",4);
 #else
     waitforvblank();
     drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
@@ -19960,7 +19960,7 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 #endif
       menu += string(menu_f3);
 #ifdef HP39
-      menu += " |cmds |A<>a |File";
+      menu += " |cmds |App  |File";
       drawRectangle(0,C205,LCD_WIDTH_PX,17,giac::_BLACK);
       PrintMini(0,C205,menu.c_str(),4);
 #else
