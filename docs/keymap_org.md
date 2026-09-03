@@ -19,7 +19,7 @@ Code | Row | Col | Binary     | Top       | SHIFT | ALPHA |
  12  |  1  |  4  | 001 004 12 | Right     |       |       |
  24  |  3  |  0  | 003 000 24 | Vars      | Chars |   A   |
  33  |  4  |  1  | 004 001 33 | Math      | Cmds  |   B   |
- 26  |  3  |  2  | 003 002 26 | a b/c     | '"    |   C   |
+ 26  |  3  |  2  | 003 002 26 | a b/c     | °′″（度分秒） |   C   |
  19  |  2  |  3  | 002 003 19 | X,T,θ,N   | EEX   |   D   |
  27  |  3  |  3  | 003 003 27 | backspace | Clear |       |
  32  |  4  |  0  | 004 000 32 | SIN       | ASIN  |   E   |
