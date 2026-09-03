@@ -12191,9 +12191,7 @@ namespace xcas {
       }
       if (key==KEY_CHAR_STORE){
 	int keyflag = GetSetupSetting( (unsigned int)0x14);
-	if (keyflag==0)
-	  // handle_f5(); // 2026-09-03 去除自动字母输入（物理 ALPHA 键可用）
-	std::string varname;
+	std::string varname; // 2026-09-03：原此处 if(keyflag==0) handle_f5(); 已去除（单语句无括号，注释会吞下本声明）
 	if (inputline(((lang)?"\xbd\xab\xd1\xa1\xd4\xf1\xb4\xe6\xb4\xa2\xb5\xbd":"Save selection in",(lang)?"Nom de variable: ":"Variable name: "),0,varname,false,65,contextptr) && !varname.empty() && isalpha(varname[0])){
 	  giac::gen g(varname,contextptr);
 	  giac::gen ge(protecteval(g,1,contextptr));
@@ -15377,8 +15375,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       GetKey(&key);
 #ifdef HP39
       show_status(text,"","");
-      if (key==KEY_CTRL_F5){
-        // 2026-09-03：去除 F5 字母输入（未做退出且与物理 ALPHA 键重复）——F5 留空
+      if (key==KEY_CTRL_F5){ // App 菜单（原 APPS 键移至 F5，2026-09-03）
+        khicas_addins_menu(contextptr);
         continue;
       }
       if (key==KEY_CTRL_F6)
@@ -18585,8 +18583,8 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
           key=KEY_BOOK;	
       }
 #ifdef HP39
-      if (key==KEY_CTRL_F5){
-        // 2026-09-03：去除 F5 字母输入（未做退出且与物理 ALPHA 键重复）——F5 留空
+      if (key==KEY_CTRL_F5){ // App 菜单（原 APPS 键移至 F5，2026-09-03）
+        khicas_addins_menu(contextptr);
         continue;
       }
       if (key==KEY_CTRL_F6)
