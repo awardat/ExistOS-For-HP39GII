@@ -401,8 +401,16 @@ static int mathKey(int key) {
         case KEY_F6: mathExec(5); rpnMode = 0; return 0;
         default: break;
     }
-    if (key == KEY_LEFT || key == KEY_UP) { if (mathPage > 0) mathPage--; return 0; }
-    if (key == KEY_RIGHT || key == KEY_DOWN) { if (mathPage < 4) mathPage++; return 0; }
+    if (key == KEY_LEFT || key == KEY_UP) { mathPage = (mathPage + 4) % 5; return 0; } // 循环：第 1 页左跳第 5 页
+    if (key == KEY_RIGHT || key == KEY_DOWN) { mathPage = (mathPage + 1) % 5; return 0; }
+    switch (key) { // 快捷键：数字键 1-5 跳对应页
+        case KEY_1: mathPage = 0; return 0;
+        case KEY_2: mathPage = 1; return 0;
+        case KEY_3: mathPage = 2; return 0;
+        case KEY_4: mathPage = 3; return 0;
+        case KEY_5: mathPage = 4; return 0;
+        default: break;
+    }
     if (key == KEY_ON || key == KEY_VIEWS || key == KEY_HOME) { rpnMode = 0; return 0; }
     return 0;
 }
