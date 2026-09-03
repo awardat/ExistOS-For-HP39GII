@@ -1,6 +1,7 @@
 
 
 include_directories(./)
+include_directories(../)  # llapi_code.h 位于仓库根
 include_directories(./core)
 include_directories(./drivers)
 include_directories(./graphics)
