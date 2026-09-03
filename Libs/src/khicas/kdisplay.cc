@@ -10747,7 +10747,7 @@ namespace xcas {
       if (doit) {
 	std::string s1; double d;
 	if (paramenu.selection==2){
-	  handle_f5();
+	  // handle_f5(); // 2026-09-03 去除自动字母输入（物理 ALPHA 键可用）
 	  if (inputline(menu_name,(lang)?"\xd0\xc2\xd6\xb5\xa3\xbf":"New value?",s1,false)==KEY_CTRL_EXE && s1.size()>0 && isalpha(s1[0])){
 	    if (s1.size()>10)
 	      s1=s1.substr(0,10);
@@ -12192,7 +12192,7 @@ namespace xcas {
       if (key==KEY_CHAR_STORE){
 	int keyflag = GetSetupSetting( (unsigned int)0x14);
 	if (keyflag==0)
-	  handle_f5();
+	  // handle_f5(); // 2026-09-03 去除自动字母输入（物理 ALPHA 键可用）
 	std::string varname;
 	if (inputline(((lang)?"\xbd\xab\xd1\xa1\xd4\xf1\xb4\xe6\xb4\xa2\xb5\xbd":"Save selection in",(lang)?"Nom de variable: ":"Variable name: "),0,varname,false,65,contextptr) && !varname.empty() && isalpha(varname[0])){
 	  giac::gen g(varname,contextptr);
@@ -15112,7 +15112,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   }
 #else
   int get_filename(char * filename,const char * extension){
-    handle_f5();
+    // handle_f5(); // 2026-09-03 去除自动字母输入（物理 ALPHA 键可用）
     string str;
 #ifdef NSPIRE_NEWLIB
     int res=inputline((lang)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang)?"\xce\xc4\xbc\xfe\xc3\xfb\xa3\xba":"Filename:",str,false);
@@ -15182,7 +15182,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       msg=(lang)?(list?"Creer nouvelle liste":"Creer nouvelle matrice"):(list?"Create new list":"Create new matrix");
     else
       msg=(((lang)?"Creer nouveau ou editer ":"Create new or edit ")+(w.size()==1?w.front():giac::gen(w,giac::_SEQ__VECT)).print(contextptr));
-    handle_f5();
+    // handle_f5(); // 2026-09-03 去除自动字母输入（物理 ALPHA 键可用）
     if (inputline(msg.c_str(),((lang)?"Nom de variable:":"Variable name:"),*sptr,false) && !sptr->empty() && isalpha((*sptr)[0])){
       giac::gen g(*sptr,contextptr);
       giac::gen ge(protecteval(g,1,contextptr));
@@ -15235,7 +15235,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   std::string get_searchitem(std::string & replace){
     replace="";
     std::string search;
-    handle_f5();
+    // handle_f5(); // 2026-09-03 去除自动字母输入（物理 ALPHA 键可用）
 #ifdef NSPIRE_NEWLIB
     int res=inputline((lang)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang)?"Chercher:":"Search:",search,false);
     if (search.empty() || res==KEY_CTRL_EXIT)
@@ -15249,7 +15249,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     replace="";
     std::string tmp=((lang)?"EXIT: recherche seule de ":"EXIT: search only ")+search;
 #endif
-    handle_f5();
+    // handle_f5(); // 2026-09-03 去除自动字母输入（物理 ALPHA 键可用）
     res=inputline(tmp.c_str(),(lang)?"Remplacer par:":"Replace by:",replace,false);
     if (res==KEY_CTRL_EXIT)
       replace="";
@@ -15378,7 +15378,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #ifdef HP39
       show_status(text,"","");
       if (key==KEY_CTRL_F5){
-        handle_f5();
+        // 2026-09-03：去除 F5 字母输入（未做退出且与物理 ALPHA 键重复）——F5 留空
         continue;
       }
       if (key==KEY_CTRL_F6)
@@ -18586,7 +18586,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
       }
 #ifdef HP39
       if (key==KEY_CTRL_F5){
-        handle_f5();
+        // 2026-09-03：去除 F5 字母输入（未做退出且与物理 ALPHA 键重复）——F5 留空
         continue;
       }
       if (key==KEY_CTRL_F6)
