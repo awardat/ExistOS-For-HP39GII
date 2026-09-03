@@ -225,6 +225,7 @@ int pressed = api_get_key(KEY_ENTER); // 非阻塞查询
 | MATH | **数学功能菜单**（原厂语义保留） | 替代 F6 菜单（F6 暂只放设置或留空） |
 | VARS | **寄存器列表**（26 个 A-Z 寄存器：名称+数值） | 选择 + ENTER = RCL（值压入 X，栈上移） |
 | F1-F6 | x<>y / R↓ / DROP / __ / __ / 设置（暂） | 无物理键的 RPN 操作 |
+| X,T,θ,N | EEX 科学计数输入（追加 e+指数位） | STO/RCL 上下文 = d 寄存器 |
 | ( / ) | STO / RCL（存数/取数） | STO 后直接按字母（自动 ALPHA） |
 | ENTER | 输入中=压栈；非输入中=复制 X 压栈 | HP RPN 惯例 |
 | 数字区 | 0-9 . (-)CHS +−×÷ backspace | 原厂键位直接对齐 |

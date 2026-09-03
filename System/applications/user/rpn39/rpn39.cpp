@@ -260,12 +260,24 @@ static int handleKey(int key) {
             return 1;
         case KEY_NEGATIVE:
             if (entering) {
-                if (inlen > 0 && inbuf[0] == '-') { memmove(inbuf, inbuf + 1, inlen); inlen--; }
+                char *ep = strchr(inbuf, 'e'); // EEX 指数区符号
+                if (ep) {
+                    if (ep[1] == '-') { memmove(ep + 1, ep + 2, strlen(ep + 1) + 1); inlen--; }
+                    else if (inlen < 12) { memmove(ep + 2, ep + 1, strlen(ep + 1) + 1); ep[1] = '-'; inlen++; }
+                } else if (inbuf[0] == '-') { memmove(inbuf, inbuf + 1, inlen); inlen--; }
                 else if (inlen < 12) { memmove(inbuf + 1, inbuf, inlen + 1); inbuf[0] = '-'; inlen++; }
             } else {
                 stX = -stX;
                 autoLift = 0;
             }
+            return 1;
+        case KEY_XTPHIN: // EEX 科学计数输入（正常层；STO/RCL 上下文 = d 寄存器）
+            if (!entering) {
+                if (autoLift) { stackLift(); autoLift = 0; }
+                entering = 1; inlen = 0; inbuf[0] = 0;
+                inbuf[inlen++] = '0';
+            }
+            if (!strchr(inbuf, 'e') && inlen < 12) { inbuf[inlen++] = 'e'; inbuf[inlen] = 0; }
             return 1;
         case KEY_BACKSPACE:
             if (entering && inlen > 0) { inlen--; inbuf[inlen] = 0; return 1; }
