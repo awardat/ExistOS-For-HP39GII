@@ -31,58 +31,45 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 | | User Guide | |
 | :---: | :---: | :---: |
-| [Current Development Status](#current-developping-status) | | [Experimental Fautures](#experimental-features) |
+| [Current Development Status](#current-developping-status) | | |
 | | **[Install Guide](#only-installing)** | |
 | For Windows 10/11 | [ExistOS Updater](#for-windows-10--11-existos-updater) | Automated tools for beginers |
 | Win/Linux | [OS Loader & EDB](#for-windows--linux) | |
-| Windows | [Emulator](#emulator) | |
 | | **[Usage](#basic-usage-of-the-firmware)** | |
 | [Setup](#booting-for-the-first-time) | [Shortcuts](#shortcuts) | [Accessing Internal Storage](#accessing-internal-storage) |
 | **[Basic Usage of KhiCAS](#basic-usage-of-khicas)** | [Basic Calculations](#basic-calculations) | [Example 1: Plotting](#example-1-plotting) |
 | | [Example 2: Indefinite Integrals](#example-2-indefinite-integrals) | [Example 3: Definite Integrals](#example-3-definite-integrals) | 
 | | [Example 4: Programming to draw Feigenbaum bifurcation diagrams mapped with Logistic equations](#example-4-programming-to-draw-feigenbaum-bifurcation-diagrams-mapped-with-logistic-equations) | |
-| **[Experimental Features](#about-experimental-features) | [Charging](#charging-not-fully-tested) | |
 | **[Uninstalling and Flashing Back](#uninstalling-existos-and-flashing-back-to-the-hp-firmware)** | **[Contributors](#contributors)** | **[License](#license)** |
 
 | | Developer Guide | |
 | :---: | :---: | :---: |
-| [Current Development Status](#current-developping-status) | | [Experimental Fautures](#experimental-features) |
+| [Current Development Status](#current-developping-status) | | |
 | | **[Comiling and Installing](#compiling-and-installing)** | |
 | [Prerequisites](#prerequisites) | [Compiling ExistOS](#compiling-existos) | [Flash firmware](#installing) |
 | | **Code contribution** | |
-| Documents (To do) | [Third-party App developing](#third-party-app-developing) | [Code submision standard](#code-submission-standard) |
+| Documents (To do) | [Code submission standard](#code-submission-standard) |
 | **[Uninstalling and Flashing Back](#uninstalling-existos-and-flashing-back-to-the-hp-firmware)** | **[Contributors](#contributors)** | **[License](#license)** |
 
-## Current Developping Status
+## Current Development Status (since build 126, see CHANGELOG.md)
 
-- [x] Boot
-- [x] Serial debugging
-- [x] LCD driver supporting 256 shades of grey
-- [x] STMP3770 interrupt controller
-- [x] Keyboard driver (GPIO polling)
-- [x] Timer driver
-- [x] Setting CPU frequency
-- [x] Real-time clock
-- [x] USB mass storage device mode
-- [x] USB serial console
-- [x] USB keyboard & mouse emulation
-- [x] USB functions dynamic configuration
-- [x] Flash driver
-- [x] FATFS implementation
-- [x] Multitasking
-- [x] Virtual memory
-- [x] Loading applications
-- [x] Miminal MicroPython implementation
-- [x] Graphical user interface
-- [x] Basic power management
-- [ ] Complete power management
-- [x] Firmware updating independent of stock tools
+### build 131 (in development)
+- [x] **RPN39 Phase 2 scientific functions** (DEG/RAD/GRAD persistence, direct key functions, Shift layer, MATH menu 5 pages, a b/c fraction display, EEX)
 
-### Experimental features
+### build 130 (2026-09-02 released)
+- [x] **RPN39 RPN calculator** (HP-42S baseline): 4-level stack + four operations + registers (STO/RCL/VARS) + power-loss persistence + auto stack lift
+- [x] KhiCAS help / ON/C semantics, E-group fixes (15 items)
+- [x] Build hygiene (-Wall/-Wextra, zero warnings), CI supply-chain hardening
 
-- [x] Charging Ni-Mh batteries in the compartment via USB power
+### build 129 (2026-09-02 released)
+- [x] Three-mode variable-frequency power (standard / power save / boost)
+- [x] Security hardening (CDC parameter validation / VM sandbox), FTL_Sync, unified GBK decoding
 
-Current development status is as described above. User interface etc. are still under discussion. You may open an issue to give your opinion.
+### build 128 (2026-09-01 released)
+- [x] KhiCAS menu Chinese display / misalignment / quit fixes + localization
+
+### build 127 / 126 (2026-08-30 released)
+- [x] Installation fixes; 25 bug fixes + documentation
 
 ## Only Installing
 
@@ -90,7 +77,7 @@ Current development status is as described above. User interface etc. are still 
 
 Requires:
 
-- Firmware: Download from [here](https://github.com/ExistOS-Team/ExistOS-For-HP39GII/releases).
+- Firmware: Download from [here](https://github.com/awardat/ExistOS-For-HP39GII/releases) (this repository).
   - Download `OSLoader.sb` and `ExistOS.sys`.
 - ExistOS Updater: Download from [here](https://github.com/ExistOS-Team/ExistOS_Updater_v2/releases).
   - Only supports Windows 10 / 11.
@@ -101,7 +88,7 @@ Then follow the [instructions](https://github.com/ExistOS-Team/ExistOS_Updater_v
 
 Requires:
 
-- Firmware: Download from [here](https://github.com/ExistOS-Team/ExistOS-For-HP39GII/releases).
+- Firmware: Download from [here](https://github.com/awardat/ExistOS-For-HP39GII/releases) (this repository).
   - Download `OSLoader.sb` and `ExistOS.sys`.
 - sb_loader: Used to send OSLoader to the RAM of your calculator if you haven't installed it before.
   - Windows: Download binary file from [here](../../raw/main/tools/sbtools_win/sb_loader.exe).
@@ -293,22 +280,6 @@ This will install ExistOS on your calculator.
 
 Your calculator will reboot automatically.
 
-## Emulator
-
-Experience ExistOS first with ExistOS Emulator for Windows.
-
-![Emulator](Image/46.png)
-
-Download from [here](https://github.com/ExistOS-Team/ExistOS-Emulator/releases/tag/Latest).
-
-### File transfer
-
-After system finishes booting, drag & drop files onto the emulator window to transfer them.
-
-### Updating system
-
-Replace ExistOS.sys directly.
-
 ## Basic Usage of the Firmware
 
 ### Booting for the first time
@@ -492,36 +463,12 @@ Final output:
 
 ![Sys1](Image/35.png)
 
-## About Experimental Features
-
-### Charging (Not fully tested)
-
-ExistOS supports controlling the DC-DC and linear regulators inside the SoC to step-down 5V USB voltage, feeding 1.4V to the battery compartment. Make sure you're using rechargable batteries when using this feature to avoid possible danger.
-
-Usage: Plug in USB cable and switch to the `Status` tab. Scroll to the bottom and tick `Enable Charge` to start charging. The core temperature shown above may rise up to 50℃, since the voltage regulators are integrated in the same chip along with the CPU.
-
-![Sys1](Image/41.png)
-
-The following system status graph was drawn charging one AAAA battery rated 400mAh 1.2V for 6 hours.
-
-![Sys1](Image/42.png)
-
-The following system status graph was drawn discharging one AAAA battery rated 400mAh 1.2V for 2 hours.
-
-![Sys1](Image/43.png)
-
 ## Uninstalling ExistOS and Flashing Back to the HP Firmware
 
 You need to erase the whole flash before flashing back to the HP Firmware, otherwise you'll get stuck at the formatting progress when using the official update tool.
 
 How to erase the whole flash:  
 After flashing OSLoader or while ExistOS is running, press `ON`+`F5` to enter the maintenance menu, and then press `F2` to erase the flash. ___This operation cannot be undone.___ When the screen shows "Flash Cleared", connect the calculator to a computer and launch the official update tool under 7 / XP to flash your calculator back to the HP firmware.
-
-## Third-party App Developing
-
-ExistOS APP Demo Repo:
-
-https://github.com/ExistOS-Team/ExistOS-App-demo
 
 ## Code Submission Standard
 
