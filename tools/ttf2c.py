@@ -3,6 +3,13 @@
 用法: python3 ttf2c.py <font.ttf> <px> [--name NAME] [--pad N]
   --pad 0/1：字符定宽 = 最大字形宽 + pad（等宽字体通常 1；非等宽如 Fira Sans 用 0 或 1）
 输出: tools/ 下生成 {name}.c，复制到 System/graphics/ 并加 aux 扫描即编译
+
+唯一权威源（2026-09-03 标注）：本脚本 + tools/ 的生成物。修改字体必须：
+  1) 在本目录重新生成（勿手改 System/graphics/ 副本）
+  2) 复制到 System/graphics/ 覆盖同文件
+  3) 同步 UICore.h 中的字库引用（symbol 名/规格注释）
+当前在用（RPN39/系统）：FiraCodeAscii24（24px 等宽）、FiraSansAscii20/32（20/32px）
+tools/ 其余字库（FiraAscii20/32、HackAscii20 等）为历史尝试废弃物，保留供对比，勿用于新代码。
 """
 import sys, os
 from PIL import Image, ImageDraw, ImageFont

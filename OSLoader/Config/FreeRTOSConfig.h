@@ -64,7 +64,7 @@
 #define configTIMER_QUEUE_LENGTH        4
 #define configTIMER_TASK_STACK_DEPTH    configMINIMAL_STACK_SIZE
 
-#define configCHECK_FOR_STACK_OVERFLOW  0
+#define configCHECK_FOR_STACK_OVERFLOW  2 // 2026-09-03：与 System 侧对齐（钩子已实现于 start.c:1073）
 
 #define configUSE_NEWLIB_REENTRANT	    0
 #define configGENERATE_RUN_TIME_STATS 	1
