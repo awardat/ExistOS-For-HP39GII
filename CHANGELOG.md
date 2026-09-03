@@ -4,7 +4,17 @@
 
 ---
 
-## [build 131] - 2026-09-02 (开发中)
+## [build 132] - 2026-09-03 (开发中)
+
+### 规划
+- **RPN39**：阶段 3 计算功能扩展（候选：复数/矩阵/统计/金融/工程常量——已取消绘图）；App 菜单内应用功能验证修复
+- **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；视图按键完整方案（HOME/VIEWS 后续定义）；giac 桌面版（2.0.0）有限移植
+- D4 FTL_Sync 真机掉电测试
+- C 组待办：OSLoader 侧栈溢出检查开启（=2，需刷 OSLoader 验证）；字体母本唯一权威源标注；RAND 种子策略
+
+---
+
+## [build 131] - 2026-09-03 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-131))
 
 ### 新增（RPN39 阶段 2：科学计算，见 docs/RPN39-phase2-test.md）
 - **角度模式**：DEG/RAD/GRAD（标题右上显示；持久化——/rpn39_sto.dat 第 31 值，旧文件兼容）
@@ -21,6 +31,7 @@
 - **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；**去除 Home→file-quit**（已完成，HOME 释放）+ **重新定义 6 个视图按键**（规划中）；giac 桌面版（2.0.0）有限移植（差异概览见 docs/giac-snapshot-diff.md）
 - D4 FTL_Sync 真机掉电测试
 - **C 组待办**（build 132）：OSLoader 侧栈溢出检查开启（=2，需刷 OSLoader 验证）；字体母本唯一权威源标注（tools/ vs System/graphics/）；RAND 种子策略（固定池或文档化）
+- **队列（暂不做）**：视图按键完整方案（HOME 已释放、SYMB/PLOT/NUM/APPS 已置空、F5=App——剩余 HOME/VIEWS 等的后续定义）；App 菜单内应用功能验证修复（见 kadd.cc）
 
 ---
 
