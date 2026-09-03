@@ -105,6 +105,7 @@ const int C20=20;
 unsigned short mmind_col[]={COLOR_BLUE,COLOR_RED,COLOR_MAGENTA,COLOR_GREEN,COLOR_CYAN,COLOR_YELLOW};
 #endif
 
+#if 0 // 2026-09-03 App 菜单示例整体移除（mastermind/fractale 等）
 void mastermind_disp(const vector<int> & solution,const vector< vector<int> > & essais,const vector<int> & essai,bool fulldisp,GIAC_CONTEXT){
   int x0=C20*3/2,y0=C20/2;
   if (fulldisp)
@@ -519,6 +520,8 @@ int fractale(GIAC_CONTEXT){
 }
 #endif
 
+#endif
+
 int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   static double pv=(-mode)*10000;
   static double fv=0;
@@ -660,6 +663,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   return 0;
 }
 
+#if 0 // 2026-09-03 App 菜单移除（geoapp 声明 + khicas_addins_menu）
 int geoapp(GIAC_CONTEXT);
 
 int khicas_addins_menu(GIAC_CONTEXT){
@@ -809,6 +813,8 @@ int khicas_addins_menu(GIAC_CONTEXT){
   } // end endless while
   return CONSOLE_SUCCEEDED;
 }
+#endif // 2026-09-03 App 菜单移除
+
 
 /* *******************
  *      FLASH        *
@@ -2094,6 +2100,7 @@ giac::gen sheet(GIAC_CONTEXT){
   }
 }
 
+#if 0 // 2026-09-03 App 菜单移除（geoapp 定义）
 int geoapp(GIAC_CONTEXT){
   int res=newgeo(contextptr);
   if (res<0) return res;
@@ -2146,4 +2153,6 @@ int geoapp(GIAC_CONTEXT){
   }
   return geoloop(geoptr);
 }
+#endif // 2026-09-03 geoapp 移除
+
 #endif
