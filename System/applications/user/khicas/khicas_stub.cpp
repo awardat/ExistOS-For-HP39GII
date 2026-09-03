@@ -386,7 +386,7 @@ int GetKey(int *key) {
                     //ll_power_off();
                 }
             }  
-            else {*key = KEY_CTRL_EXIT;}  // ON 短按 = 返回/取消（原厂 ON/C 取消语义；AC 在 Shift+backspace）
+            else {*key = KEY_CTRL_AC;}  // ON 短按 = AC（返回/清除——2026-09-03 从 EXIT 复归：EXIT 曾误与 View 相同触发公式视图切换；原厂 ON/C 取消语义）
 
           break;
 
