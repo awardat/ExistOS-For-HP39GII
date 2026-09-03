@@ -235,7 +235,34 @@ static const char *fmtFrac(double v, char *out) {
 }
 
 // ---- MATH 菜单（5 页 × 6 项）----
-static const char *mathTitles[5] = {"ANGLE", "CONST/BASIC", "HYPERBOLIC", "PROB/CALC", "POWER"};
+// 标题中英文对照（GBK 中文，HZK16S 渲染需混排绘制）
+static const char *mathTitles[5] = {
+    "\xBD\xC7\xB6\xC8/ANGLE",     // 角度/ANGLE
+    "\xB3\xA3\xC1\xBF/BASIC",     // 常量/BASIC
+    "\xCB\xAB\xC7\xFA/HYPER",     // 双曲/HYPER
+    "\xB8\xC5\xC2\xCA/PROB",      // 概率/PROB
+    "\xC3\xDD/POWER"              // 幂/POWER
+};
+
+// 混排绘制（GBK 双字节中文 16px + ASCII 16px；返回新 x）
+static int drawTextMix(int x, int y, const char *s, uint8_t fg, int16_t bg) {
+    while (*s) {
+        unsigned char c = (unsigned char)*s;
+        if (c >= 0x81 && c < 0xFF && s[1]) {
+            unsigned char c2 = (unsigned char)s[1];
+            if (c2 >= 0x40 && c2 < 0xFF && c2 != 0x7F) {
+                uidisp->draw_char_GBK16(x, y, (uint16_t)((c << 8) | c2), fg, bg);
+                x += 16;
+                s += 2;
+                continue;
+            }
+        }
+        uidisp->draw_char_ascii(x, y, *s, 16, fg, bg);
+        x += 8;
+        s++;
+    }
+    return x;
+}
 static const char *mathItems[5][6] = {
     {"DEG", "RAD", "GRAD", "", "", ""},
     {"e", "sign", "round", "floor", "ceil", ""},
@@ -319,7 +346,7 @@ static void drawMathPage(void) {
     char buf[64];
     uidisp->draw_box(0, 0, 255, 127, 255, 255); // 白底
     sprintf(buf, "MATH %d/5: %s", mathPage + 1, mathTitles[mathPage]);
-    uidisp->draw_printf(0, 0, 12, 0, 255, "%s", buf);
+    drawTextMix(0, 0, buf, 0, 255); // 中英对照标题（混排绘制）
     for (int i = 0; i < 6; i++) {
         const char *t = mathItems[mathPage][i];
         if (t[0] == 0) t = "--";
