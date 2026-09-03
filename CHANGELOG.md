@@ -6,8 +6,18 @@
 
 ## [build 131] - 2026-09-02 (开发中)
 
+### 新增（RPN39 阶段 2：科学计算，见 docs/RPN39-phase2-test.md）
+- **角度模式**：DEG/RAD/GRAD（标题右上显示；持久化——/rpn39_sto.dat 第 31 值，旧文件兼容）
+- **直接键位函数**（原厂键位对齐）：SIN/COS/TAN（按当前角度模式）、LN/LOG、X²、x^y（Y^X）、a b/c 小数↔分数显示切换（X 行连分数，1e-12 阈值，转不出保持 12 位小数）
+- **Shift 层**：ASIN/ACOS/ATAN、e^x、10^x、√X、Y 次根（x^(1/y)）、1/X、X!（tgamma）、π（Shift+3）、**ABS（Shift+`(-)`）**、CLx（Shift+backspace）、退出（Shift+ON）
+- **MATH 菜单**（5 页）：角度 / 常量基础（e/sign/round/floor/ceil）/ 双曲（sinh…atanh）/ 概率（nCr/nPr/RAND）/ 幂（x³/10^x/2^x）；**循环翻页**（第 1 页左跳第 5 页）+ **数字键 1-5 跳页**；标题**中英文对照**（GBK 混排）
+- **EEX 科学计数输入**（X,T,θ,N 正常层；指数区负号 CHS 翻转）
+- 三角近零噪声舍去（90° COS → 0）；运算 NaN/Inf 防护（→0）
+- backspace 非输入态从当前 X 开始编辑（a/b/c 往返后仍可退格）
+- 构建环境修正：**主系统须从仓库根构建**（顶层 CMakeLists；AGENTS.md 已更新）
+
 ### 规划
-- **RPN39**：阶段 2 科学计算（直接键位函数 + Shift 层 + MATH 菜单 + DEG/RAD 角度模式）；阶段 3 计算功能扩展（已取消绘图）
+- **RPN39**：阶段 3 计算功能扩展（候选：复数/矩阵/统计/金融/工程常量——已取消绘图）
 - **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；giac 桌面版（2.0.0）有限移植（差异概览见 docs/giac-snapshot-diff.md）
 - D4 FTL_Sync 真机掉电测试
 

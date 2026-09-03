@@ -216,17 +216,19 @@ int pressed = api_get_key(KEY_ENTER); // 非阻塞查询
 | `System/graphics/UICore.cpp` | ExistOS UI 按键处理 |
 | `System/utils/basic_api.c` | App SDK 按键 API |
 | `keymap_org.md` | **原厂键位表**（功能定义参考，不改动） |
-## 五、RPN39 键位设计（规划，build 129 后）
+## 五、RPN39 键位设计（当前实现，build 131）
 
 | 键 | 功能 | 说明 |
 |------|------|------|
 | ON/C | **取消/后退**（短按）；Shift+ON/C 关机 | HP 原版 ON/C 语义（开机后为取消键） |
 | VIEWS | 系统/新计算器**无定义**（释放）；KhiCAS 保留（切换公式输入） | 原 View 的后退已转移至 ON/C |
-| MATH | **数学功能菜单**（原厂语义保留） | 替代 F6 菜单（F6 暂只放设置或留空） |
-| VARS | **寄存器列表**（26 个 A-Z 寄存器：名称+数值） | 选择 + ENTER = RCL（值压入 X，栈上移） |
-| F1-F6 | x<>y / R↓ / DROP / __ / __ / 设置（暂） | 无物理键的 RPN 操作 |
-| X,T,θ,N | EEX 科学计数输入（追加 e+指数位） | STO/RCL 上下文 = d 寄存器 |
+| MATH | **数学功能菜单**（原厂语义保留） | 5 页：角度/常量基础/双曲/概率/幂；循环翻页（左右/上下）+ 数字键 1-5 跳页；标题中英文对照；ON 退出 |
+| VARS | **寄存器列表**（26 个 A-Z 寄存器：名称+数值） | 选择 + ENTER = RCL（值压入 X，栈上移）；Shift+backspace = 清空全部（带确认） |
+| F1-F6 | x<>y / R↓ / DROP / __ / __ / __ | 无物理键的 RPN 操作（F4-F6 空） |
+| X,T,θ,N | EEX 科学计数输入（追加 e+指数位） | STO/RCL 上下文 = d 寄存器；指数区 CHS 翻转符号 |
 | ( / ) | STO / RCL（存数/取数） | STO 后直接按字母（自动 ALPHA） |
-| ENTER | 输入中=压栈；非输入中=复制 X 压栈 | HP RPN 惯例 |
-| 数字区 | 0-9 . (-)CHS +−×÷ backspace | 原厂键位直接对齐 |
-| 函数键 | x² x^y 1/x √ SIN/COS/TAN+反三角 LN/LOG+指数 π ABS ! | 原厂键位直接对齐 |
+| ENTER | 输入中=压栈；非输入中=复制 X 压栈 | HP RPN 惯例；计算后输入数字自动压栈（auto-lift） |
+| 数字区 | 0-9 . (-)CHS +−×÷ backspace | 原厂键位直接对齐；backspace 非输入态从当前 X 开始编辑 |
+| 函数键（正常层） | x² x^y（Y^X） SIN/COS/TAN LN/LOG a b/c（小数↔分数） | 原厂键位直接对齐；a b/c 仅切换 X 行显示（连分数，转不出保持小数） |
+| 函数键（Shift 层） | 1/x（÷） 阶乘（×） √（x²） Y次根（x^y） ASIN/ACOS/ATAN（SIN/COS/TAN） e^x/10^x（LN/LOG） π（3） ABS（(-)） CLx（backspace） 退出（ON） | 动作完成自动退出 Shift |
+| 角度模式 | DEG/RAD/GRAD（MATH 页 1 或标题右上状态） | 三角/反三角按当前模式；持久化 |
