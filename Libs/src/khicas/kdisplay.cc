@@ -14207,9 +14207,9 @@ void draw_editor_menu(bool textgr,bool textpython){
 #ifdef HP39
     drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_BLACK);
     if (textgr)
-      PrintMini(0,114,"pnts | lines| undo| cmds| App  | File",4);
+      PrintMini(0,114,"pnts | lines| undo| cmds|      | File",4);
     else
-      PrintMiniMini(0,114,"tests|struct| undo| cmds| App  | File",4);
+      PrintMiniMini(0,114,"tests|struct| undo| cmds|      | File",4);
 #else
     waitforvblank();
     drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
@@ -15375,8 +15375,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       GetKey(&key);
 #ifdef HP39
       show_status(text,"","");
-      if (key==KEY_CTRL_F5){ // App 菜单（原 APPS 键移至 F5，2026-09-03）
-        khicas_addins_menu(contextptr);
+      if (key==KEY_CTRL_F5){ // App 菜单已移除（2026-09-03：内含不完整示例，整体拿掉）——F5 留空
         continue;
       }
       if (key==KEY_CTRL_F6)
@@ -18583,8 +18582,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
           key=KEY_BOOK;	
       }
 #ifdef HP39
-      if (key==KEY_CTRL_F5){ // App 菜单（原 APPS 键移至 F5，2026-09-03）
-        khicas_addins_menu(contextptr);
+      if (key==KEY_CTRL_F5){ // App 菜单已移除（2026-09-03：内含不完整示例，整体拿掉）——F5 留空
         continue;
       }
       if (key==KEY_CTRL_F6)
@@ -18966,13 +18964,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	return CONSOLE_SUCCEEDED;
 #endif
       }
-      if (key==KEY_SHIFT_ANS || key==KEY_CTRL_SD){ // 3rd party app
-	int res=khicas_addins_menu(contextptr);
-	if (res==KEY_CTRL_MENU)
-	  return res;
-	Console_Disp(1,contextptr);
-	return CONSOLE_SUCCEEDED;
-      }
+
       if ( (key >= KEY_CTRL_F1 && key <= KEY_CTRL_F6) ||
 	   (key >= KEY_CTRL_F7 && key <= KEY_CTRL_F14) 
 	   ){
@@ -19960,7 +19952,7 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 #endif
       menu += string(menu_f3);
 #ifdef HP39
-      menu += " |cmds |App  |File";
+      menu += " |cmds |     |File";
       drawRectangle(0,C205,LCD_WIDTH_PX,17,giac::_BLACK);
       PrintMini(0,C205,menu.c_str(),4);
 #else
