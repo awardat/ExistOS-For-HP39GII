@@ -504,6 +504,7 @@ bool vGL_getkey(int *keyid)
     last_key = key;
     last_press = kpress;
     do{
+        vTaskDelay(pdMS_TO_TICKS(5)); // 2026-09-03：空闲轮询让出 CPU（触发系统 idle→waitIRQ 深度待机，KhiCAS 待机电流 80-90mA → ~50mA）；按键变化即时返回无响应损失
         keys = ll_vm_check_key();
         key = keys & 0xFFFF;
         kpress = keys >> 16;
