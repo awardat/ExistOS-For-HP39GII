@@ -19,6 +19,7 @@
 #include "../../../third_party/freertos/include/SysConf.h"
 #include "../../graphics/UICore.h"
 #include "../../drivers/keyboard_gii39.h"
+#include "rpn39_int.h"
 
 extern UI_Display *uidisp;
 extern "C" {
@@ -26,28 +27,28 @@ uint32_t ll_vm_check_key();
 void SystemUISuspend();
 void SystemUIResume();
 }
-static int shiftHeld = 0; // Shift 状态（全局，供绘制显示）
+int shiftHeld = 0; // Shift 状态（全局，供绘制显示）
 
-static double stX = 0, stY = 0, stZ = 0, stT = 0; // 4 层栈
-static double lastX = 0;                          // LAST X
-static int entering = 0;                          // 数字输入中
-static int autoLift = 0;                           // 栈提升标志（42S：计算后输入数字自动压栈）
-static char inbuf[40];
-static int inlen = 0;
-static int rpn39Running = 0;
+double stX = 0, stY = 0, stZ = 0, stT = 0; // 4 层栈
+double lastX = 0;                          // LAST X
+int entering = 0;                          // 数字输入中
+int autoLift = 0;                           // 栈提升标志（42S：计算后输入数字自动压栈）
+char inbuf[40];
+int inlen = 0;
+int rpn39Running = 0;
 
 // ---- 寄存器（A-Z，42S STO/RCL）----
-static double regs[26] = {0};
-static int rpnMode = 0;       // 0=正常 1=STO 等字母 2=RCL 等字母 3=寄存器列表 4=MATH 菜单
-static int stoOp = 0;         // STO 运算（42S：0=普通 STO，1/2/3/4 = STO+ − × ÷；Shift+四则在 STO 态选择）
+double regs[26] = {0};
+int rpnMode = 0;       // 0=正常 1=STO 等字母 2=RCL 等字母 3=寄存器列表 4=MATH 菜单
+int stoOp = 0;         // STO 运算（42S：0=普通 STO，1/2/3/4 = STO+ − × ÷；Shift+四则在 STO 态选择）
 static int clearConfirm = 0;  // CLEAR ALL 确认态
 static int regSel = 0;        // 列表高亮（0-25）
 static int regTop = 0;        // 列表滚动顶
 
 // ---- 阶段 2：角度模式 / 分数显示 / MATH 菜单 ----
-static int angMode = 0;       // 0=DEG 1=RAD 2=GRAD（持久化）
-static int fracMode = 0;      // X 行分数显示（0=小数）
-static int mathPage = 0;      // MATH 菜单当前页（0-4）
+int angMode = 0;       // 0=DEG 1=RAD 2=GRAD（持久化）
+int fracMode = 0;      // X 行分数显示（0=小数）
+int mathPage = 0;      // MATH 菜单当前页（0-4）
 
 // 字母键映射（key 码 -> 寄存器索引）：VARS=a MATH=b ABC=c XTPHIN=d SIN=e COS=f TAN=g LN=h LOG=i
 // X2=j XY=k ( =l )=m / =n , =o 7=p 8=q 9=r x=s 4=t 5=u 6=v -=w 1=x 2=y 3=z
@@ -84,7 +85,7 @@ static int regKeyToIdx(int key) {
 }
 
 // 掉电持久化（/rpn39_sto.dat：26 寄存器 + 4 栈 + 角度模式；旧版 208B/240B 兼容）
-static void saveRegs(void) {
+void saveRegs(void) {
     FIL f;
     if (f_open(&f, "/rpn39_sto.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw = 0;
@@ -94,7 +95,7 @@ static void saveRegs(void) {
         f_close(&f);
     }
 }
-static void loadRegs(void) {
+void loadRegs(void) {
     FIL f;
     UINT br = 0;
     memset(regs, 0, sizeof(regs));
@@ -113,11 +114,11 @@ static void loadRegs(void) {
 }
 
 // ---- 栈操作（HP RPN 语义）----
-static void stackLift() { stT = stZ; stZ = stY; stY = stX; }
-static void stackDrop() { stX = stY; stY = stZ; stZ = stT; stT = 0; } // DROP：X 丢弃，栈上移，T 清空
+void stackLift() { stT = stZ; stZ = stY; stY = stX; }
+void stackDrop() { stX = stY; stY = stZ; stZ = stT; stT = 0; } // DROP：X 丢弃，栈上移，T 清空
 
 // ---- 数字格式化（整数直显，否则 12 位有效数字）----
-static const char *fmtNum(double v, char *buf) {
+const char *fmtNum(double v, char *buf) {
     if (v > -1e9 && v < 1e9 && v == (double)(long long)v) // 范围先判（防 2^63 UB），整数 <=9 位直显
         sprintf(buf, "%lld", (long long)v);
     else
@@ -127,22 +128,22 @@ static const char *fmtNum(double v, char *buf) {
 }
 
 // ---- 阶段 2：角度转换（DEG/RAD/GRAD）----
-static double toRad(double v) {
+double toRad(double v) {
     if (angMode == 1) return v;                 // RAD
     if (angMode == 2) return v * M_PI / 200.0;  // GRAD
     return v * M_PI / 180.0;                    // DEG
 }
-static double fromRad(double v) {
+double fromRad(double v) {
     if (angMode == 1) return v;
     if (angMode == 2) return v * 200.0 / M_PI;
     return v * 180.0 / M_PI;
 }
 
-static int valid(double r) { return !(r != r || r == HUGE_VAL || r == -HUGE_VAL); }
+int valid(double r) { return !(r != r || r == HUGE_VAL || r == -HUGE_VAL); }
 
 // 单操作数函数：X -> f(X)（LAST X=旧 X，autoLift=1）
 // angIn：输入先转弧度（三角）；angOut：结果转当前角度（反三角）
-static void unaryOp(double (*f)(double), int angIn, int angOut) {
+void unaryOp(double (*f)(double), int angIn, int angOut) {
     double x;
     if (entering) { x = atof(inbuf); entering = 0; inlen = 0; }
     else x = stX;
@@ -157,7 +158,7 @@ static void unaryOp(double (*f)(double), int angIn, int angOut) {
 }
 
 // 双操作数：Y g X -> X（栈下移，同四则）
-static void binaryOp(double (*g)(double, double)) {
+void binaryOp(double (*g)(double, double)) {
     double x, y;
     if (entering) { x = atof(inbuf); entering = 0; inlen = 0; }
     else x = stX;
@@ -171,7 +172,7 @@ static void binaryOp(double (*g)(double, double)) {
 }
 
 // 常量压栈（42S：常数输入，旧 X 上移，可连续输入参与运算）
-static void pushConst(double v) {
+void pushConst(double v) {
     if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
     lastX = stX;
     stackLift();
@@ -256,7 +257,7 @@ static const char *mathTitles[5] = {
 };
 
 // 混排绘制（GBK 双字节中文 16px + ASCII 16px；返回新 x）
-static int drawTextMix(int x, int y, const char *s, uint8_t fg, int16_t bg) {
+int drawTextMix(int x, int y, const char *s, uint8_t fg, int16_t bg) {
     while (*s) {
         unsigned char c = (unsigned char)*s;
         if (c >= 0x81 && c < 0xFF && s[1]) {
@@ -344,10 +345,10 @@ static void mathExec(int slot) {
     }
 }
 
-// 菜单项（F1-F6；无功能的显示占位）
-static const char *menuItems[6] = {"x<>y", "Rdn", "DROP", "", "", ""};
+// 菜单项（F1-F6；Sum+=Σ+ 统计收集、Sum-=Σ- 撤最后）
+static const char *menuItems[6] = {"x<>y", "Rdn", "DROP", "Sum+", "Sum-", ""};
 
-static void drawXLine(void); // 前置声明（draw 内调用）
+void drawXLine(void); // 前置声明（draw 内调用）
 static void drawMathPage(void);
 
 // ---- 寄存器列表绘制（rpnMode==3）----
@@ -429,7 +430,7 @@ static void draw(void) {
 }
 
 // X 行：标签 X: + 数字（32px 大字，最多 13 字符；分数模式显示分数）
-static void drawXLine(void) {
+void drawXLine(void) {
     char buf[48], buf2[48], fbuf[48];
     const char *num = NULL;
     if (entering) num = inbuf;
@@ -482,6 +483,8 @@ static int mathKey(int key) {
 
 // ---- 按键处理（返回 1 = 仅 X 行变化（区域刷新），0 = 全屏刷新）----
 static int handleKey(int key, int shift) {
+    // 扩展模式（5=CPLX 复数 6=MATX 矩阵 7=STAT 统计）
+    if (rpnMode >= 5) return rpn39ExtKey(rpnMode, key, shift);
     // 寄存器列表模式（rpnMode==3）：方向键移动/ENT=RCL/VIEWS/ON 退出
     if (rpnMode == 3) {
         if (key == KEY_UP) { if (regSel > 0) { regSel--; if (regSel < regTop) regTop = regSel; } return 0; }
@@ -552,6 +555,9 @@ static int handleKey(int key, int shift) {
             case KEY_MULTIPLICATION: unaryOp(f_fact, 0, 0); return 0; // X!
             case KEY_NEGATIVE: unaryOp(f_abs, 0, 0); return 0; // ABS（原厂 Shift+(-) = ABS）
             case KEY_3:  pushConst(M_PI);       return 0; // π 压栈
+            case KEY_7:  rpnMode = 7; rpn39ExtEnter(7); return 0; // 统计（原 LIST 键位）
+            case KEY_8:  rpnMode = 6; rpn39ExtEnter(6); return 0; // 矩阵（原 MATRIX 键位）
+            case KEY_9:  rpnMode = 5; rpn39ExtEnter(5); return 0; // 复数（原 PRGM 键位）
             default: return 0;                            // 未定义 shift 组合忽略
         }
     }
@@ -677,6 +683,12 @@ static int handleKey(int key, int shift) {
             if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
             stackDrop(); autoLift = 0;
             break;
+        case KEY_F4: // Sum+（Σ+）：X 收集进统计
+            rpn39StatAccum(1);
+            break;
+        case KEY_F5: // Sum-（Σ-）：撤销最后一个收集点
+            rpn39StatAccum(0);
+            break;
         case KEY_LEFTBRACKET: // ( : STO（等字母）
             if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
             rpnMode = 1;
@@ -749,10 +761,12 @@ void rpn39Task(void *_) {
                         ll_disp_set_indicator(0, -1);
                         if (rpnMode == 3) drawRegList();       // 保持列表/菜单视图
                         else if (rpnMode == 4) drawMathPage();
+                        else if (rpnMode >= 5) rpn39ExtDraw(rpnMode);
                         else draw();
                     } else {
                         if (rpnMode == 3) drawRegList(); // 列表模式全屏
                         else if (rpnMode == 4) drawMathPage();
+                        else if (rpnMode >= 5) rpn39ExtDraw(rpnMode);
                         else if (r) drawX();             // 输入变化：X 行区域刷新
                         else draw();                     // 栈/菜单变化：全屏刷新
                     }
@@ -766,6 +780,7 @@ void rpn39Task(void *_) {
     if (shiftHeld) { shiftHeld = 0; ll_disp_set_indicator(0, -1); }
     if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; } // 输入中退出：先落值
     saveRegs(); // 退出保存（寄存器 + 栈 + 角度模式——HP 关机保留语义）
+    if (rpnMode >= 5) rpn39ExtExit(rpnMode); // 扩展态退出持久化（复数/矩阵/统计）
     entering = 0; inlen = 0; inbuf[0] = 0; // 清输入态（避免重进残留）
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
     uidisp->flush();

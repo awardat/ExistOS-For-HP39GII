@@ -6,6 +6,20 @@
 
 ## [build 132] - 2026-09-03 (开发中)
 
+### 新增（2026-09-04 电源/充电/性能 + RPN39 阶段 3）
+- **电源两档制**：实测省电档与标准档待机电流差小（40-50 vs 50-60mA），去除省电档——标准 240/120 ↔ 加速 480/240；旧 'S'/'L' 配置按标准档
+- **HCLK 240→120MHz**（手册明确 HCLK≤200MHz；CPU 走 PLL 独立分频不受影响）+ **空闲 PFM/DC_HALFCLK 轻载省电** + LOOPCTRL 手册推荐位（TOGGLE_DIF/EN_CM_HYST/EN_RCSCALE=1）
+- **充电**：启用锂电 STOP_ILIMIT 停充（锂电靠限流停；镍氢 12h 定时已有）；配置页充电类型选择（锂电/镍氢，KEY_3 切换、持久化、启动应用、SWI +86）；开关与类型同行布局（EN 文案缩短）；**实测电流基线**：待机 省电 40-50/标准 50-60/加速 90mA（1.6V）
+- **KhiCAS 待机电流优化**：vGL_getkey 空闲轮询加 5ms 延时（让出 CPU→idle 降频；KhiCAS 待机 80-90mA → 预计 ~50mA，按键响应无感知损失）
+- **手册核对结论**（docs/power-notes-2026-09-03.md）：STMP3770 无 CPU 频率上限（480MHz 仅 USB 480Mbps 与"PLL 恒 480"，CPU div1 自然 480；"380MHz 限制"不成立）；唯一明确限制 HCLK≤200MHz
+- **RPN39 阶段 3**（测试 docs/RPN39-phase3-test.md）：
+  - 百分比 % / Δ% / %T（MATH 页 1 下三槽：12C 语义只改 X 保 Y——可直接 + 得价税合计）
+  - STO 运算（42S：STO 态 Shift+四则 = STO+−×÷，R op= X 存回；Shift 区分不破坏 n/s/w 字母寄存器）
+  - 复数 CPLX（Shift+9）：方案 A 复寄存器 Z1/Z0（re+im）；3 子页——载入（主栈 Y,X）/四则、共轭/模/倒数/辐角/输出主栈/RECT↔POLAR 显示、R→P/P→R 实数坐标转换/交换/清除；持久化
+  - 矩阵 MATX（Shift+8）：A/B/R 槽 4×4 方阵格编辑（方向+数字+小数+负号+退格）；加减乘/转置/求逆（高斯-约当）/行列式（→主栈 X）/SIZE/R→A/B 链式；持久化
+  - 统计 STAT（Shift+7 + 主界面 F4=Σ+/F5=Σ−）：8 统计量（n/均值/总体·样本标准差/最值/和/平方和），↑↓+ENT 取值→主栈；n≤256 持久化
+- 结构：rpn39 拆出扩展模块（rpn39_int.h + rpn39_ext.cpp，aux_source_directory 需重 configure）
+
 ### 规划
 - **RPN39 阶段 3 详规**（2026-09-03 更新）：统计（MATH 页 + Shift+7）、矩阵（MATH 页 + Shift+8）；财务/求解器已移出（见下方新程序）
 - **新程序：表单计算（FormCalc）**（规划中，2026-09-03 更新）：财务（12C 经典功能全集：TVM/现金流/摊销/债券/折旧/日期/利率转换/利润）+ 工程（单位换算等），表单 UI；**求解器已移出**（去向待定：RPN39 阶段 3 或独立）；依据与参考：docs/FinCalc-refs.md
@@ -34,7 +48,7 @@
 - **RPN39**：阶段 3 计算功能扩展（候选：复数/矩阵/统计/金融/工程常量——已取消绘图）
 - **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；**去除 Home→file-quit**（已完成，HOME 释放）+ **重新定义 6 个视图按键**（规划中）；giac 桌面版（2.0.0）有限移植（差异概览见 docs/giac-snapshot-diff.md）
 - D4 FTL_Sync 真机掉电测试
-- **C 组待办**（build 132）：OSLoader 侧栈溢出检查开启（=2，需刷 OSLoader 验证）；字体母本唯一权威源标注（tools/ vs System/graphics/）；RAND 种子策略（固定池或文档化）
+- **C 组待办**（build 132）：~~OSLoader 侧栈溢出检查开启（=2）~~（已移除：2026-09-03 实测导致刷写失败已永久回滚为 0）；字体母本唯一权威源标注（tools/ vs System/graphics/）；RAND 种子策略（固定池或文档化）
 - **队列（暂不做）**：视图按键完整方案（HOME 已释放、SYMB/PLOT/NUM/APPS 已置空、F5=App——剩余 HOME/VIEWS 等的后续定义）；App 菜单内应用功能验证修复（见 kadd.cc）
 
 ---
