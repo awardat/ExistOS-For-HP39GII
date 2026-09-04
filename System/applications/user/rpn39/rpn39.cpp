@@ -39,6 +39,7 @@ static int rpn39Running = 0;
 // ---- 寄存器（A-Z，42S STO/RCL）----
 static double regs[26] = {0};
 static int rpnMode = 0;       // 0=正常 1=STO 等字母 2=RCL 等字母 3=寄存器列表 4=MATH 菜单
+static int stoOp = 0;         // STO 运算（42S：0=普通 STO，1/2/3/4 = STO+ − × ÷；Shift+四则在 STO 态选择）
 static int clearConfirm = 0;  // CLEAR ALL 确认态
 static int regSel = 0;        // 列表高亮（0-25）
 static int regTop = 0;        // 列表滚动顶
@@ -247,7 +248,7 @@ static const char *fmtFrac(double v, char *out) {
 // ---- MATH 菜单（5 页 × 6 项）----
 // 标题中英文对照（GBK 中文，HZK16S 渲染需混排绘制）
 static const char *mathTitles[5] = {
-    "\xBD\xC7\xB6\xC8/ANGLE",     // 角度/ANGLE
+    "\xBD\xC7\xB6\xC8\xA1\xA4\xB0\xD9\xB7\xD6\xB1\xC8/ANGLE\xA1\xA4PCT", // 角度·百分比/ANGLE·PCT
     "\xB3\xA3\xC1\xBF/BASIC",     // 常量/BASIC
     "\xCB\xAB\xC7\xFA/HYPER",     // 双曲/HYPER
     "\xB8\xC5\xC2\xCA/PROB",      // 概率/PROB
@@ -274,19 +275,37 @@ static int drawTextMix(int x, int y, const char *s, uint8_t fg, int16_t bg) {
     return x;
 }
 static const char *mathItems[5][6] = {
-    {"DEG", "RAD", "GRAD", "", "", ""},
+    {"DEG", "RAD", "GRAD", "%", "\xDC%", "%T"},   // 页 1：角度切换 + 12C 百分比（% / Δ% / %T）
     {"e", "sign", "round", "floor", "ceil", ""},
     {"sinh", "cosh", "tanh", "asinh", "acosh", "atanh"},
     {"nCr", "nPr", "RAND", "", "", ""},
     {"x3", "10^x", "2^x", "", "", ""}
 };
 
+// 百分比（12C 语义：只改 X，Y 保持——算完可直接 + 得合计价）；lastX=旧 X，autoLift=1
+// k=0: %（Y 的 X%）X=Y*X/100；k=1: Δ%（相对变化 (X-Y)/Y*100）；k=2: %T（X 占 Y 的 % X/Y*100）
+static void percentOp(int k) {
+    double x, y;
+    if (entering) { x = atof(inbuf); entering = 0; inlen = 0; }
+    else x = stX;
+    y = stY;
+    lastX = x;
+    double r;
+    if (k == 0) r = y * x / 100.0;
+    else if (k == 1) r = (y != 0) ? (x - y) * 100.0 / y : 0;
+    else r = (y != 0) ? x * 100.0 / y : 0;
+    if (!valid(r)) r = 0;
+    stX = r;
+    autoLift = 1;
+}
+
 static void mathExec(int slot) {
     switch (mathPage) {
-        case 0: // 角度
+        case 0: // 角度 + 百分比（% / Δ% / %T）
             if (slot == 0) { angMode = 0; saveRegs(); }
             else if (slot == 1) { angMode = 1; saveRegs(); }
             else if (slot == 2) { angMode = 2; saveRegs(); }
+            else if (slot >= 3 && slot <= 5) percentOp(slot - 3);
             break;
         case 1: // e/sign/round/floor/ceil（abs 已移到 Shift+(-) 物理键）
             if (slot == 0) pushConst(M_E);
@@ -375,8 +394,10 @@ static void draw(void) {
     char buf[48];
     int i;
     uidisp->draw_box(0, 0, 255, 127, 255, 255); // 白底
-    if (rpnMode == 1)
-        uidisp->draw_printf(0, 0, 12, 255, 0, "STO _");
+    if (rpnMode == 1) {
+        const char *op = stoOp == 0 ? "" : stoOp == 1 ? "+" : stoOp == 2 ? "-" : stoOp == 3 ? "*" : "/";
+        uidisp->draw_printf(0, 0, 12, 255, 0, "STO%s _", op);
+    }
     else if (rpnMode == 2)
         uidisp->draw_printf(0, 0, 12, 255, 0, "RCL _");
     else if (rpnMode == 4)
@@ -478,15 +499,32 @@ static int handleKey(int key, int shift) {
         if (key == KEY_VIEWS || key == KEY_ON || key == KEY_HOME) { rpnMode = 0; clearConfirm = 0; return 0; }
         return 0;
     }
-    // STO/RCL 等待字母（rpnMode 1/2）（shift 无意义：字母优先）
+    // STO/RCL 等待字母（rpnMode 1/2）
     if (rpnMode == 1 || rpnMode == 2) {
         int mode = rpnMode; // 保存（下面清 rpnMode）
+        // STO 运算前缀（42S STO+−×÷）：STO 态按 Shift+四则 → 挂起运算，等字母后执行
+        if (shift && mode == 1) {
+            switch (key) {
+                case KEY_PLUS: stoOp = 1; return 0;
+                case KEY_SUBTRACTION: stoOp = 2; return 0;
+                case KEY_MULTIPLICATION: stoOp = 3; return 0;
+                case KEY_DIVISION: stoOp = 4; return 0;
+                default: break;
+            }
+        }
         int idx = regKeyToIdx(key);
         rpnMode = 0; // 无论是否命中先退出等待态（非字母=取消）
         if (idx >= 0) {
             if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
-            if (mode == 1) {          // STO：存 X 到寄存器
-                regs[idx] = stX;
+            if (mode == 1) {          // STO：存 X（或 STO 运算 R op= X 后存回）
+                if (stoOp == 0) regs[idx] = stX;
+                else {
+                    double v = stX;
+                    if (stoOp == 1) regs[idx] += v;
+                    else if (stoOp == 2) regs[idx] -= v;
+                    else if (stoOp == 3) regs[idx] *= v;
+                    else if (v != 0) regs[idx] /= v; // 除 0：寄存器保持
+                }
                 saveRegs();
             } else {                  // RCL：寄存器值压栈（42S stack lift）
                 lastX = stX;
@@ -495,6 +533,7 @@ static int handleKey(int key, int shift) {
                 autoLift = 0;
             }
         }
+        stoOp = 0; // 复位挂起运算（无论成功/取消）
         return 0;
     }
     // MATH 菜单（rpnMode 4）
