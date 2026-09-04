@@ -355,7 +355,7 @@ static void drawMathPage(void);
 static void drawRegList(void) {
     char buf[48];
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
-    uidisp->draw_printf(0, 0, 12, 0, 255, "VARS: UP/DOWN ENT=RCL");
+    uidisp->draw_printf(0, 0, 12, 0, 255, "VARS: UP/DN ENT=RCL  Sh+UP/DN pg");
     for (int i = 0; i < 8; i++) {
         int idx = regTop + i;
         if (idx >= 26) break;
@@ -485,8 +485,22 @@ static int mathKey(int key) {
 static int handleKey(int key, int shift) {
     // 扩展模式（5=CPLX 复数 6=MATX 矩阵 7=STAT 统计）
     if (rpnMode >= 5) return rpn39ExtKey(rpnMode, key, shift);
-    // 寄存器列表模式（rpnMode==3）：方向键移动/ENT=RCL/VIEWS/ON 退出
+    // 寄存器列表模式（rpnMode==3）：方向键移动/ENT=RCL/VIEWS/ON 退出；Shift+UP/DN 整页翻（8 行/页）
     if (rpnMode == 3) {
+        if (shift && key == KEY_UP) {
+            if (regSel > 0) {
+                regSel = (regSel >= 8) ? regSel - 8 : 0;
+                if (regSel < regTop) regTop = regSel;
+            }
+            return 0;
+        }
+        if (shift && key == KEY_DOWN) {
+            if (regSel < 25) {
+                regSel = (regSel <= 25 - 8) ? regSel + 8 : 25;
+                if (regSel > regTop + 7) regTop = regSel - 7;
+            }
+            return 0;
+        }
         if (key == KEY_UP) { if (regSel > 0) { regSel--; if (regSel < regTop) regTop = regSel; } return 0; }
         if (key == KEY_DOWN) { if (regSel < 25) { regSel++; if (regSel > regTop + 7) regTop = regSel - 7; } return 0; }
         if (key == KEY_ENTER) { // ENT：RCL 选中寄存器（栈提升，42S）
