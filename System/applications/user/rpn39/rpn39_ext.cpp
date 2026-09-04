@@ -407,8 +407,8 @@ static void matxDraw(void) {
             char tbuf[16];
             if (mEdOn && hl) { txt = mBuf; }
             else { fmt7(m[i * 4 + j], tbuf); txt = tbuf; }
-            uidisp->draw_box(2 + j * 63, 30 + i * 20, 2 + j * 63 + 60, 30 + i * 20 + 17, hl ? 0 : 255, hl ? 255 : 0);
-            uidisp->draw_printf(4 + j * 63, 32 + i * 20, 12, hl ? 255 : 0, 255, "%s", txt);
+            uidisp->draw_box(2 + j * 63, 30 + i * 20, 2 + j * 63 + 60, 30 + i * 20 + 17, hl ? 255 : 0, hl ? 0 : 255);
+            uidisp->draw_printf(4 + j * 63, 32 + i * 20, 12, hl ? 255 : 0, hl ? 0 : 255, "%s", txt);
         }
     }
     uidisp->draw_printf(0, 92, 12, 0, 255, "F1-F5 op  F6: Ed slot  ON:exit");
@@ -481,17 +481,22 @@ static int matxEditKey(int key) {
     return 0;
 }
 
+static void matxCommit(void) { // 提交正在编辑的格（切槽/翻页/退出/运算前防丢值）
+    if (mEdOn) { edM(edSlot)[cy * 4 + cx] = atof(mBuf); mEdOn = 0; saveMatx(); }
+}
+
 static int matxKey(int key, int shift) {
     (void)shift;
-    if (key == KEY_ON || key == KEY_VIEWS || key == KEY_HOME) { rpnMode = 0; saveMatx(); return 0; }
-    if (key == KEY_MATH) { matxPage = (matxPage + 1) % 3; return 0; } // b 键翻页
-    // 左右方向在格边界时翻页（编辑中先提交）
+    if (key == KEY_ON || key == KEY_VIEWS || key == KEY_HOME) { matxCommit(); rpnMode = 0; return 0; }
+    if (key == KEY_MATH) { matxCommit(); matxPage = (matxPage + 1) % 3; return 0; } // b 键翻页
+    // 左右方向：编辑中=只移动光标（先提交，永不翻页）；非编辑态=格边界翻页
     if (key == KEY_LEFT || key == KEY_RIGHT) {
         int n = *edD(edSlot);
         if (mEdOn) {
             edM(edSlot)[cy * 4 + cx] = atof(mBuf);
             mEdOn = 0;
             saveMatx();
+            return matxEditKey(key);
         }
         if (key == KEY_LEFT && cx == 0) { matxPage = (matxPage + 2) % 3; return 0; }
         if (key == KEY_RIGHT && cx == n - 1) { matxPage = (matxPage + 1) % 3; return 0; }
@@ -508,10 +513,10 @@ static int matxKey(int key, int shift) {
         default: break;
     }
     if (slot < 0) return matxEditKey(key); // 方向/数字/编辑键
+    matxCommit(); // 运算/切槽前提交当前编辑格（A/B 输入后半途操作值不丢）
     if (slot == 5) { // F6：编辑槽循环 A→B→R
         edSlot = (edSlot + 1) % 3;
         cx = cy = 0;
-        saveMatx();
         return 0;
     }
     if (matxPage == 0) matxOp(slot);
