@@ -20,7 +20,7 @@
 
 #define UI_Power_Save_Mode_CN        "省电模式"
 #define UI_Enable_Charge_CN          "开启充电"
-#define UI_Charge_Mode_CN          "\xb3\xe4\xb5\xe7\xb7\xbd\xca\xbd"
+#define UI_Charge_Mode_CN          "\xc0\xe0\xd0\xcd"
 #define UI_LiIon_CN                   "\xef\xae\xb5\xe7"
 #define UI_NiMH_CN                    "\xc4\xf8\xc7\xe2"
 
