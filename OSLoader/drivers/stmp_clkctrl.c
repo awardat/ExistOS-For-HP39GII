@@ -43,6 +43,9 @@ void setSlowDownMinCpuFrac(uint8_t frac)
 
 void enterSlowDown()
 {
+    // 轻载省电（手册 29.2.2.2）：PFM 脉冲跳 + DC 开关半频 750kHz
+    HW_POWER_MINPWR.B.EN_DC_PFM = 1;
+    HW_POWER_MINPWR.B.DC_HALFCLK = 1;
     if(g_slowdown_enable == 1)
     {
         setCPUDivider(CPU_DIVIDE_STD_IDLE);
@@ -55,6 +58,9 @@ void enterSlowDown()
 
 void exitSlowDown()
 {
+    // 恢复满载 DC-DC（忙态）
+    HW_POWER_MINPWR.B.EN_DC_PFM = 0;
+    HW_POWER_MINPWR.B.DC_HALFCLK = 0;
     if(g_slowdown_enable == 1)
     {
         setCPUDivider(CPU_DIVIDE_STD_BUSY);
@@ -72,6 +78,9 @@ void exitSlowDown()
 void slowDownEnable(int mode)
 {
     g_slowdown_enable = mode;
+    // 忙态恢复（与 exitSlowDown 一致）
+    HW_POWER_MINPWR.B.EN_DC_PFM = 0;
+    HW_POWER_MINPWR.B.DC_HALFCLK = 0;
     if(g_slowdown_enable == 2)
     {
         setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
@@ -147,7 +156,7 @@ void volatile portCLKCtrlInit(void) {
     
     setCPU_HFreqDomain(true);
 
-    setHCLKDivider(2);
+    setHCLKDivider(4); // 2026-09-03：HCLK=120MHz（手册上限 200MHz；原 240MHz 超限——外设总线降速，CPU 走 PLL 独立分频不受影响）
     setCPUFracDivider(22);
     
     enableUSBClock(true);
