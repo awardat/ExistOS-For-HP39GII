@@ -19,7 +19,7 @@ extern "C" {
 // 系统配置结构体
 typedef struct {
     int language;           // 语言设置 (0=英文, 1=中文)
-    char power_save;        // 电源节省模式 (' ' = 关闭, 'S' = 低功耗, 'L' = 超低功耗)
+    char power_save;        // 电源模式 (' ' = 标准, 'B' = 加速；2026-09-03 两档制——省电档实测差距小已去除，旧 'S'/'L' 按标准)
     bool enable_charge;     // 是否启用充电
     bool charging;          // 充电状态
     bool enable_mem_swap;   // 是否启用内存交换

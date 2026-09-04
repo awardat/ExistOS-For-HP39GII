@@ -157,11 +157,11 @@ void main_thread() {
     // 初始化崩溃日志系统
     crash_log_init();
 
-    // 应用电源档位（main_thread 单点）：' '=标准(240/120), 'S'=省电(160/80), 'L'=兼容旧配置(160/80), 'B'=加速(480/240)
+    // 应用电源档位（main_thread 单点）：' '=标准(240/120), 'B'=加速(480/240)；旧 'S'/'L'（省电档）按标准档（2026-09-03 两档制）
     {
         extern char config_get_power_save(void);
         char ps = config_get_power_save();
-        ll_cpu_slowdown_enable(ps == 'S' ? 2 : (ps == 'L' ? 2 : (ps == 'B' ? 3 : 1)));
+        ll_cpu_slowdown_enable(ps == 'B' ? 3 : 1);
     }
 
     // StartKhiCAS();

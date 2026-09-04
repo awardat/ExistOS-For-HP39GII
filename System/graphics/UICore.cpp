@@ -235,9 +235,9 @@ void pageUpdate() {
                 char ps = config_get_power_save();
                 const char *psn;
                 if (config_get_language()) {
-                    psn = ps=='S' ? "\xca\xa1\xb5\xe7" : ps=='B' ? "\xbc\xd3\xcb\xd9" : ps=='L' ? "\xb5\xcd\xb9\xa6\xba\xc4" : "\xb1\xea\xd7\xbc";
+                    psn = ps=='B' ? "\xbc\xd3\xcb\xd9" : "\xb1\xea\xd7\xbc";
                 } else {
-                    psn = ps=='S' ? "Save" : ps=='B' ? "Boost" : ps=='L' ? "Low" : "Off";
+                    psn = ps=='B' ? "Boost" : "Off";
                 }
                 uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)", UI_Power_Save_Mode, psn);
             }
@@ -789,18 +789,13 @@ void keyMsg(uint32_t key, int state) {
             if (curPage == 3) {
                 switch (page3Subpage) {
                 case 0:
-                    if (config_get_power_save() == 'S') {
-                        config_set_power_save('B');
-                        ll_cpu_slowdown_enable(3);
-                    } else if (config_get_power_save() == 'B') {
+                    // 2026-09-03：两档制（标准/加速）——实测省电与标准电流差距小（40-50 vs 50-60mA），省电档去除（旧 'S'/'L' 配置按标准档处理）
+                    if (config_get_power_save() == 'B') {
                         config_set_power_save(' ');
                         ll_cpu_slowdown_enable(1);
-                    } else if (config_get_power_save() == ' ') {
-                        config_set_power_save('S');
-                        ll_cpu_slowdown_enable(2);
-                    } else if (config_get_power_save() == 'L') { // 兼容旧配置
-                        config_set_power_save('S');
-                        ll_cpu_slowdown_enable(2);
+                    } else {
+                        config_set_power_save('B');
+                        ll_cpu_slowdown_enable(3);
                     }
                     drawPage(curPage); // 完整重绘配置页，确保档位文本立即更新
                     break;
@@ -840,13 +835,11 @@ void keyMsg(uint32_t key, int state) {
                     if (config_get_enable_charge()) {
                         config_set_enable_charge(false);
                         ll_charge_enable(false);
+                        ll_cpu_slowdown_enable(config_get_power_save() == 'B' ? 3 : 1); // 恢复档位
                     } else {
-                        if (config_get_power_save() != 'L') {
-                            config_set_power_save('L');
-                            ll_cpu_slowdown_enable(2);
-                        }
                         config_set_enable_charge(true);
                         ll_charge_enable(true);
+                        ll_cpu_slowdown_enable(1); // 充电中强制标准档（不显示低功耗；2026-09-03 去除原 'L' 联动）
                     }
                     break;
                 case 1: {
