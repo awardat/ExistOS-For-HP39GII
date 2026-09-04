@@ -603,6 +603,11 @@ static void statDraw(void) {
         } else
             uidisp->draw_printf(2, 16 + i * 12, 12, 0, 255, "%s", buf);
     }
+    uidisp->draw_box(0, 112, 255, 127, 255, 0);
+    for (i = 1; i < 6; i++) uidisp->draw_line(i * 42, 114, i * 42, 126, 255);
+    static const char *sm[6] = {"Sum+", "Sum-", "CLR", "_", "_", "_"};
+    for (i = 0; i < 6; i++)
+        uidisp->draw_printf(i * 42 + 2, 114, 12, 255, 0, "%s", sm[i]);
     uidisp->flush();
 }
 
