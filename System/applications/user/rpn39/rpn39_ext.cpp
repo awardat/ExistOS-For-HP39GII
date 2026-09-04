@@ -146,13 +146,13 @@ static void cplxRP(int toPolar) {
     if (entering) { x = atof(inbuf); entering = 0; inlen = 0; }
     else x = stX;
     y = stY;
-    if (toPolar) { // R→P
+    if (toPolar) { // R→P：主栈 (Y,X)=(re,im) → (r, θ)
         stY = hypot(x, y);
-        stX = fromRad(atan2(y, x));
-    } else {       // P→R
+        stX = fromRad(atan2(x, y)); // θ=atan2(im=X, re=Y)
+    } else {       // P→R：主栈 (Y,X)=(r, θ) → (re,im)
         double t = toRad(x);
-        stY = y * cos(t);   // y=r 时 X=θ
-        stX = y * sin(t);
+        stY = y * cos(t);   // re = r·cosθ
+        stX = y * sin(t);   // im = r·sinθ
     }
     autoLift = 1;
 }
@@ -645,8 +645,14 @@ static int statKey(int key, int shift) {
 
 // ==================== 分发（rpn39_int.h）====================
 void rpn39ExtEnter(int mode) {
-    if (mode == 5 && !cplxInit) { loadCplx(); cplxInit = 1; cplxPage = 0; }
-    if (mode == 6 && !matxInit) { loadMatx(); matxInit = 1; matxPage = 0; }
+    if (mode == 5) { // CPLX：每次进入固定页 1/3（LOAD 区）——避免页残留导致 F 键功能错位
+        if (!cplxInit) { loadCplx(); cplxInit = 1; }
+        cplxPage = 0;
+    }
+    if (mode == 6) { // MATX：进入固定页 1/3（运算区）
+        if (!matxInit) { loadMatx(); matxInit = 1; }
+        matxPage = 0;
+    }
     if (mode == 7) { if (statN == 0) loadStat(); statSel = 0; }
 }
 void rpn39ExtExit(int mode) {
