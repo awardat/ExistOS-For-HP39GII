@@ -35,6 +35,7 @@
 | Win/Linux 通用 | [使用 OS_Loader 和 EDB 安装](#通用方法) | |
 | | **[使用教程](#固件基本使用)** | |
 | [初始化](#初次使用) | [系统快捷键](#系统快捷键) | [访问内部存储](#内部存储的访问) |
+| **[RPN39 RPN 计算器](#rpn39-计算器)** | [用户手册（功能/用法/示例）](#rpn39-用户手册) | [键位](#键位映射) |
 | **[KhiCAS 基本使用](#khicas-的基本使用)** | [基本计算](#基本计算) | [示例 1: 绘图](#示例1-绘图) |
 | | [示例 2: 不定积分](#示例2-不定积分) | [示例 3: 定积分](#示例3-定积分) |
 | | [示例 4: 编程绘制 Logistic 方程映射 Feigenbaum 分岔图](#示例4-编程绘制-logistic-方程映射-feigenbaum-分岔图) | |
@@ -53,6 +54,8 @@
 
 ### build 131（开发中）
 - [x] **RPN39 阶段 2 科学计算**（角度模式 DEG/RAD/GRAD 持久化、直接键位函数、Shift 层、MATH 菜单 5 页、a b/c 分数显示、EEX）
+- [x] **RPN39 阶段 3 计算扩展**（12C 百分比 %/Δ%/%T、STO 运算、复数 CPLX、矩阵 MATX、统计 STAT）
+- [x] **RPN39 用户手册**（[docs/RPN39-manual.md](./docs/RPN39-manual.md)）
 
 ### build 130（2026-09-02 已发布）
 - [x] **RPN39 RPN 计算器**（42S 基准）：4 层栈 + 四则 + 寄存器（STO/RCL/VARS）+ 掉电持久化 + 自动栈提升
@@ -124,6 +127,8 @@
 按键定义详见 [docs/keymap.md](./docs/keymap.md)（代码实际键位：编码表 / KhiCAS 映射 / ExistOS UI 按键），原厂键位表见 [docs/keymap_org.md](./docs/keymap_org.md)。
 
 ## RPN39 计算器
+
+### RPN39 用户手册
 
 RPN39 用户手册（功能/用法/示例）：[docs/RPN39-manual.md](./docs/RPN39-manual.md)。
 
