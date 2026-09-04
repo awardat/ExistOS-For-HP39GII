@@ -575,7 +575,7 @@ static void statDraw(void) {
     char buf[64], vb[40];
     int i;
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
-    drawTextMix(0, 0, "STAT \xcd\xb3\xbc\xc6  F4=Sum+ F5=Sum-", 0, 255);
+    drawTextMix(0, 0, "STAT \xcd\xb3\xbc\xc6", 0, 255);
     double s = 0, s2 = 0, mn = 0, mx = 0;
     for (i = 0; i < statN; i++) {
         double v = statData[i];
