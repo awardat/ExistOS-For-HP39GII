@@ -586,6 +586,11 @@ void __attribute__((target("thumb"))) LLAPI_Task_thumb_entry() {
                 portChargeEnable(currentCall.para0);
             }break;
 
+            case LL_SWI_CHARGE_MODE:
+            {
+                portChargeSetMode(currentCall.para0 != 0);
+            }break;
+
             case LL_SWI_SLOW_DOWN_ENABLE:
             {
                 slowDownEnable(currentCall.para0);

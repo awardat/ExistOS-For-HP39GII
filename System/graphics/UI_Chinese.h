@@ -20,6 +20,9 @@
 
 #define UI_Power_Save_Mode_CN        "省电模式"
 #define UI_Enable_Charge_CN          "开启充电"
+#define UI_Charge_Mode_CN          "\xb3\xe4\xb5\xe7\xb7\xbd\xca\xbd"
+#define UI_LiIon_CN                   "\xef\xae\xb5\xe7"
+#define UI_NiMH_CN                    "\xc4\xf8\xc7\xe2"
 
 #define UI_FS_init1                  "文件系统未初始化"
 #define UI_FS_init2                  "按下[F2]键进行格式化"

@@ -9,6 +9,13 @@
 
 bool g_chargeEnable = false;
 
+void portChargeSetMode(bool liIon)
+{
+    // 充电方式切换：锂电 = STOP_ILIMIT 限流停充 + ALKALINE_CHARGE=0；碱性/NiMH = 12h 定时停充（start.c）+ ALKALINE_CHARGE=1
+    HW_POWER_CHARGE.B.STOP_ILIMIT = liIon ? (1 << 3) : 0;
+    HW_POWER_VDDDCTRL.B.ALKALINE_CHARGE = liIon ? 0 : 1;
+}
+
 void portChargeEnable(bool enable)
 {
     g_chargeEnable = enable;

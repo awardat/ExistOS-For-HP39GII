@@ -14,6 +14,7 @@ extern "C" {
 #define DEFAULT_LANGUAGE UI_LANG_EN
 #define DEFAULT_POWER_SAVE ' '  // ' ' = 标准(120MHz), 'S' = 省电(80+空闲48MHz), 'B' = 加速(240MHz), 'L' 兼容旧配置(80MHz)
 #define DEFAULT_ENABLE_CHARGE false
+#define DEFAULT_CHARGE_MODE 'L'      // 'L' = Li-Ion（STOP_ILIMIT 停充）, 'A' = 碱性/NiMH（12h 定时停充）
 #define DEFAULT_ENABLE_MEM_SWAP false
 
 // 系统配置结构体
@@ -21,6 +22,7 @@ typedef struct {
     int language;           // 语言设置 (0=英文, 1=中文)
     char power_save;        // 电源模式 (' ' = 标准, 'B' = 加速；2026-09-03 两档制——省电档实测差距小已去除，旧 'S'/'L' 按标准)
     bool enable_charge;     // 是否启用充电
+    char charge_mode;       // 充电方式 ('L'=Li-Ion, 'A'=碱性/NiMH；2026-09-03 加)
     bool charging;          // 充电状态
     bool enable_mem_swap;   // 是否启用内存交换
     bool mem_swap;          // 内存交换状态
@@ -41,6 +43,8 @@ char config_get_power_save(void);
 void config_set_power_save(char mode);
 bool config_get_enable_charge(void);
 void config_set_enable_charge(bool enable);
+char config_get_charge_mode(void);
+void config_set_charge_mode(char mode);
 // 获取/设置充电状态
 bool config_get_charging(void);
 void config_set_charging(bool charging);

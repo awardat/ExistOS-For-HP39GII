@@ -164,6 +164,12 @@ void main_thread() {
         ll_cpu_slowdown_enable(ps == 'B' ? 3 : 1);
     }
 
+    // 应用充电方式（锂电/碱性-NiMH；2026-09-03 加）
+    {
+        extern char config_get_charge_mode(void);
+        ll_charge_set_mode(config_get_charge_mode() == 'L');
+    }
+
     // StartKhiCAS();
 
     for (;;) {

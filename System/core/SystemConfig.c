@@ -60,6 +60,7 @@ void config_reset_to_default(void) {
     g_config.language = DEFAULT_LANGUAGE;
     g_config.power_save = DEFAULT_POWER_SAVE;
     g_config.enable_charge = DEFAULT_ENABLE_CHARGE;
+    g_config.charge_mode = DEFAULT_CHARGE_MODE;
     g_config.charging = false;
     g_config.enable_mem_swap = DEFAULT_ENABLE_MEM_SWAP;
     g_config.mem_swap = false;
@@ -118,6 +119,12 @@ void config_load(void) {
     if (find_json_value(buffer, "enable_charge", value, sizeof(value)) == 0) {
         g_config.enable_charge = (strcmp(value, "true") == 0);
     }
+    if (find_json_value(buffer, "charge_mode", value, sizeof(value)) == 0) {
+        g_config.charge_mode = value[0];
+        if (g_config.charge_mode != 'L' && g_config.charge_mode != 'A') {
+            g_config.charge_mode = DEFAULT_CHARGE_MODE;
+        }
+    }
     
     // 解析内存交换设置
     if (find_json_value(buffer, "enable_mem_swap", value, sizeof(value)) == 0) {
@@ -143,11 +150,13 @@ void config_save(void) {
         "  \"language\": %d,\n"
         "  \"power_save\": \"%c\",\n"
         "  \"enable_charge\": %s,\n"
+        "  \"charge_mode\": \"%c\",\n"
         "  \"enable_mem_swap\": %s\n"
         "}",
         g_config.language,
         g_config.power_save,
         g_config.enable_charge ? "true" : "false",
+        g_config.charge_mode,
         g_config.enable_mem_swap ? "true" : "false"
     );
     
@@ -198,6 +207,14 @@ void config_set_power_save(char mode) {
 
 bool config_get_enable_charge(void) {
     return g_config.enable_charge;
+}
+char config_get_charge_mode(void) {
+    return g_config.charge_mode;
+}
+
+void config_set_charge_mode(char mode) {
+    g_config.charge_mode = mode;
+    g_config.dirty = true;
 }
 
 void config_set_enable_charge(bool enable) {

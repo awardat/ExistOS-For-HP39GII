@@ -20,6 +20,9 @@ const char *UI_TIME = UI_TIME_EN;
 
 const char *UI_Power_Save_Mode = UI_Power_Save_Mode_EN;
 const char *UI_Enable_Charge = UI_Enable_Charge_EN;
+const char *UI_Charge_Mode = UI_Charge_Mode_EN;
+const char *UI_LiIon = UI_LiIon_EN;
+const char *UI_NiMH = UI_NiMH_EN;
 
 const char *UI_LANGUAGE = UI_LANGUAGE_EN;
 

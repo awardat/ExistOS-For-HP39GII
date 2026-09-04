@@ -22,6 +22,7 @@ uint32_t portLRADCConvCh(uint32_t ch, uint32_t samples);
 uint32_t portGetBatteryMode();
 uint32_t portGetPWRSpeed();
 void portChargeEnable(bool enable);
+void portChargeSetMode(bool liIon);
 
 
 uint32_t portBoardGetTime_us(void);

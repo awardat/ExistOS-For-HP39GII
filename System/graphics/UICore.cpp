@@ -149,6 +149,9 @@ int exf_getfree(uint8_t *drv, uint32_t *total, uint32_t *free) {
     UI_TIME = UI_TIME_##lang;                                       \
     UI_Power_Save_Mode = UI_Power_Save_Mode_##lang;                 \
     UI_Enable_Charge = UI_Enable_Charge_##lang;                     \
+    UI_Charge_Mode = UI_Charge_Mode_##lang;                         \
+    UI_LiIon = UI_LiIon_##lang;                                     \
+    UI_NiMH = UI_NiMH_##lang;                                       \
     UI_LANGUAGE = UI_LANGUAGE_##lang;                               \
     UI_Hours = UI_Hours_##lang;                                     \
     UI_Minutes = UI_Minutes_##lang;                                 \
@@ -242,6 +245,7 @@ void pageUpdate() {
                 uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)", UI_Power_Save_Mode, psn);
             }
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "[%c]%s (2)", config_get_enable_charge() ? 'X' : ' ', UI_Enable_Charge);
+            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (3)", UI_Charge_Mode, config_get_charge_mode() == 'L' ? UI_LiIon : UI_NiMH);
         } else if (page3Subpage == 1) {
 
             // sprintf(s, "%02d:%02d:%02d", (rtc_time_sec / (60 * 60)) % 24, (rtc_time_sec / 60) % 60, rtc_time_sec % 60);
@@ -853,6 +857,14 @@ void keyMsg(uint32_t key, int state) {
                     break;
                 }
                 pageUpdate();
+            }
+            break;
+        case KEY_3:
+            if (curPage == 3 && page3Subpage == 0) {
+                char cm = config_get_charge_mode();
+                config_set_charge_mode(cm == 'L' ? 'A' : 'L'); // 锂电 ↔ 碱性/NiMH
+                ll_charge_set_mode(config_get_charge_mode() == 'L');
+                drawPage(curPage);
             }
             break;
             /*

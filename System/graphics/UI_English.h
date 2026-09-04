@@ -20,6 +20,9 @@
 
 #define UI_Power_Save_Mode_EN        "Power Save Mode .."
 #define UI_Enable_Charge_EN          "Enable Charge ...."
+#define UI_Charge_Mode_EN            "Charge Mode ......"
+#define UI_LiIon_EN                   "Li-Ion"
+#define UI_NiMH_EN                    "NiMH"
 
 #define UI_LANGUAGE_EN               "Language"
 #define UI_LANGUAGE_ENGLISH_EN       "EN"
