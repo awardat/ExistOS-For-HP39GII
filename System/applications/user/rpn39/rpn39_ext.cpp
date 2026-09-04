@@ -79,7 +79,7 @@ static void saveCplx(void) {
     FIL f;
     if (f_open(&f, "/rpn39_cplx.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw;
-        double d[4] = {cZ0re, cZ0im, cZ1re, cZ1im};
+        double d[5] = {cZ0re, cZ0im, cZ1re, cZ1im, (double)cplxPolar}; // 第 5 值=显示模式
         f_write(&f, d, sizeof(d), &bw);
         f_close(&f);
     }
@@ -87,9 +87,10 @@ static void saveCplx(void) {
 static void loadCplx(void) {
     FIL f; UINT br = 0;
     if (f_open(&f, "/rpn39_cplx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) {
-        double d[4] = {0};
+        double d[5] = {0};
         f_read(&f, d, sizeof(d), &br);
         if (br >= 4 * sizeof(double)) { cZ0re = d[0]; cZ0im = d[1]; cZ1re = d[2]; cZ1im = d[3]; }
+        if (br >= 5 * sizeof(double)) cplxPolar = (int)d[4]; // 旧 4 值文件保持默认 0
         f_close(&f);
     }
 }
@@ -102,6 +103,7 @@ static void cplxLoad(int which) {
     y = stY;
     if (which == 0) { cZ0re = y; cZ0im = x; }
     else { cZ1re = y; cZ1im = x; }
+    cplxPolar = 0; // 载入是直角坐标输入：自动回 RECT 显示（F6 可再切 POLAR）
     saveCplx();
 }
 
