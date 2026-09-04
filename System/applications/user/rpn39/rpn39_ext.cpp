@@ -398,7 +398,7 @@ static void matxDraw(void) {
     if (matxMsg[0])
         uidisp->draw_printf(0, 14, 12, 255, 0, "%s", matxMsg);
     else
-        uidisp->draw_printf(0, 14, 12, 0, 255, "digits edit  F6:slot  L/R edge=pg");
+        uidisp->draw_printf(0, 14, 12, 0, 255, "digits edit  F6:slot  b:page  ON:exit");
     double *m = edM(edSlot);
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
@@ -440,10 +440,14 @@ static int matxEditKey(int key) {
     switch (key) {
         case KEY_UP: case KEY_DOWN: case KEY_LEFT: case KEY_RIGHT:
             if (mEdOn) { *v = atof(mBuf); mEdOn = 0; saveMatx(); }
-            if (key == KEY_UP && cy > 0) cy--;
-            if (key == KEY_DOWN && cy < n - 1) cy++;
-            if (key == KEY_LEFT && cx > 0) cx--;
-            if (key == KEY_RIGHT && cx < n - 1) cx++;
+            if (key == KEY_RIGHT) { // 行尾换行（wrap 格导航，不翻页）
+                if (cx < n - 1) cx++;
+                else { cx = 0; cy = (cy + 1) % n; }
+            } else if (key == KEY_LEFT) {
+                if (cx > 0) cx--;
+                else { cx = n - 1; cy = (cy + n - 1) % n; }
+            } else if (key == KEY_DOWN) cy = (cy + 1) % n;
+            else cy = (cy + n - 1) % n;
             return 0;
         case KEY_ENTER:
             if (mEdOn) { *v = atof(mBuf); mEdOn = 0; saveMatx(); }
@@ -488,20 +492,7 @@ static void matxCommit(void) { // 提交正在编辑的格（切槽/翻页/退�
 static int matxKey(int key, int shift) {
     (void)shift;
     if (key == KEY_ON || key == KEY_VIEWS || key == KEY_HOME) { matxCommit(); rpnMode = 0; return 0; }
-    if (key == KEY_MATH) { matxCommit(); matxPage = (matxPage + 1) % 3; return 0; } // b 键翻页
-    // 左右方向：编辑中=只移动光标（先提交，永不翻页）；非编辑态=格边界翻页
-    if (key == KEY_LEFT || key == KEY_RIGHT) {
-        int n = *edD(edSlot);
-        if (mEdOn) {
-            edM(edSlot)[cy * 4 + cx] = atof(mBuf);
-            mEdOn = 0;
-            saveMatx();
-            return matxEditKey(key);
-        }
-        if (key == KEY_LEFT && cx == 0) { matxPage = (matxPage + 2) % 3; return 0; }
-        if (key == KEY_RIGHT && cx == n - 1) { matxPage = (matxPage + 1) % 3; return 0; }
-        return matxEditKey(key); // 否则格导航
-    }
+    if (key == KEY_MATH) { matxCommit(); matxPage = (matxPage + 1) % 3; return 0; } // b 键翻页（方向键不再翻页：只做格导航）
     int slot = -1;
     switch (key) {
         case KEY_F1: slot = 0; break;
