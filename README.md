@@ -52,10 +52,19 @@
 
 ## 目前工作进展（build 126 起，详见 CHANGELOG.md）
 
-### build 131（开发中）
+### build 133（开发中）
+- [ ] RPN39 阶段 3 真机测试收尾（[docs/RPN39-phase3-test.md](../RPN39-phase3-test.md) 在本地工作区）
+- [ ] KhiCAS 帮助中文化/物理按键映射加强；FormCalc（财务 12C 全集+工程）规划
+
+### build 132（2026-09-04 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-132)）
+- [x] **RPN39 阶段 3 计算扩展**：12C 百分比 %/Δ%/%T（MATH 页 1）、STO 运算（42S 累加器）、复数 CPLX（Shift+,）、矩阵 MATX（Shift+4）、统计 STAT（Shift+7 + 主界面 F4/F5）
+- [x] **RPN39 用户手册**（[docs/RPN39-manual.md](./docs/RPN39-manual.md)：功能/用法/示例 15 章）
+- [x] 矩阵/复数修复批次（数字键码不连续、高亮反显、方向纯格导航、R→P 辐角修正、页残留）
+- [x] 电源两档制（标准 240/120 ↔ 加速 480/240）、HCLK 120MHz + 空闲轻载
+- [x] 充电锂电/镍氢类型选择、KhiCAS 待机电流优化
+
+### build 131（2026-09-03 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-131)）
 - [x] **RPN39 阶段 2 科学计算**（角度模式 DEG/RAD/GRAD 持久化、直接键位函数、Shift 层、MATH 菜单 5 页、a b/c 分数显示、EEX）
-- [x] **RPN39 阶段 3 计算扩展**（12C 百分比 %/Δ%/%T、STO 运算、复数 CPLX、矩阵 MATX、统计 STAT）
-- [x] **RPN39 用户手册**（[docs/RPN39-manual.md](./docs/RPN39-manual.md)）
 
 ### build 130（2026-09-02 已发布）
 - [x] **RPN39 RPN 计算器**（42S 基准）：4 层栈 + 四则 + 寄存器（STO/RCL/VARS）+ 掉电持久化 + 自动栈提升
