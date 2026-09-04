@@ -423,9 +423,20 @@ static void matxDraw(void) {
     uidisp->flush();
 }
 
+static int matxDigit(int key) { // 数字键码不连续（行 9 的 0-9 与行 6-8 分开）：显式映射
+    switch (key) {
+        case KEY_0: return 0; case KEY_1: return 1; case KEY_2: return 2;
+        case KEY_3: return 3; case KEY_4: return 4; case KEY_5: return 5;
+        case KEY_6: return 6; case KEY_7: return 7; case KEY_8: return 8;
+        case KEY_9: return 9;
+        default: return -1;
+    }
+}
+
 static int matxEditKey(int key) {
     int n = *edD(edSlot);
     double *v = &edM(edSlot)[cy * 4 + cx];
+    int d;
     switch (key) {
         case KEY_UP: case KEY_DOWN: case KEY_LEFT: case KEY_RIGHT:
             if (mEdOn) { *v = atof(mBuf); mEdOn = 0; saveMatx(); }
@@ -447,7 +458,7 @@ static int matxEditKey(int key) {
         return 0;
     }
     if (!mEdOn) {
-        if ((key >= KEY_0 && key <= KEY_9) || key == KEY_DOT || key == KEY_NEGATIVE) {
+        if (matxDigit(key) >= 0 || key == KEY_DOT || key == KEY_NEGATIVE) {
             mEdOn = 1; mLen = 0; mBuf[0] = 0;
         } else return 1;
     }
@@ -461,8 +472,9 @@ static int matxEditKey(int key) {
         if (!strchr(mBuf, '.') && mLen < 14) { mBuf[mLen++] = '.'; mBuf[mLen] = 0; }
         return 0;
     }
-    if (key >= KEY_0 && key <= KEY_9 && mLen < 14) {
-        mBuf[mLen++] = (char)('0' + key - KEY_0);
+    d = matxDigit(key);
+    if (d >= 0 && mLen < 14) {
+        mBuf[mLen++] = (char)('0' + d);
         mBuf[mLen] = 0;
         return 0;
     }
