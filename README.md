@@ -123,6 +123,10 @@
 
 按键定义详见 [docs/keymap.md](./docs/keymap.md)（代码实际键位：编码表 / KhiCAS 映射 / ExistOS UI 按键），原厂键位表见 [docs/keymap_org.md](./docs/keymap_org.md)。
 
+## RPN39 计算器
+
+RPN39 用户手册（功能/用法/示例）：[docs/RPN39-manual.md](./docs/RPN39-manual.md)。
+
 ## 编译和安装
 
 ### 准备环境
