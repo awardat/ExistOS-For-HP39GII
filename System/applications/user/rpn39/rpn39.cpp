@@ -276,7 +276,7 @@ int drawTextMix(int x, int y, const char *s, uint8_t fg, int16_t bg) {
     return x;
 }
 static const char *mathItems[5][6] = {
-    {"DEG", "RAD", "GRAD", "%", "\xDC%", "%T"},   // 页 1：角度切换 + 12C 百分比（% / Δ% / %T）
+    {"DEG", "RAD", "GRAD", "%", "\xa6\xa4%", "%T"},   // 页 1：角度切换 + 12C 百分比（% / Δ% / %T；Δ=GBK A6A4）
     {"e", "sign", "round", "floor", "ceil", ""},
     {"sinh", "cosh", "tanh", "asinh", "acosh", "atanh"},
     {"nCr", "nPr", "RAND", "", "", ""},
@@ -384,7 +384,7 @@ static void drawMathPage(void) {
         if (t[0] == 0) t = "--";
         char lb[48];
         sprintf(lb, "F%d %s", i + 1, t);
-        uidisp->draw_printf(0, 16 + i * 18, 16, 0, 255, "%s", lb);
+        drawTextMix(0, 16 + i * 18, lb, 0, 255); // 混排：GBK（Δ 等）与 ASCII 均可
     }
     uidisp->draw_printf(0, 119, 8, 0, 255, "L/R page  ON exit");
     uidisp->flush();
@@ -535,6 +535,10 @@ static int handleKey(int key, int shift) {
                 stX = regs[idx];
                 autoLift = 0;
             }
+        } else if (mode == 1 && key == KEY_PLUS) { // 直接按 + = STO+（+ 无字母映射；42S 直觉）
+            rpnMode = 1; // 不退出（继续等字母）
+            stoOp = 1;
+            return 0;
         }
         stoOp = 0; // 复位挂起运算（无论成功/取消）
         return 0;
@@ -555,9 +559,9 @@ static int handleKey(int key, int shift) {
             case KEY_MULTIPLICATION: unaryOp(f_fact, 0, 0); return 0; // X!
             case KEY_NEGATIVE: unaryOp(f_abs, 0, 0); return 0; // ABS（原厂 Shift+(-) = ABS）
             case KEY_3:  pushConst(M_PI);       return 0; // π 压栈
-            case KEY_7:  rpnMode = 7; rpn39ExtEnter(7); return 0; // 统计（原 LIST 键位）
-            case KEY_8:  rpnMode = 6; rpn39ExtEnter(6); return 0; // 矩阵（原 MATRIX 键位）
-            case KEY_9:  rpnMode = 5; rpn39ExtEnter(5); return 0; // 复数（原 PRGM 键位）
+            case KEY_4:  rpnMode = 6; rpn39ExtEnter(6); return 0; // 矩阵 MATX（2026-09-04 用户定键）
+            case KEY_7:  rpnMode = 7; rpn39ExtEnter(7); return 0; // 统计 STAT（原 LIST 键位）
+            case KEY_COMMA: rpnMode = 5; rpn39ExtEnter(5); return 0; // 复数 CPLX（2026-09-04 用户定键：Shift+,）
             default: return 0;                            // 未定义 shift 组合忽略
         }
     }
@@ -712,6 +716,14 @@ static int handleKey(int key, int shift) {
     return 0;
 }
 
+// 统一重绘分发（主循环所有态）
+static void redraw(void) {
+    if (rpnMode == 3) drawRegList();
+    else if (rpnMode == 4) drawMathPage();
+    else if (rpnMode >= 5) rpn39ExtDraw(rpnMode);
+    else draw();
+}
+
 // ---- 任务 ----
 void rpn39Task(void *_) {
     SystemUISuspend();
@@ -726,17 +738,16 @@ void rpn39Task(void *_) {
         uint32_t kp = keys >> 16;
         uint32_t key = keys & 0xFFFF;
         if (kp) {
-            if (key == KEY_SHIFT) { // Shift 按下沿：激活（指示 + 标题 S）
+            if (key == KEY_SHIFT) { // Shift 按下沿：激活/取消切换（再按取消，42S 式）
                 if (key != (uint32_t)lastKey) {
-                    shiftHeld = 1;
-                    ll_disp_set_indicator(INDICATE_LEFT, -1);
-                    if (rpnMode == 3) drawRegList(); // 列表模式保持列表视图
-                    else draw();
+                    if (shiftHeld) { shiftHeld = 0; ll_disp_set_indicator(0, -1); }
+                    else { shiftHeld = 1; ll_disp_set_indicator(INDICATE_LEFT, -1); }
+                    if (rpnMode < 5) redraw(); // 扩展态无 shift 指示（不重绘）
                 }
                 lastKey = key;
             } else if (key != (uint32_t)lastKey) { // 按下沿（防重复）
                 lastKey = key;
-                if (key == KEY_BACKSPACE && shiftHeld) {
+                if (key == KEY_BACKSPACE && shiftHeld && rpnMode < 5) {
                     if (rpnMode == 3) { // Vars 列表：Shift+backspace = CLEAR ALL（带确认）
                         if (clearConfirm) {
                             memset(regs, 0, sizeof(regs));
@@ -750,8 +761,7 @@ void rpn39Task(void *_) {
                         stX = 0; entering = 0; inlen = 0; autoLift = 0; // CLx（Shift+backspace）
                     }
                     shiftHeld = 0; ll_disp_set_indicator(0, -1);   // 动作完成自动退 shift
-                    if (rpnMode == 3) drawRegList(); // 统一绘制（单次刷新）
-                    else draw();
+                    redraw();
                 } else if (key == KEY_ON && shiftHeld) {
                     rpn39Running = 0; // Shift+ON 退出（不触发系统关机）
                 } else {
@@ -759,14 +769,9 @@ void rpn39Task(void *_) {
                     if (shiftHeld) { // shift + 普通键：动作后自动退 shift
                         shiftHeld = 0;
                         ll_disp_set_indicator(0, -1);
-                        if (rpnMode == 3) drawRegList();       // 保持列表/菜单视图
-                        else if (rpnMode == 4) drawMathPage();
-                        else if (rpnMode >= 5) rpn39ExtDraw(rpnMode);
-                        else draw();
+                        redraw();
                     } else {
-                        if (rpnMode == 3) drawRegList(); // 列表模式全屏
-                        else if (rpnMode == 4) drawMathPage();
-                        else if (rpnMode >= 5) rpn39ExtDraw(rpnMode);
+                        if (rpnMode == 3 || rpnMode == 4 || rpnMode >= 5) redraw(); // 列表/菜单/扩展全屏
                         else if (r) drawX();             // 输入变化：X 行区域刷新
                         else draw();                     // 栈/菜单变化：全屏刷新
                     }

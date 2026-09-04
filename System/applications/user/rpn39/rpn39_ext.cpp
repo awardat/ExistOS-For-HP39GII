@@ -70,9 +70,9 @@ static const char *cplxMenus[3][6] = {
     {"R>P", "P>R", "Z1Z0", "CL1", "CL0", ""}
 };
 static const char *cplxHints[3] = {
-    "LOAD1: Z1=(Y,X);  ops: Z0=Z1 op Z0", // 提示行 12px（ASCII）
-    "CONJ/|Z0|/1/Z0/ARG  on Z0;  Z0XY->Y,X",
-    "R>P/P>R on (Y,X) real coords"
+    "LOAD reads stack (Y=Re, X=Im)",
+    "pg3: R>P P>R act on stack (Y,X)",
+    "F4 CL1 / F5 CL0 clear Z1/Z0"
 };
 
 static void saveCplx(void) {
@@ -162,14 +162,15 @@ static void cplxDraw(void) {
     char hdr[40];
     sprintf(hdr, "CPLX %d/3  %s", cplxPage + 1, cplxPolar ? "POLAR" : "RECT");
     drawTextMix(0, 0, hdr, 0, 255);
-    uidisp->draw_printf(0, 16, 12, 0, 255, "Z1 (first) : %s", cplx2str(cZ1re, cZ1im, buf, cplxPolar));
+    cplx2str(cZ1re, cZ1im, buf, cplxPolar);
+    uidisp->draw_printf(0, 16, 12, 0, 255, "Z1 (first) : %s", buf);
     // Z0 黑底白字强调条
     uidisp->draw_box(0, 34, 255, 55, 255, 0);
     cplx2str(cZ0re, cZ0im, buf, cplxPolar);
     drawTextMix(4, 37, buf, 255, 0);
-    uidisp->draw_printf(0, 60, 12, 0, 255, "Z0 (result): (from Y,X via LOAD)");
+    uidisp->draw_printf(0, 60, 12, 0, 255, "Z1 op Z0 -> Z0   (F1=F5 chain)");
     uidisp->draw_printf(0, 74, 12, 0, 255, "%s", cplxHints[cplxPage]);
-    uidisp->draw_printf(0, 90, 12, 0, 255, "Sh+9: CPLX  Sh+8:MATX  Sh+7:STAT");
+    uidisp->draw_printf(0, 90, 12, 0, 255, "<>/pg  BKSP:CL Z0  ON exit");
     // 菜单条
     uidisp->draw_box(0, 112, 255, 127, 255, 0);
     for (i = 1; i < 6; i++) uidisp->draw_line(i * 42, 114, i * 42, 126, 255);
@@ -186,6 +187,11 @@ static int cplxKey(int key, int shift) {
     if (key == KEY_LEFT || key == KEY_UP) { cplxPage = (cplxPage + 2) % 3; return 0; }
     if (key == KEY_RIGHT || key == KEY_DOWN) { cplxPage = (cplxPage + 1) % 3; return 0; }
     if (key == KEY_ON || key == KEY_VIEWS || key == KEY_HOME) { rpnMode = 0; saveCplx(); return 0; }
+    if (key == KEY_BACKSPACE) { // 任何页退格清 Z0（=主界面 CLx 语义）
+        cZ0re = 0; cZ0im = 0;
+        saveCplx();
+        return 0;
+    }
     int slot = -1;
     switch (key) {
         case KEY_F1: slot = 0; break;
@@ -390,7 +396,7 @@ static void matxDraw(void) {
     if (matxMsg[0])
         uidisp->draw_printf(0, 14, 12, 255, 0, "%s", matxMsg);
     else
-        uidisp->draw_printf(0, 14, 12, 0, 255, "dir+digits edit  F6:slot  b:pg");
+        uidisp->draw_printf(0, 14, 12, 0, 255, "digits edit  F6:slot  L/R edge=pg");
     double *m = edM(edSlot);
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
@@ -465,6 +471,18 @@ static int matxKey(int key, int shift) {
     (void)shift;
     if (key == KEY_ON || key == KEY_VIEWS || key == KEY_HOME) { rpnMode = 0; saveMatx(); return 0; }
     if (key == KEY_MATH) { matxPage = (matxPage + 1) % 3; return 0; } // b 键翻页
+    // 左右方向在格边界时翻页（编辑中先提交）
+    if (key == KEY_LEFT || key == KEY_RIGHT) {
+        int n = *edD(edSlot);
+        if (mEdOn) {
+            edM(edSlot)[cy * 4 + cx] = atof(mBuf);
+            mEdOn = 0;
+            saveMatx();
+        }
+        if (key == KEY_LEFT && cx == 0) { matxPage = (matxPage + 2) % 3; return 0; }
+        if (key == KEY_RIGHT && cx == n - 1) { matxPage = (matxPage + 1) % 3; return 0; }
+        return matxEditKey(key); // 否则格导航
+    }
     int slot = -1;
     switch (key) {
         case KEY_F1: slot = 0; break;
@@ -529,9 +547,9 @@ static void loadStat(void) {
 }
 
 // 主界面收集入口（F4/F5 调用）：Σ+ 收 X；Σ− 撤最后点
+// 注意：不自动加载持久化旧数据（新会话从空收集；查看旧数据先进 Shift+7 页加载）
 void rpn39StatAccum(int add) {
     double x;
-    if (statN == 0) loadStat(); // 懒加载持久化数据（幂等）
     if (add) {
         if (entering) { x = atof(inbuf); entering = 0; inlen = 0; }
         else x = stX;
