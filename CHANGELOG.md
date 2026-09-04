@@ -11,8 +11,8 @@
 - **HCLK 240→120MHz**（手册明确 HCLK≤200MHz；CPU 走 PLL 独立分频不受影响）+ **空闲 PFM/DC_HALFCLK 轻载省电** + LOOPCTRL 手册推荐位（TOGGLE_DIF/EN_CM_HYST/EN_RCSCALE=1）
 - **充电**：启用锂电 STOP_ILIMIT 停充（锂电靠限流停；镍氢 12h 定时已有）；配置页充电类型选择（锂电/镍氢，KEY_3 切换、持久化、启动应用、SWI +86）；开关与类型同行布局（EN 文案缩短）；**实测电流基线**：待机 省电 40-50/标准 50-60/加速 90mA（1.6V）
 - **KhiCAS 待机电流优化**：vGL_getkey 空闲轮询加 5ms 延时（让出 CPU→idle 降频；KhiCAS 待机 80-90mA → 预计 ~50mA，按键响应无感知损失）
-- **手册核对结论**（docs/power-notes-2026-09-03.md）：STMP3770 无 CPU 频率上限（480MHz 仅 USB 480Mbps 与"PLL 恒 480"，CPU div1 自然 480；"380MHz 限制"不成立）；唯一明确限制 HCLK≤200MHz
-- **RPN39 阶段 3**（测试 docs/RPN39-phase3-test.md）：
+- **手册核对结论**：STMP3770 无 CPU 频率上限（480MHz 仅 USB 480Mbps 与"PLL 恒 480"，CPU div1 自然 480；"380MHz 限制"不成立）；唯一明确限制 HCLK≤200MHz
+- **RPN39 阶段 3**（测试清单另记）：
   - 百分比 % / Δ% / %T（MATH 页 1 下三槽：12C 语义只改 X 保 Y——可直接 + 得价税合计）
   - STO 运算（42S：STO 态 Shift+四则 = STO+−×÷，R op= X 存回；Shift 区分不破坏 n/s/w 字母寄存器）
   - 复数 CPLX（Shift+9）：方案 A 复寄存器 Z1/Z0（re+im）；3 子页——载入（主栈 Y,X）/四则、共轭/模/倒数/辐角/输出主栈/RECT↔POLAR 显示、R→P/P→R 实数坐标转换/交换/清除；持久化
@@ -22,7 +22,7 @@
 
 ### 规划
 - **RPN39 阶段 3 详规**（2026-09-03 更新）：统计（MATH 页 + Shift+7）、矩阵（MATH 页 + Shift+8）；财务/求解器已移出（见下方新程序）
-- **新程序：表单计算（FormCalc）**（规划中，2026-09-03 更新）：财务（12C 经典功能全集：TVM/现金流/摊销/债券/折旧/日期/利率转换/利润）+ 工程（单位换算等），表单 UI；**求解器已移出**（去向待定：RPN39 阶段 3 或独立）；依据与参考：docs/FinCalc-refs.md
+- **新程序：表单计算（FormCalc）**（规划中，2026-09-03 更新）：财务（12C 经典功能全集：TVM/现金流/摊销/债券/折旧/日期/利率转换/利润）+ 工程（单位换算等），表单 UI；**求解器已移出**（去向待定：RPN39 阶段 3 或独立）；依据与参考：free42/WP43 等 ref 仓库（功能清单汇总）
 - **KhiCAS**：~~App 菜单验证修复~~ → **该功能已整体移除**（2026-09-03：内含不完整示例；F5 留空、原 APPS 键已置空）
 - **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；视图按键完整方案（HOME/VIEWS 后续定义）；giac 桌面版（2.0.0）有限移植
 - **KhiCAS 示例功能**（新待办）：App 菜单移除后，计划补充完整示例功能（Syracuse/Mastermind/分形等完善后重新加入——先前版本不完整）
@@ -34,7 +34,7 @@
 
 ## [build 131] - 2026-09-03 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-131))
 
-### 新增（RPN39 阶段 2：科学计算，见 docs/RPN39-phase2-test.md）
+### 新增（RPN39 阶段 2：科学计算）
 - **角度模式**：DEG/RAD/GRAD（标题右上显示；持久化——/rpn39_sto.dat 第 31 值，旧文件兼容）
 - **直接键位函数**（原厂键位对齐）：SIN/COS/TAN（按当前角度模式）、LN/LOG、X²、x^y（Y^X）、a b/c 小数↔分数显示切换（X 行连分数，1e-12 阈值，转不出保持 12 位小数）
 - **Shift 层**：ASIN/ACOS/ATAN、e^x、10^x、√X、Y 次根（x^(1/y)）、1/X、X!（tgamma）、π（Shift+3）、**ABS（Shift+`(-)`）**、CLx（Shift+backspace）、退出（Shift+ON）
@@ -46,7 +46,7 @@
 
 ### 规划
 - **RPN39**：阶段 3 计算功能扩展（候选：复数/矩阵/统计/金融/工程常量——已取消绘图）
-- **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；**去除 Home→file-quit**（已完成，HOME 释放）+ **重新定义 6 个视图按键**（规划中）；giac 桌面版（2.0.0）有限移植（差异概览见 docs/giac-snapshot-diff.md）
+- **KhiCAS**：帮助文本中文化（约 800 条）；加强物理按键映射；**去除 Home→file-quit**（已完成，HOME 释放）+ **重新定义 6 个视图按键**（规划中）；giac 桌面版（2.0.0）有限移植
 - D4 FTL_Sync 真机掉电测试
 - **C 组待办**（build 132）：~~OSLoader 侧栈溢出检查开启（=2）~~（已移除：2026-09-03 实测导致刷写失败已永久回滚为 0）；字体母本唯一权威源标注（tools/ vs System/graphics/）；RAND 种子策略（固定池或文档化）
 - **队列（暂不做）**：视图按键完整方案（HOME 已释放、SYMB/PLOT/NUM/APPS 已置空、F5=App——剩余 HOME/VIEWS 等的后续定义）；App 菜单内应用功能验证修复（见 kadd.cc）
@@ -56,7 +56,7 @@
 ## [build 130] - 2026-09-02 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-130))
 
 ### 新增
-- **RPN39 RPN 计算器**（42S 基准，见 docs/RPN39-design.md）：
+- **RPN39 RPN 计算器**（42S 基准）：
   - 4 层栈 + 基础四则（ENTER 压栈/42S 自动栈提升/x<>y/R↓/DROP/CLx）
   - **寄存器管理**：26 个 A-Z 寄存器（STO `(` / RCL `)` 等字母键；Vars 列表选择；Shift+backspace 清空全部）
   - **掉电持久化**（/rpn39_sto.dat：寄存器 + 栈——HP 关机保留语义）
@@ -67,7 +67,7 @@
   - 模态输入（inputline）返回后清按键状态（修复保存 session 后 quit 卡住）
 - **E 组整改**：msc WRITE10 边界、getSuffix 三缺陷、路径拼接有界、MB_ElementCount 与渲染对齐、CrashLog SP 校验、链接器 ASSERT、主机工具修复、UI_Task 栈 800→2048（栈溢出检查重新启用）
 - **构建卫生**：-Wall/-Wextra + 栈保护 0 警告；刷写支持 OSLoader/ExistOS 单独更新
-- 审核报告：build130 增量审核 + 用户决策 + 修复引入回归记录（docs/）
+- 审核报告：build130 增量审核 + 用户决策 + 修复引入回归记录
 
 ### 发布惯例
 - **每次发布 OSLoader.sb 与 ExistOS.sys 一并附上**（无论单版本是否改动）
@@ -78,7 +78,7 @@
 
 ### ⚠️ 风险警告
 - **加速模式（480MHz）超出 STMP3770 文档上限（380MHz）**：可能导致**耗电剧增、发热、设备损坏**。请谨慎使用，长时间使用建议标准（240MHz）或省电（160MHz）模式
-- 320MHz（FRAC 分频）真机两次尝试失败（频率异常/挂死），已回退搁置，详见 docs/boost-320-frac-issue.md
+- 320MHz（FRAC 分频）真机两次尝试失败（频率异常/挂死），已回退搁置（FRAC 分频不再使用）
 
 ### 新增
 - **电源三档变频**：标准 120~240 / 省电 80~160 / 加速 240~480（空闲自动降频，空闲 WFI 省电）
