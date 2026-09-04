@@ -244,8 +244,7 @@ void pageUpdate() {
                 }
                 uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)", UI_Power_Save_Mode, psn);
             }
-            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "[%c]%s (2)", config_get_enable_charge() ? 'X' : ' ', UI_Enable_Charge);
-            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (3)", UI_Charge_Mode, config_get_charge_mode() == 'L' ? UI_LiIon : UI_NiMH);
+            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "[%c]%s (2)  %s:%s (3)", config_get_enable_charge() ? 'X' : ' ', UI_Enable_Charge, UI_Charge_Mode, config_get_charge_mode() == 'L' ? UI_LiIon : UI_NiMH);
         } else if (page3Subpage == 1) {
 
             // sprintf(s, "%02d:%02d:%02d", (rtc_time_sec / (60 * 60)) % 24, (rtc_time_sec / 60) % 60, rtc_time_sec % 60);
