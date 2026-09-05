@@ -52,9 +52,15 @@
 
 ## 目前工作进展（build 126 起，详见 CHANGELOG.md）
 
-### build 133（开发中）
-- [ ] RPN39 阶段 3 真机测试收尾（[docs/RPN39-phase3-test.md](../RPN39-phase3-test.md) 在本地工作区）
-- [ ] KhiCAS 帮助中文化/物理按键映射加强；FormCalc（财务 12C 全集+工程）规划
+### build 134（开发中）
+- [ ] RPN39 阶段 3 残余体验迭代；KhiCAS 物理按键映射加强 / 示例功能；giac 2.0.0 有限移植
+- [ ] FormCalc（表单计算：财务 12C 全集 + 工程）规划
+
+### build 133（2026-09-05 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-133)）
+- [x] **KhiCAS 帮助全面中文化**（260 条描述 GBK + 乱码根治——渲染宽度与 GBK 双字节对齐；ON 返回统一；命令目录分类补译）
+- [x] **充电固定镍氢**（锂电实测失败）+ 三重停充 + 状态显示硬件化；UI 空闲 CPU 28%→1%
+- [x] **Round 4 审核整改**：统计 Welford 稳定方差/会话重置、矩阵光标钳制与 F6 槽直达、复数溢出保护
+- [x] RPN39 阶段 3 真机测试完成（[docs/RPN39-phase3-test.md](../RPN39-phase3-test.md) 在本地工作区）
 
 ### build 132（2026-09-04 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-132)）
 - [x] **RPN39 阶段 3 计算扩展**：12C 百分比 %/Δ%/%T（MATH 页 1）、STO 运算（42S 累加器）、复数 CPLX（Shift+,）、矩阵 MATX（Shift+4）、统计 STAT（Shift+7 + 主界面 F4/F5）

@@ -53,8 +53,18 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (since build 126, see CHANGELOG.md)
 
-### build 131 (in development)
-- [x] **RPN39 Phase 2 scientific functions** (DEG/RAD/GRAD persistence, direct key functions, Shift layer, MATH menu 5 pages, a b/c fraction display, EEX)
+### build 134 (in development)
+- [ ] RPN39 Phase 3 remaining UX iteration; KhiCAS physical key mapping / demo features; limited giac 2.0.0 port
+- [ ] FormCalc (form-based: full 12C financial + engineering) planning
+
+### build 133 (2026-09-05 released)
+- [x] **KhiCAS help fully localized** (260 GBK descriptions + root-cause fix of glyph overlap; ON=back unified; catalog category translations)
+- [x] **NiMH-only charging** (lithium failed on hardware) + triple stop-charge + hardware status; UI idle CPU 28%→1%
+- [x] **Round 4 audit fixes**: Welford stable variance/stat session reset, matrix cursor clamp & F6 slot-to-page, complex overflow guards
+- [x] RPN39 Phase 3 on-device tests complete
+
+### build 132 (2026-09-04 released)
+- [x] **RPN39 Phase 3 extensions** (percentages, STO ops, complex, matrix, statistics), user manual
 
 ### build 130 (2026-09-02 released)
 - [x] **RPN39 RPN calculator** (HP-42S baseline): 4-level stack + four operations + registers (STO/RCL/VARS) + power-loss persistence + auto stack lift

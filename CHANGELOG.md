@@ -4,6 +4,17 @@
 
 ---
 
+## [build 134] - 2026-09-05 (开发中)
+
+### 规划
+- RPN39 阶段 3 残余体验：按用户实测反馈迭代
+- KhiCAS：物理按键映射加强；示例功能补充；giac 2.0.0 有限移植
+- FormCalc（表单计算：财务 12C 全集 + 工程）规划
+- D4 FTL_Sync 真机掉电测试
+- C 组待办（CDC VMResume 补全 / EN_RCSCALE 统一 / 1.4V+2h 迟滞——用户决定暂缓，充电复测后处理）
+
+---
+
 ## [build 133] - 2026-09-05 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-133))
 
 ### 新增（2026-09-04 充电/功耗/显示修正 + 2026-09-05 KhiCAS 汉化/审核整改）
