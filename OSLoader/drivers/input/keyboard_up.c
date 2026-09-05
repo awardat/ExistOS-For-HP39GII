@@ -48,6 +48,14 @@ void key_task_capt()
             {
                 state = 1;
             }
+            else if(cp && portIsKeyDown(KEY_ON))
+            {
+                // ON+组合键同按（矩阵扫描顺序导致组合键先入队）——同样捕获（2026-09-04 加：原 ON+{+,-} 对比度调节失效根因）
+                state = 2;
+                capt_ck = ck;
+                capt_ON_Key(capt_ck, 1);
+                break;
+            }
             g_latest_key_status = kval;
             break;
         
