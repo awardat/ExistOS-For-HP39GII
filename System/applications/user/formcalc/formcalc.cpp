@@ -36,7 +36,7 @@ void SystemUIResume();
 #define ZH_DANWEI  "\xB5\xA5\xCE\xBB\xBB\xBB\xCB\xE3"            // 单位换算
 #define ZH_HSJZ    "\xBB\xF5\xB1\xD2\xCA\xB1\xBC\xE4\xBC\xDB\xD6\xB5" // 货币时间价值
 #define ZH_QISHU   "\xC6\xDA\xCA\xFD"                            // 期数
-#define ZH_NLILV   "\xC4\xEA\xC0\xFB\xC2\xCA"                    // 年利率
+#define ZH_NLILV   "\xC0\xFB\xC2\xCA"                            // 利率（每期，12C）
 #define ZH_XIANZHI "\xCF\xD6\xD6\xB5"                            // 现值
 #define ZH_FUKUAN  "\xB8\xB6\xBF\xEE"                            // 付款
 #define ZH_ZHONGZHI "\xD6\xD5\xD6\xB5"                           // 终值
@@ -78,6 +78,7 @@ static int fcSel = 0;   // L0/L1 高亮（绝对下标）
 static int fcTop = 0;   // L1 滚动窗口顶（可视 5 行）
 static int fcForm = 0;  // L2 表单 id（P1 仅 0=TVM 实现；其余占位）
 static int fcFix = 2;   // 金融金额小数位（12C FIX，默认 2）
+static int fcRowFoc = -1; // >=0：行级局部刷新（仅 TVM 聚焦行重画+flush；-1 全刷）
 static int fcFixSel = 0; // FIX 设置页高亮
 static int foc = 0;     // 表单聚焦字段（0-4）
 
@@ -188,6 +189,7 @@ static int fcDigit(int key) {
 
 static void fcEditAppend(char c) {
     fcMsg[0] = 0;
+    fcRowFoc = foc; // 行级刷新（输入仅聚焦行变化）
     if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; }
     if (elen < 20) {
         ebuf[elen++] = c;
@@ -197,6 +199,7 @@ static void fcEditAppend(char c) {
 
 static void fcEditNeg(void) { // (-)：翻转编辑符号
     fcMsg[0] = 0;
+    fcRowFoc = foc; // 行级刷新
     if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; }
     if (ebuf[0] == '-') { memmove(ebuf, ebuf + 1, elen); elen--; }
     else { memmove(ebuf + 1, ebuf, elen + 1); ebuf[0] = '-'; elen++; }
@@ -430,39 +433,41 @@ static void drawL1(void) {
     drawMenu(m);
 }
 
-static void drawTVM(void) {
-    const char *names[5] = { ZH_QISHU, ZH_NLILV, ZH_XIANZHI, ZH_FUKUAN, ZH_ZHONGZHI };
-    const char *abbr[5] = { "N", "I%", "PV", "PMT", "FV" };
-    char right[24], tmp[40];
-    sprintf(right, "FIX%d %s", fcFix, tvmBgn ? ZH_QICHU : ZH_QIMMO);
-    drawTitle("TVM " ZH_HSJZ, right);
-    const char *menus[6] = { "N", "I%", "PV", "PMT", "FV", "B/E" };
-    for (int i = 0; i < 5; i++) {
-        int y = 20 + i * 18;
-        if (i == foc) { // 聚焦整行反显
-            uidisp->draw_box(0, y - 1, 255, y + 15, 255, 0);
-            fDrawMix(4, y, names[i], 255, 0);
-            int x = 4 + 4 * 16 + 2 * 8; // 标签列后
-            uidisp->draw_printf(x, y, 12, 255, 0, "%s", abbr[i]);
-            if (eAct && i == foc) {
-                strcpy(tmp, ebuf);
-                uidisp->draw_printf(120, y, 16, 255, 0, "%s", tmp);
-            } else if (tvmHas[i]) {
-                fmtFin(tvmV[i], tmp);
-                uidisp->draw_printf(120, y, 16, 255, 0, "%s", tmp);
-            } else {
-                uidisp->draw_printf(120, y, 16, 255, 0, "\x2d\x2d"); // -- 未填
-            }
+static const char *tvmNames[5] = { ZH_QISHU, ZH_NLILV, ZH_XIANZHI, ZH_FUKUAN, ZH_ZHONGZHI };
+static const char *tvmAbbr[5] = { "N", "i%", "PV", "PMT", "FV" };
+
+static void drawTvmRow(int i) { // 单行绘制（行级局部刷新用：整行 x0=0 全宽）
+    int y = 20 + i * 18;
+    char tmp[40];
+    if (i == foc) { // 聚焦整行反显
+        uidisp->draw_box(0, y - 1, 255, y + 15, 255, 0);
+        fDrawMix(4, y, tvmNames[i], 255, 0);
+        uidisp->draw_printf(84, y, 12, 255, 0, "%s", tvmAbbr[i]);
+        if (eAct) {
+            uidisp->draw_printf(120, y, 16, 255, 0, "%s", ebuf);
+        } else if (tvmHas[i]) {
+            fmtFin(tvmV[i], tmp);
+            uidisp->draw_printf(120, y, 16, 255, 0, "%s", tmp);
         } else {
-            fDrawMix(4, y, names[i], 0, 255);
-            int x = 4 + 4 * 16 + 2 * 8;
-            uidisp->draw_printf(x, y, 12, 0, 255, "%s", abbr[i]);
-            if (tvmHas[i]) {
-                fmtFin(tvmV[i], tmp);
-                uidisp->draw_printf(120, y, 16, 0, 255, "%s", tmp);
-            }
+            uidisp->draw_printf(120, y, 16, 255, 0, "--"); // 未填
+        }
+    } else {
+        uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255); // 清白底
+        fDrawMix(4, y, tvmNames[i], 0, 255);
+        uidisp->draw_printf(84, y, 12, 0, 255, "%s", tvmAbbr[i]);
+        if (tvmHas[i]) {
+            fmtFin(tvmV[i], tmp);
+            uidisp->draw_printf(120, y, 16, 0, 255, "%s", tmp);
         }
     }
+}
+
+static void drawTVM(void) {
+    char right[24];
+    sprintf(right, "FIX%d %s", fcFix, tvmBgn ? ZH_QICHU : ZH_QIMMO);
+    drawTitle("TVM " ZH_HSJZ, right);
+    const char *menus[6] = { "N", "i%", "PV", "PMT", "FV", "B/E" };
+    for (int i = 0; i < 5; i++) drawTvmRow(i);
     drawMenu(menus);
 }
 
@@ -511,6 +516,14 @@ static void drawFixPage(void) {
 
 // ---- 重绘 ----
 static void fcDraw(void) {
+    if (fcRowFoc >= 0 && fcLevel == 2 && fcMod == 1 && fcForm == 0) {
+        int y = 20 + fcRowFoc * 18;
+        drawTvmRow(fcRowFoc);
+        uidisp->flushRect(0, y - 1, 255, y + 15); // 整行宽局部刷新（x0=0 才正确）
+        fcRowFoc = -1;
+        return;
+    }
+    fcRowFoc = -1;
     if (fcLevel == 3) drawFormula();
     else if (fcLevel == 2) {
         if (fcMod == 1 && fcForm == 0) drawTVM();
@@ -535,6 +548,7 @@ static int fcHandleKey(int key) {
         if (key == KEY_NEGATIVE) { fcEditNeg(); return 1; }
         if (key == KEY_BACKSPACE) {
             fcMsg[0] = 0;
+            fcRowFoc = foc; // 行级刷新
             if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; return 1; }
             if (elen > 0) { elen--; ebuf[elen] = 0; if (elen == 0) { eAct = 0; } return 1; }
             return 1;
