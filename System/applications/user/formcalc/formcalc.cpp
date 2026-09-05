@@ -425,13 +425,8 @@ static void drawL1(void) {
         x = 150;
         uidisp->draw_printf(x, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", fcItemAbbr(fcMod, idx));
     }
-    // 菜单：可视 5 项直达（F1-F5）+ F6 下翻
-    const char *m[6];
-    for (int r = 0; r < 5; r++) {
-        int idx = fcTop + r;
-        m[r] = idx < cnt ? fcItemAbbr(fcMod, idx) : "";
-    }
-    m[5] = "";
+    // 菜单：留空（用户定：模块选择菜单不用 F 键快捷键）
+    const char *m[6] = { "_", "_", "_", "_", "_", "_" };
     drawMenu(m);
 }
 
@@ -604,21 +599,7 @@ static int fcHandleKey(int key) {
         int cnt = fcModCount();
         if (key == KEY_UP) { if (fcTop + fcSel > 0) { if (fcSel == 0 && fcTop > 0) fcTop--; else fcSel--; } return 1; }
         if (key == KEY_DOWN) { if (fcTop + fcSel < cnt - 1) { if (fcSel == 4 && fcTop + 4 < cnt - 1) fcTop++; else fcSel++; } return 1; }
-        if (key == KEY_ENTER) { fcSel = fcTop + fcSel < 5 ? fcSel : 4; fcListSel(); return 1; }
-        // F1-F5 = 可视项直达
-        int d = -1;
-        switch (key) {
-            case KEY_F1: d = 0; break;
-            case KEY_F2: d = 1; break;
-            case KEY_F3: d = 2; break;
-            case KEY_F4: d = 3; break;
-            case KEY_F5: d = 4; break;
-            case KEY_F6: d = 5; break;
-        }
-        if (d >= 0 && d < 5) {
-            int idx = fcTop + d;
-            if (idx < cnt) { fcSel = d; fcListSel(); return 1; }
-        }
+        if (key == KEY_ENTER) { fcListSel(); return 1; }
         return 0;
     }
     // L0 功能列表
@@ -684,6 +665,7 @@ static void formcalcTask(void *_) {
                 }
             }
         } else {
+            if (lastKey != -1) lastKey = -1; // 键释放：清防重——同键再次按下可触发
             vTaskDelay(5); // 释放 CPU（省电：空闲让位给 IDLE 降频）
         }
     }

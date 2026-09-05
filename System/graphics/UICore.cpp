@@ -339,7 +339,7 @@ void drawPage(int page) {
 
         uidisp->draw_box((mainw->content_x0 + 12) + appPage_select * 80,
                          mainw->content_y0 + 12,
-                         (mainw->content_x0 + 12) + 48 + appPage_select * (48 + appPage_select * 32),
+                         (mainw->content_x0 + 12) + 48 + appPage_select * 80,
                          mainw->content_y0 + 12 + 48,
                          0,
                          -1);
