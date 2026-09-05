@@ -123,10 +123,13 @@ void vTask1(void *pvParameters) {
     // printf("Start vTask1\n");
     int c = 0;
     for (;;) {
+        // 2026-09-04：原无 delay 忙循环 + 高频 printTaskList（~几十 ms 一次）——
+        // 空转占满同优先级 CPU（UI 显示 21% 来源），且洪水淹没 vBatteryMon 等的串口输出（充电诊断不可见根因）。
+        vTaskDelay(pdMS_TO_TICKS(50));
         HCLK_Freq = check_frequency();
         g_core_cur_freq_mhz = (HCLK_Freq / 1000000) * (*((uint32_t *)0x80040030) & 0x1F);
         c++;
-        if (c == 30) {
+        if (c == 600) { // 600×50ms = 30s 一次任务列表（保留功能，降频）
             printTaskList();
             c = 0;
         }
