@@ -322,18 +322,15 @@ void drawPage(int page) {
         uidisp->draw_printf(mainw->content_x0 + 12 + 80,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
 
-        // FormCalc 图标（48x48：机壳外沿收 2px（无顶部灰条圈感）+ 白色表单纸 + 3 字段 + F+ 跨纸下缘）
+        // FormCalc 图标（48x48：无衬底无框线——仅表单内容：3 输入行（黑 label + 灰值线）+ F+ 黑字）
         {
             int ix = mainw->content_x0 + 12 + 160, iy = mainw->content_y0 + 12;
-            uidisp->draw_box(ix + 4, iy + 4, ix + 43, iy + 43, 45, -1);       // 机壳（灰，外沿比纸大 2px 左右，顶部与纸平齐——无整圈灰条）
-            uidisp->draw_box(ix + 6, iy + 4, ix + 41, iy + 38, 255, -1);      // 白色表单纸（实心 36x35）
-            for (int r = 0; r < 3; r++) {                                     // 3 行输入字段：黑 label + 值灰条
-                int y = iy + 8 + r * 7;
-                uidisp->draw_box(ix + 8, y, ix + 12, y + 2, 0, -1);
-                uidisp->draw_box(ix + 15, y, ix + 38, y + 2, 190, -1);
+            for (int r = 0; r < 3; r++) {                                     // 3 行输入字段：左黑 label 块 + 值灰线（直接浮于白底）
+                int y = iy + 6 + r * 8;
+                uidisp->draw_box(ix + 7, y, ix + 10, y + 5, 0, -1);
+                uidisp->draw_box(ix + 14, y + 1, ix + 40, y + 2, 190, -1);
             }
-            // 黑字 "F+" 从纸内伸出，底缘压过纸下缘（断口感）
-            uidisp->draw_printf(ix + 12, iy + 26, 16, 0, 255, "F+");
+            uidisp->draw_printf(ix + 12, iy + 28, 16, 0, 255, "F+");          // F+（24px 黑字）
         }
         uidisp->draw_printf(mainw->content_x0 + 12 + 160,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "FormCalc");
