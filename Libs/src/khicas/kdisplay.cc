@@ -280,8 +280,8 @@ namespace giac {
       // interaction
       int key=getkey(1);
       //dbgprintf("key %i %i\n",key,cur);
-      if (key==KEY_CTRL_EXIT)
-        return -1;
+      if (key==KEY_CTRL_EXIT || key==KEY_CTRL_AC)
+        return -1; // ON/C 同返回（2026-09-04 统一 ON 返回）
       if (key==KEY_CTRL_OK || key==KEY_CTRL_EXE)
         return cur;
       if (key==KEY_CTRL_LEFT)
@@ -10626,8 +10626,8 @@ namespace xcas {
 	    V.push_back(L);
 	  }
 	  int key=getkey(1);
-	  if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK)
-	    break;
+	  if (key==KEY_CTRL_EXIT || key==KEY_CTRL_AC || key==KEY_CTRL_OK)
+	    break; // ON/C 同退出（2026-09-04）
 	  if (key==KEY_CTRL_UP)
 	    tc -= (ndisp/2)*ts;
 	  if (key==KEY_CTRL_DOWN)
@@ -21333,7 +21333,7 @@ void drawAtom(uint8_t id) {
 	return key;
       if (key==KEY_PRGM_ACON)
 	redraw=true;
-      if (key==KEY_CTRL_EXIT)
+      if (key==KEY_CTRL_EXIT || key==KEY_CTRL_AC)
 	return 0;
       if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK)
 	return 1|4|8|16|32;
