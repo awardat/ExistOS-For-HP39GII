@@ -521,8 +521,8 @@ static int matxKey(int key, int shift) {
     }
     if (slot < 0) return matxEditKey(key); // 方向/数字/编辑键
     matxCommit(); // 运算/切槽前提交当前编辑格（A/B 输入后半途操作值不丢）
-    if (slot == 5) { // F6：编辑槽循环 A→B→R
-        edSlot = (edSlot + 1) % 3;
+    if (slot == 5) { // F6：切到本页标注的编辑槽（页1 Ed:R / 页2 Ed:A / 页3 Ed:B）——不是循环 +1
+        edSlot = matxPage == 0 ? 2 : (matxPage == 1 ? 0 : 1);
         cx = cy = 0;
         return 0;
     }
