@@ -67,6 +67,7 @@ void SystemUIResume();
 #define ZH_RIQI    "\xC8\xD5\xC6\xDA"                            // 日期
 #define ZH_DAIKUAN "\xB4\xFB\xBF\xEE"                            // 贷款
 #define ZH_QINGKONG "\xC7\xE5\xBF\xD5"                           // 清空
+#define ZH_XIANJINLIU "\xCF\xD6\xBD\xF0\xC1\xF7"                  // 现金流
 
 // ---- 混排绘制（GBK 双字节中文 16px + ASCII 16px；返回新 x）----
 static int fDrawMix(int x, int y, const char *s, uint8_t fg, int16_t bg) {
@@ -99,6 +100,8 @@ static int fcFix = 2;   // 小数位（12C FIX，默认 2）
 static int fcFixSel = 0;
 static int foc = 0;     // 表单聚焦字段
 static int fcRowFoc = -1; // >=0 行级刷新
+static const double bondFreq[4] = { 1, 2, 4, 12 }; // 付息频
+static void drawFocRowOnly(void);
 static int fcClrArm = 0;  // Shift+BKSP 清空确认臂
 
 // ---- 表单数据（[模块][表单][字段]）----
@@ -153,21 +156,21 @@ static void fmtFin(double v, char *buf) {
     if (strlen(buf) > 13) buf[13] = 0;
 }
 
-// ---- 日期工具（值 = MM.DDYYYY double；12C 格式）----
+// ---- 日期工具（值 = DD.MMYYYY double：整数=日，小数前2=月，后4=年）----
 static void parseDate(double v, int *m, int *d, int *y) {
-    *m = (int)v;
-    double frac = v - *m;
-    *d = (int)(frac * 100.0 + 0.5);
-    frac = frac * 100.0 - *d;
+    *d = (int)v;                  // 日
+    double frac = v - *d;         // .MMYYYY
+    *m = (int)(frac * 100.0 + 0.5);
+    frac = frac * 100.0 - *m;
     *y = (int)(frac * 10000.0 + 0.5);
-    if (*y < 100) *y += 2000; // 容错短年
+    if (*y < 100) *y += 2000;     // 容错短年
     if (*m < 1 || *m > 12) *m = 1;
     if (*d < 1 || *d > 31) *d = 1;
 }
 static void fmtDate(double v, char *buf) {
     int m, d, y;
     parseDate(v, &m, &d, &y);
-    sprintf(buf, "%02d.%02d%04d", m, d, y);
+    sprintf(buf, "%02d.%02d%04d", d, m, y);
 }
 // 儒略日（实际日基）
 static long jdn(int y, int m, int d) {
@@ -290,6 +293,29 @@ static int fcDigit(int key) {
     }
 }
 
+static void fcStatusRight(char *buf) { // 标题右侧状态文本（输入行级刷新时局部重绘用）
+    buf[0] = 0;
+    if (fcLevel != 2) return;
+    if (fcMod == 1) {
+        if (fcForm == 0) sprintf(buf, "FIX%d %s", fcFix, (fs_[1][0] & 1) ? ZH_QICHU : ZH_QIMMO);
+        else if (fcForm == 3) sprintf(buf, "FIX%d frq%d", fcFix, (int)bondFreq[fs_[1][3] & 3]);
+        else if (fcForm == 5) strcpy(buf, (fs_[1][5] & 1) ? "ACT" : "360");
+        else sprintf(buf, "FIX%d", fcFix);
+    }
+}
+
+static void fcTitleRightRedraw(void) { // 标题行右侧消息/状态文本区局部重绘（行级输入时不整刷标题）
+    uidisp->draw_box(150, 0, 255, 17, 255, 255);
+    char rb[24];
+    fcStatusRight(rb);
+    const char *txt = fcMsg[0] ? fcMsg : rb;
+    if (txt[0]) {
+        int l = (int)strlen(txt);
+        uidisp->draw_printf(254 - l * 8, 2, 12, 0, 255, "%s", txt);
+    }
+    uidisp->flushRect(150, 0, 255, 17);
+}
+
 static void fcEditAppend(char c) {
     fcMsg[0] = 0;
     fcRowFoc = foc;
@@ -298,6 +324,9 @@ static void fcEditAppend(char c) {
         ebuf[elen++] = c;
         ebuf[elen] = 0;
     }
+    drawFocRowOnly();
+    fcTitleRightRedraw();
+    fcRowFoc = -1;
 }
 
 static void fcEditNeg(void) {
@@ -306,6 +335,9 @@ static void fcEditNeg(void) {
     if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; }
     if (ebuf[0] == '-') { memmove(ebuf, ebuf + 1, elen); elen--; }
     else { memmove(ebuf + 1, ebuf, elen + 1); ebuf[0] = '-'; elen++; }
+    drawFocRowOnly();
+    fcTitleRightRedraw();
+    fcRowFoc = -1;
 }
 
 // ---- 显示字段值（按类型）----
@@ -374,24 +406,30 @@ static void drawStdRow(int form, int i) {
 static void drawCflowRow(int idx) { // idx 0=r 1-13=CF0-12
     int y = cfRowY(idx);
     char tmp[40];
-    char lab[24];
+    const char *nm;
+    char ab[8];
     if (idx == 0) {
-        strcpy(lab, "r% "); // 前缀标识：折现率行（用户测试要点）
-        strcat(lab, ZH_LILV);
+        nm = ZH_LILV;             // 名：利率（中文前，与标准表单一致）
+        strcpy(ab, "r%");         // 缩写位：r%（x84）
     } else {
-        sprintf(lab, "\xCF\xD6\xBD\xF0\xC1\xF7 CF%d", idx - 1); // 现金流 CFk（GBK 现金流+ascii）
+        nm = ZH_XIANJINLIU;
+        sprintf(ab, "CF%d", idx - 1);
     }
+    int vx = 136;
     int isFoc = (idx == foc);
     if (isFoc) {
         uidisp->draw_box(0, y - 1, 255, y + 15, 255, 0);
-        fDrawMix(4, y, lab, 255, 0);
-        if (eAct) uidisp->draw_printf(140, y, 16, 255, 0, "%s", ebuf);
-        else if (fh_[1][1][idx]) { fmtFin(fv_[1][1][idx], tmp); uidisp->draw_printf(140, y, 16, 255, 0, "%s", tmp); }
-        else uidisp->draw_printf(140, y, 16, 255, 0, "--");
+        fDrawMix(4, y, nm, 255, 0);
+        uidisp->draw_printf(84, y, 12, 255, 0, "%s", ab);
+        if (eAct) uidisp->draw_printf(vx, y, 16, 255, 0, "%s", ebuf);
+        else if (fh_[1][1][idx]) { fmtFin(fv_[1][1][idx], tmp); uidisp->draw_printf(vx, y, 16, 255, 0, "%s", tmp); }
+        else uidisp->draw_printf(vx, y, 16, 255, 0, "--");
     } else {
         uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255);
-        fDrawMix(4, y, lab, 0, 255);
-        if (fh_[1][1][idx]) { fmtFin(fv_[1][1][idx], tmp); uidisp->draw_printf(140, y, 16, 0, 255, "%s", tmp); }
+        fDrawMix(4, y, nm, 0, 255);
+        uidisp->draw_printf(84, y, 12, 0, 255, "%s", ab);
+        if (fh_[1][1][idx]) { fmtFin(fv_[1][1][idx], tmp); uidisp->draw_printf(vx, y, 16, 0, 255, "%s", tmp); }
+        else uidisp->draw_printf(vx, y, 16, 0, 255, "--");
     }
 }
 
@@ -528,8 +566,8 @@ static double npvAt(double r) { // r 比率
     double den = 1 + r;
     double dk = den;
     for (int k = 2; k < 14; k++) {
-        dk *= den;
         if (fh_[1][1][k]) s += fv_[1][1][k] / dk;
+        dk *= den;
     }
     return s;
 }
@@ -633,7 +671,7 @@ static int actAmort(int slot) {
 }
 
 // BOND（form 3）：字段 结算/到期/票息%/面值/价格/收益%；fs bit0-1=付息频(1<<(2*f))  日期同日号假设
-static const double bondFreq[4] = { 1, 2, 4, 12 };
+
 static double bondPrice(double yld, int Nc, double c, double rv, double y) {
     // y 比率；现值：票息现值年金 + 面值折现
     if (Nc <= 0) return rv;
@@ -648,7 +686,8 @@ static int bondCalcNc(int *Nc) {
     parseDate(fv_[1][3][1], &m2, &d2, &y2);
     double f = bondFreq[fs_[1][3] & 3];
     long months = 12L * (y2 - y1) + (m2 - m1);
-    if (months <= 0 || d1 != d2) return -1; // 需同日号
+    if (months <= 0 || d1 != d2) return -1;   // 需同日号
+    if (months > 1200) return -1;             // 期限超 100 年视为输入错误（防 D.MYYYYY 误读）
     *Nc = (int)(months * f / 12.0 + 0.5);
     if (*Nc <= 0) return -1;
     return 0;
@@ -761,7 +800,7 @@ static int actDate(int slot) {
         long j = dateJdn(v[0]) + (long)v[2];
         int y, m, d;
         jdnYmd(j, &y, &m, &d);
-        v[1] = m + d / 100.0 + y / 1000000.0; // 组装 MM.DDYYYY（12C：9.052026 = 9月05日2026）
+        v[1] = d + m / 100.0 + y / 1000000.0; // 组装 DD.MMYYYY（15.012026 = 15日01月2026）
         h[1] = 1;
         fcSave();
         return 0;
@@ -1071,15 +1110,17 @@ static void fcListSel(void) {
 // ---- 表单按键（L2 金融表单）----
 static int fcFormKey(int key) {
     int d = fcDigit(key);
-    if (d >= 0) { fcEditAppend('0' + d); return 1; }
-    if (key == KEY_DOT) { fcEditAppend('.'); return 1; }
-    if (key == KEY_NEGATIVE) { fcEditNeg(); return 1; }
+    if (d >= 0) { fcEditAppend('0' + d); return 0; }
+    if (key == KEY_DOT) { fcEditAppend('.'); return 0; }
+    if (key == KEY_NEGATIVE) { fcEditNeg(); return 0; }
     if (key == KEY_BACKSPACE) {
         fcMsg[0] = 0;
         fcRowFoc = foc;
-        if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; return 1; }
-        if (elen > 0) { elen--; ebuf[elen] = 0; if (elen == 0) { eAct = 0; } return 1; }
-        return 1;
+        if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; }
+        else if (elen > 0) { elen--; ebuf[elen] = 0; if (elen == 0) { eAct = 0; } }
+        drawFocRowOnly();
+        fcRowFoc = -1;
+        return 0;
     }
     int nf = fcFieldCount();
     if (key == KEY_ENTER) {
