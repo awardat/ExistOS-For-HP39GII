@@ -322,20 +322,20 @@ void drawPage(int page) {
         uidisp->draw_printf(mainw->content_x0 + 12 + 80,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
 
-        // FormCalc 图标（48x48：机壳 + 小一圈白框线 + 框内字段；黑字 F 脚跨过框下沿断开）
+        // FormCalc 图标（48x48：深灰机壳衬底 + 大号白框线铺满 + 字段条；黑字 F+ 脚跨框下沿断开）
         {
             int ix = mainw->content_x0 + 12 + 160, iy = mainw->content_y0 + 12;
-            uidisp->draw_box(ix + 1, iy + 1, ix + 46, iy + 46, 45, -1);       // 机壳（深灰底）
-            uidisp->draw_box(ix + 11, iy + 11, ix + 36, iy + 36, 255, -1);    // 白框块（小一圈：28x28）
-            uidisp->draw_box(ix + 13, iy + 13, ix + 34, iy + 34, 45, -1);     // 挖回灰芯（留 2px 白框线）
-            for (int r = 0; r < 2; r++) {                                     // 框内 2 行输入字段：左黑 label + 值灰条
-                int y = iy + 16 + r * 5;
-                uidisp->draw_box(ix + 15, y, ix + 18, y + 1, 0, -1);
-                uidisp->draw_box(ix + 21, y, ix + 32, y + 1, 190, -1);
+            uidisp->draw_box(ix + 1, iy + 1, ix + 46, iy + 46, 45, -1);       // 机壳（灰底衬——白框线需深色反差）
+            uidisp->draw_box(ix + 6, iy + 6, ix + 41, iy + 41, 255, -1);      // 白框块（铺满 36x36）
+            uidisp->draw_box(ix + 8, iy + 8, ix + 39, iy + 39, 45, -1);       // 挖回灰芯（2px 白框线）
+            for (int r = 0; r < 2; r++) {                                     // 框内 2 行输入字段
+                int y = iy + 11 + r * 6;
+                uidisp->draw_box(ix + 11, y, ix + 14, y + 2, 0, -1);          // label 黑块
+                uidisp->draw_box(ix + 17, y, ix + 36, y + 2, 190, -1);        // 值灰条
             }
-            uidisp->draw_box(ix + 15, iy + 26, ix + 32, iy + 27, 190, -1);    // 结果条（框内下）
-            // 黑字 "F+"（16px 字 3 字符 24px 宽）从框内伸出——底缘（F 脚）压过白框下沿
-            uidisp->draw_printf(ix + 12, iy + 22, 16, 0, 255, "F+");
+            uidisp->draw_box(ix + 11, iy + 23, ix + 36, iy + 24, 190, -1);    // 结果条
+            // 黑字 "F+" 16px（24px 宽）横跨框芯下段，底缘压过白框下沿形成断口
+            uidisp->draw_printf(ix + 10, iy + 25, 16, 0, 255, "F+");
         }
         uidisp->draw_printf(mainw->content_x0 + 12 + 160,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "FormCalc");
