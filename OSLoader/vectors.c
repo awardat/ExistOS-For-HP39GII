@@ -16,6 +16,7 @@
 #include "vmMgr.h"
 
 #include "board_up.h"
+#include "regspower.h"
 #include "llapi.h"
 #include "llapi_code.h"
 
@@ -133,7 +134,10 @@ void volatile arm_do_swi(uint32_t SWINum, uint32_t *pRegFram) {
         }
 
         case LL_FAST_SWI_GET_CHARGE_STATUS:
-            pRegFram[0 + 2] = g_chargeEnable;
+            // 2026-09-04：原返回软件开关 g_chargeEnable——电池满后 DCDC 已关（电流 0）仍显"充电中"误导；
+            // 改为硬件实际状态：开关开 且 充电电源(DCDC)开 且 充电电路未关
+            pRegFram[0 + 2] =
+                (g_chargeEnable && HW_POWER_5VCTRL.B.ENABLE_DCDC && !HW_POWER_CHARGE.B.PWD_BATTCHRG) ? 1 : 0;
             break;
 
         case LL_FAST_SWI_RTC_GET_SEC:
