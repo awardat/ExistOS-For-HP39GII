@@ -16629,6 +16629,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  show_status(text,search,replace);
 	}
 	if (key==KEY_CTRL_AC){
+	  if (!editable) // 帮助/只读视图：ON = 返回（2026-09-04，与 EXIT 同语义——原走"清行"分支无法退出）
+	    return TEXTAREA_RETURN_EXIT;
 	  if (clipline>=0){
 	    clipline=-1;
 	    show_status(text,search,replace);
