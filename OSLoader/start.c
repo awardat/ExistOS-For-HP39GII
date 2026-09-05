@@ -907,6 +907,10 @@ void vBatteryMon(void *__n) {
 
     uint32_t show_bat_val;
     static uint32_t chargeStartTick = 0; // 充电开始（12h 定时，2026-09-03 数据手册增强；CHRGSTS 轮询仅 Li-Ion 用——镍氢不适用已移除）
+    static uint32_t t1400 = 0;           // 首次达 1.4V 时刻（1.4V+2h 窗口兜底，2026-09-04）
+    static bool chargeSessionDone = false; // 本次充电会话已停充（防停后电压仍高重复触发）
+    static bool prevChargeEnable = false;  // g_chargeEnable 上升沿 = 新充电会话
+    extern bool g_chargeEnable;
 
     for (;;) {
 
@@ -915,23 +919,42 @@ void vBatteryMon(void *__n) {
         vdd5v_voltage = (int)(portLRADCConvCh(5, 5) * 0.45 * 4);
         coreTemp = (int)((portLRADCConvCh(4, 5) - portLRADCConvCh(3, 5)) * 1.012 / 4 - 273.15);
 
-        extern bool g_chargeEnable;
         if (g_chargeEnable) {
             uint32_t now = xTaskGetTickCount();
-            if (chargeStartTick == 0) { chargeStartTick = now; }
-            // 手册 §29.7：NiMH 0.1C 慢充 12 小时后必须停止（软件职责）
-            if (now - chargeStartTick >= 43200000UL) { // 12h（镍氢标准停充；CHRGSTS 轮询仅 Li-Ion，不适用于镍氢）
-                portChargeEnable(false);
-                printf("Charge stop (12h)\n");
-                chargeStartTick = 0;
+            if (!prevChargeEnable) { chargeSessionDone = false; t1400 = 0; } // 新充电会话（开关重新打开）
+            prevChargeEnable = true;
+            if (chargeSessionDone) {
+                // 已停充：保持断电状态，等待用户重开（防停后开路电压仍 ≥1.4/1.5 重复触发）
+            } else {
+                if (chargeStartTick == 0) { chargeStartTick = now; }
+                // 手册 §29.7：NiMH 0.1C 慢充 12 小时后必须停止（软件职责）
+                if (now - chargeStartTick >= 43200000UL) { // 12h（镍氢标准停充；CHRGSTS 轮询仅 Li-Ion，不适用于镍氢）
+                    HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
+                    portChargeEnable(false);
+                    printf("Charge stop (12h)\n");
+                    chargeStartTick = 0; t1400 = 0; chargeSessionDone = true;
+                } else if (batt_voltage >= 1500) {
+                    // 2026-09-04：原 ≥1420 即关 DCDC 且无重开——镍氢 200mA 带载充电电压可达 1.5V+，1.4V 停只充 ~85-90%；
+                    // 1.5V（镍氢充满带载电压）正常停充：断充电电源 + PWD 关充电器
+                    HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
+                    portChargeEnable(false);
+                    printf("Charge stop (1.5V)\n");
+                    chargeStartTick = 0; t1400 = 0; chargeSessionDone = true;
+                } else if (batt_voltage >= 1400) {
+                    // 1.4V 后 2h 窗口兜底（2026-09-04，用户确认 T=2h）：平台徘徊升不到 1.5V 的电池不干等 12h
+                    if (t1400 == 0) { t1400 = now; }
+                    if (now - t1400 >= 7200000UL) {
+                        HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
+                        portChargeEnable(false);
+                        printf("Charge stop (1.4V+2h)\n");
+                        chargeStartTick = 0; t1400 = 0; chargeSessionDone = true;
+                    }
+                } else {
+                    t1400 = 0; // 未达 1.4V：窗口未开始
+                }
             }
-            if (batt_voltage >= 1500) {
-                // 2026-09-04：原 ≥1420 即关 DCDC 且无重开——镍氢 200mA 带载充电电压可达 1.5V+，1.4V 停只充 ~85-90%；
-                // 改为 1.5V（镍氢充满带载电压）一次停：断充电电源 + PWD 关充电器，12h 定时仍兜底
-                HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
-                portChargeEnable(false);
-                printf("Charge stop (1.5V)\n");
-            }
+        } else {
+            prevChargeEnable = false;
         }
 
         if (t % 3 == 0) {
