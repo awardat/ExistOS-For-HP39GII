@@ -14,7 +14,7 @@ extern "C" {
 #define DEFAULT_LANGUAGE UI_LANG_EN
 #define DEFAULT_POWER_SAVE ' '  // ' ' = 标准(120MHz), 'S' = 省电(80+空闲48MHz), 'B' = 加速(240MHz), 'L' 兼容旧配置(80MHz)
 #define DEFAULT_ENABLE_CHARGE false
-#define DEFAULT_CHARGE_MODE 'L'      // 'L' = Li-Ion（STOP_ILIMIT 停充）, 'A' = 碱性/NiMH（12h 定时停充）
+#define DEFAULT_CHARGE_MODE 'A'      // 固定镍氢（2026-09-04：锂电直插实测失败——AAA 外围电路短路拉低电压；选择已从 UI 隐藏，'L' 仅兼容旧配置文件读取，无行为影响）
 #define DEFAULT_ENABLE_MEM_SWAP false
 
 // 系统配置结构体

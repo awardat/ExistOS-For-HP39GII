@@ -11,7 +11,9 @@ bool g_chargeEnable = false;
 
 void portChargeSetMode(bool liIon)
 {
-    // 充电方式切换：锂电 = STOP_ILIMIT 限流停充 + ALKALINE_CHARGE=0；碱性/NiMH = 12h 定时停充（start.c）+ ALKALINE_CHARGE=1
+    // 充电方式切换（2026-09-04 起镍氢固定：调用点恒传 false，锂电路径仅供回退参考）
+    // 锂电 = STOP_ILIMIT 停充阈值（手册建议=充电电流 10%）；碱性/NiMH = ALKALINE_CHARGE=1（boost 电感从 VDDD 充电的效率位，
+    // 非充电通道）+ 12h 定时停充（start.c）
     HW_POWER_CHARGE.B.STOP_ILIMIT = liIon ? (1 << 3) : 0;
     HW_POWER_VDDDCTRL.B.ALKALINE_CHARGE = liIon ? 0 : 1;
 }
@@ -218,7 +220,7 @@ void portPowerInit()
 
     HW_POWER_CHARGE.B.ENABLE_FAULT_DETECT = 0; // 手册：VDD5V 低于电池电压时自动断充（上游禁用，真机验证前保持）
     HW_POWER_CHARGE.B.BATTCHRG_I  = 1 << 4;    // 200mA 档（折中：1 节 AAA 900mAh=0.22C 安全、4 并 3600mAh=0.056C 部分充；手册位权 400/200/100/50/20/10mA）
-    HW_POWER_CHARGE.B.STOP_ILIMIT = 1 << 3;  // Li-Ion 停止阈值（2026-09-03 启用：用户将焊接锂电——锂电靠此项停充；若换回 NiMH/AAA 需关闭并依赖 12h 定时）
+    HW_POWER_CHARGE.B.STOP_ILIMIT = 0;       // 镍氢无停充电流判据（2026-09-04 固定镍氢：3.8V 锂电直插实测失败——AAA 外围电路短路拉低电压；改用 12h 定时停充）
     HW_POWER_CHARGE.B.USE_EXTERN_R = 1;
 
     HW_POWER_CHARGE.B.CHRG_STS_OFF = 0;

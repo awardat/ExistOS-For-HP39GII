@@ -244,7 +244,7 @@ void pageUpdate() {
                 }
                 uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)", UI_Power_Save_Mode, psn);
             }
-            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "[%c]%s (2)  %s:%s (3)", config_get_enable_charge() ? 'X' : ' ', UI_Enable_Charge, UI_Charge_Mode, config_get_charge_mode() == 'L' ? UI_LiIon : UI_NiMH);
+            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "[%c]%s (2)  %s:%s", config_get_enable_charge() ? 'X' : ' ', UI_Enable_Charge, UI_Charge_Mode, UI_NiMH); // 电池类型固定镍氢（2026-09-04 锂电直插失败，选择已隐藏）
         } else if (page3Subpage == 1) {
 
             // sprintf(s, "%02d:%02d:%02d", (rtc_time_sec / (60 * 60)) % 24, (rtc_time_sec / 60) % 60, rtc_time_sec % 60);
@@ -858,14 +858,7 @@ void keyMsg(uint32_t key, int state) {
                 pageUpdate();
             }
             break;
-        case KEY_3:
-            if (curPage == 3 && page3Subpage == 0) {
-                char cm = config_get_charge_mode();
-                config_set_charge_mode(cm == 'L' ? 'A' : 'L'); // 锂电 ↔ 碱性/NiMH
-                ll_charge_set_mode(config_get_charge_mode() == 'L');
-                drawPage(curPage);
-            }
-            break;
+        // KEY_3 充电类型切换已移除（2026-09-04：锂电直插实测失败——AAA 外围电路短路拉低电压，充电固定镍氢，选择功能隐藏）
             /*
         case KEY_3:
             if((curPage == 3) && (page3Subpage == 2))

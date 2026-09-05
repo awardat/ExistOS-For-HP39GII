@@ -164,11 +164,10 @@ void main_thread() {
         ll_cpu_slowdown_enable(ps == 'B' ? 3 : 1);
     }
 
-    // 应用充电方式（锂电/碱性-NiMH；2026-09-03 加）
-    {
-        extern char config_get_charge_mode(void);
-        ll_charge_set_mode(config_get_charge_mode() == 'L');
-    }
+    // 充电固定镍氢（2026-09-04：锂电直插实测失败——AAA 外围电路短路，
+    // 配置默认 'L' 实际走了锂电路径（ALKALINE 关 + STOP_ILIMIT 停充），
+    // 电池类型选择已从 UI 隐藏；调用点固定 false，ll_charge_set_mode 签名保留）
+    ll_charge_set_mode(false);
 
     // StartKhiCAS();
 
