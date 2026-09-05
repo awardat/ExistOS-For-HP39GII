@@ -941,6 +941,11 @@ void vBatteryMon(void *__n) {
             printf("Core Temp: %d ℃\n", coreTemp);
             printf("Power Speed:%lu\n", portGetPWRSpeed());
         }
+        if (t % 9 == 0) { // 充电诊断（2026-09-04：充电 29mA 实测 vs 配置 200mA 排查）
+            printf("CHRG reg:%08lx STS:%d DCDC:%d BATT:%ld VDD5V:%ld\n",
+                   (unsigned long)HW_POWER_CHARGE.U, (int)HW_POWER_STS.B.CHRGSTS,
+                   (int)HW_POWER_5VCTRL.B.ENABLE_DCDC, batt_voltage, vdd5v_voltage);
+        }
         t++;
 
         if (vdd5v_voltage > 3500) {
