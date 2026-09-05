@@ -919,6 +919,18 @@ void vBatteryMon(void *__n) {
         vdd5v_voltage = (int)(portLRADCConvCh(5, 5) * 0.45 * 4);
         coreTemp = (int)((portLRADCConvCh(4, 5) - portLRADCConvCh(3, 5)) * 1.012 / 4 - 273.15);
 
+        // 外接电源消失检测（2026-09-05）：无 5V 输入时立即停充并清硬件位——
+        // 否则软件位保持（DCDC=1/PWD=0），GET_CHARGE_STATUS 恒 1，拔 USB 后仍显示"充电中:是"
+        if (g_chargeEnable && vdd5v_voltage < 3500) {
+            HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
+            portChargeEnable(false);
+            chargeStartTick = 0;
+            t1400 = 0;
+            chargeSessionDone = false; // 电源重插后重开开关（或重启）即新会话
+            prevChargeEnable = false;
+            printf("Charge stop (5V lost)\n");
+        }
+
         if (g_chargeEnable) {
             uint32_t now = xTaskGetTickCount();
             if (!prevChargeEnable) { chargeSessionDone = false; t1400 = 0; } // 新充电会话（开关重新打开）
