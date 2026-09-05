@@ -13,11 +13,12 @@
 - **ON+{+,-} 对比度调节修复**：key_task_capt 状态 0 增加 ON 物理按住检测（矩阵扫描顺序导致组合键先入队时失效）
 - **vTask1（Status Print）忙循环修复**：50ms delay + printTaskList 30s 降频（原空转占 CPU 且串口洪水）
 - **CDC 会话任务恢复**：PING 挂起的监控任务（vBatteryMon 等）在 DTR 断开时自动恢复（免重启）
+- **KhiCAS 帮助中文化**：completeCatzh 全量 355 条（260 条 desc 中文 GBK；XCAS_ONLY 保留原文）；lang=1 切换中文目录；**乱码根治**——textArea print() 宽度推进按字节×7（中文 14px）与 16px 渲染漂移 2px/字导致 ASCII 叠压中文（p 盖式/p= 盖键）→ 改 hp39_text_width（GBK=16px）推进；帮助/只读视图 ON=返回（View 不承担返回，编辑态语义保留）；charmap/脚本保存类型/trace 加 ON 等效退出；命令目录一级分类补译 5 项（算术加密/复数/选项/矩阵/三维）
 - RPN39 手册/README 硬件实测记录（锂电失败、整机电流基线、AAA 电池建议）
 
 ### 规划
-- RPN39 阶段 3 剩余（测试清单 docs/RPN39-phase3-test.md 真机过完；充电需放电后复测）
-- KhiCAS：帮助文本中文化；物理按键映射加强；示例功能补充；giac 2.0.0 有限移植
+- ~~RPN39 阶段 3 测试~~（✅ 2026-09-05 用户确认 docs/RPN39-phase3-test.md 用例已过）
+- KhiCAS：物理按键映射加强；示例功能补充；giac 2.0.0 有限移植
 - FormCalc（表单计算：财务 12C 全集 + 工程）规划
 - D4 FTL_Sync 真机掉电测试
 - C 组待办其余项
