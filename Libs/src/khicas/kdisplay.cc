@@ -16607,6 +16607,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	if (clipline<0)
 	  return KEY_CTRL_F2;
       case KEY_CTRL_EXIT:
+	if (!editable){ // 帮助/只读视图：View 不承担返回（View 仅编辑态切换视图；返回统一 ON/C）2026-09-04
+	  continue;
+	}
 	if (clipline>=0){
 	  clipline=-1;
 	  show_status(text,search,replace);

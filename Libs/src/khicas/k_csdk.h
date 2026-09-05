@@ -22,17 +22,31 @@ extern "C" {
 #ifdef HP39
   #include <string.h>
   void vGL_putString(int x0, int y0,const char *s, int fg, int bg, int fontSize);
+  // 2026-09-04：宽度估算需中文感知——GBK 双字节渲染固定 16px 字模（vGL_putChar16），
+  // 按字节×字号估算（中文按 12/14px）会低估 2-4px/字 → 分行错位 + 行尾文字被右缘裁成半字（用户实测乱码）
+  inline int hp39_text_width(const char * s,int ascii_px){
+    int w=0;
+    while (*s){
+      unsigned char b1=(unsigned char)*s;
+      if (b1>=0xA1 && b1<=0xF7 && s[1]){
+	unsigned char b2=(unsigned char)s[1];
+	if (b2>=0xA1 && b2<=0xFE){ w+=16; s+=2; continue; }
+      }
+      w+=ascii_px; ++s;
+    }
+    return w;
+  }
   inline int os_draw_string(int x,int y,int c,int bg,const char * s,bool fake){
     if (!fake) vGL_putString(x,y,s,c,bg,16);
-    return strlen(s)*8+x;
+    return hp39_text_width(s,8)+x;
   }
   inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake){
     if (!fake) vGL_putString(x,y,s,c,bg,14);
-    return strlen(s)*7+x;
+    return hp39_text_width(s,7)+x;
   }
   inline int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake){
     if (!fake) vGL_putString(x,y,s,c,bg,12);
-    return strlen(s)*6+x;
+    return hp39_text_width(s,6)+x;
   }
 #endif
   int ext_main();
