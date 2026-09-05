@@ -1050,6 +1050,14 @@ volatile void _startup() {
     boardInit();
     printf("booting .....\n");
 
+    // 充电寄存器快照（System 起来前串口独占必见；2026-09-04 充电 29mA vs 200mA 配置排查）
+    printf("CHRG reg:%08lx PWD:%d I:%d EXTR:%d STS:%d\n",
+           (unsigned long)HW_POWER_CHARGE.U,
+           (int)HW_POWER_CHARGE.B.PWD_BATTCHRG,
+           (int)HW_POWER_CHARGE.B.BATTCHRG_I,
+           (int)HW_POWER_CHARGE.B.USE_EXTERN_R,
+           (int)HW_POWER_STS.B.CHRGSTS);
+
     xTaskCreate(vTask1, "Status Print", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, &pStatusPrintTask);
     xTaskCreate(vMTDSvc, "MTD Svc", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 2, NULL);
     xTaskCreate(vFTLSvc, "FTL Svc", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, NULL);
