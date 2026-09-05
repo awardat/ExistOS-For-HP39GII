@@ -322,19 +322,20 @@ void drawPage(int page) {
         uidisp->draw_printf(mainw->content_x0 + 12 + 80,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
 
-        // FormCalc 图标（48x48：机壳 + 白表单页 3 行字段；底部黑字 F+ 压过页下缘——无外框线，同 RPN39 风格）
+        // FormCalc 图标（48x48：机壳 + 小一圈白框线 + 框内字段；黑字 F 脚跨过框下沿断开）
         {
             int ix = mainw->content_x0 + 12 + 160, iy = mainw->content_y0 + 12;
-            uidisp->draw_box(ix + 1, iy + 1, ix + 46, iy + 46, 45, -1);       // 机壳（深灰）
-            uidisp->draw_box(ix + 4, iy + 4, ix + 43, iy + 43, 255, -1);      // 表单页（全白）
-            for (int r = 0; r < 3; r++) {                                     // 3 行输入字段：左 label 黑块 + 值灰条
-                int y = iy + 7 + r * 6;
-                uidisp->draw_box(ix + 7, y, ix + 11, y + 2, 0, -1);
-                uidisp->draw_box(ix + 14, y, ix + 40, y + 2, 190, -1);
+            uidisp->draw_box(ix + 1, iy + 1, ix + 46, iy + 46, 45, -1);       // 机壳（深灰底）
+            uidisp->draw_box(ix + 11, iy + 11, ix + 36, iy + 36, 255, -1);    // 白框块（小一圈：28x28）
+            uidisp->draw_box(ix + 13, iy + 13, ix + 34, iy + 34, 45, -1);     // 挖回灰芯（留 2px 白框线）
+            for (int r = 0; r < 2; r++) {                                     // 框内 2 行输入字段：左黑 label + 值灰条
+                int y = iy + 16 + r * 5;
+                uidisp->draw_box(ix + 15, y, ix + 18, y + 1, 0, -1);
+                uidisp->draw_box(ix + 21, y, ix + 32, y + 1, 190, -1);
             }
-            uidisp->draw_box(ix + 7, iy + 27, ix + 40, iy + 29, 190, -1);     // 结果条（灰）
-            // 黑字 "F+" 底缘压过白页下缘（断口感）
-            uidisp->draw_printf(ix + 16, iy + 27, 16, 0, 255, "F+");
+            uidisp->draw_box(ix + 15, iy + 26, ix + 32, iy + 27, 190, -1);    // 结果条（框内下）
+            // 黑字 "F+"（16px 字 3 字符 24px 宽）从框内伸出——底缘（F 脚）压过白框下沿
+            uidisp->draw_printf(ix + 12, iy + 22, 16, 0, 255, "F+");
         }
         uidisp->draw_printf(mainw->content_x0 + 12 + 160,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "FormCalc");

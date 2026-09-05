@@ -306,12 +306,14 @@ static void fcStatusRight(char *buf) { // 标题右侧状态文本（输入行�
 
 static void fcTitleRightRedraw(void) { // 标题行右侧消息/状态文本区局部重绘（行级输入时不整刷标题）
     uidisp->draw_box(150, 0, 255, 17, 255, 255);
-    char rb[24];
-    fcStatusRight(rb);
-    const char *txt = fcMsg[0] ? fcMsg : rb;
-    if (txt[0]) {
-        int l = (int)strlen(txt);
-        uidisp->draw_printf(254 - l * 8, 2, 12, 0, 255, "%s", txt);
+    if (fcMsg[0]) {
+        // 消息统一 ASCII（12px）；防 GBK 误入 ascii 渲染成雪花——长度自适应起点
+        int l = (int)strlen(fcMsg);
+        uidisp->draw_printf(254 - l * 8, 2, 12, 0, 255, "%s", fcMsg);
+    } else {
+        char rb[24];
+        fcStatusRight(rb);
+        if (rb[0]) fDrawMix(150, 1, rb, 0, 255); // 状态可含 GBK（期初/期末）——16px 混排
     }
     uidisp->flushRect(150, 0, 255, 17);
 }
@@ -407,7 +409,7 @@ static void drawCflowRow(int idx) { // idx 0=r 1-13=CF0-12
     int y = cfRowY(idx);
     char tmp[40];
     const char *nm;
-    char ab[8];
+    char ab[12]; // CF13 最长 4 字符——扩缓冲防格式告警
     if (idx == 0) {
         nm = ZH_LILV;             // 名：利率（中文前，与标准表单一致）
         strcpy(ab, "r%");         // 缩写位：r%（x84）
@@ -575,7 +577,7 @@ static int actCflow(int slot) {
     if (slot == 4) { // CLR 现金流（含 r）
         for (int i = 0; i < 14; i++) { fv_[1][1][i] = 0; fh_[1][1][i] = 0; }
         fcSave();
-        strcpy(fcMsg, ZH_QINGKONG "ed");
+        strcpy(fcMsg, "Cleared");
         return 0;
     }
     if (!fh_[1][1][0]) return 1; // r 缺
@@ -1268,7 +1270,7 @@ static void formcalcTask(void *_) {
                         if (fcClrArm) {
                             fcClearAll();
                             fcClrArm = 0;
-                            strcpy(fcMsg, ZH_QINGKONG "ed");
+                            strcpy(fcMsg, "Cleared");
                         } else {
                             fcClrArm = 1;
                             strcpy(fcMsg, "CLR ALL? Sh+BKSP");
