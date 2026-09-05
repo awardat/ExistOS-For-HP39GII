@@ -1705,6 +1705,625 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"|", "|", "Logical or", "#1|2", 0, CAT_CATEGORY_PROGCMD},
   {"~", "~", "Complement", "#~7", 0, CAT_CATEGORY_PROGCMD},
 };
+const catalogFunc completeCatzh[] = { // 中文帮助目录（2026-09-04 汉化，desc 中文；name/insert 保持代码原样；XCAS_ONLY 条目计算器不显示保留原文）
+  {" loop for", "for ", "\xb6\xa8\xd2\xe5\xd1\xad\xbb\xb7\xa1\xa3", "#\nfor ", 0, CAT_CATEGORY_PROG},
+
+  {" loop in list", "for in", "\xb6\xd4\xc1\xd0\xb1\xed\xb5\xc4\xcb\xf9\xd3\xd0\xd4\xaa\xcb\xd8\xd1\xad\xbb\xb7\xa1\xa3", "#\nfor in", 0, CAT_CATEGORY_PROG},
+
+  {" loop while", "while ", "\xb2\xbb\xb6\xa8\xb4\xce\xd1\xad\xbb\xb7\xa1\xa3", "#\nwhile ", 0, CAT_CATEGORY_PROG},
+
+  {" test if", "if ", "\xcc\xf5\xbc\xfe\xb2\xe2\xca\xd4\xa1\xa3", "#\nif ", 0, CAT_CATEGORY_PROG},
+
+  {" test else", "else ", "\xcc\xf5\xbc\xfe\xce\xaa\xbc\xd9\xca\xb1\xd6\xb4\xd0\xd0", 0, 0, CAT_CATEGORY_PROG},
+
+  {" function def", "f(x):=", "\xba\xaf\xca\xfd\xb6\xa8\xd2\xe5\xa1\xa3", "#\nf(x):=", 0, CAT_CATEGORY_PROG},
+
+  {" local j,k;", "local ", "\xbe\xd6\xb2\xbf\xb1\xe4\xc1\xbf\xc9\xf9\xc3\xf7\xa3\xa8Xcas\xa3\xa9", 0, 0, CAT_CATEGORY_PROG},
+
+  {" range(a,b)", 0, "\xc7\xf8\xbc\xe4 [a,b)\xa3\xa8\xba\xac a \xb2\xbb\xba\xac b\xa3\xa9", "# in range(1,10)", 0, CAT_CATEGORY_PROG},
+
+  {" return res", "return ", "\xcd\xcb\xb3\xf6\xb5\xb1\xc7\xb0\xba\xaf\xca\xfd\xb2\xa2\xb7\xb5\xbb\xd8 res\xa1\xa3", 0, 0, CAT_CATEGORY_PROG},
+
+  {" edit list ", "list ", "\xc1\xd0\xb1\xed\xb4\xb4\xbd\xa8\xcf\xf2\xb5\xbc\xa1\xa3", 0, 0, CAT_CATEGORY_LIST},
+
+  {" edit matrix ", "matrix ", "\xbe\xd8\xd5\xf3\xb4\xb4\xbd\xa8\xcf\xf2\xb5\xbc\xa1\xa3", 0, 0, CAT_CATEGORY_MATRIX},
+
+    {" mksa(x)", 0, "Conversion to MKSA units", 0, 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8) | XCAS_ONLY},
+    {" ufactor(a,b)", 0, "Factorize unit b in a", "100_J,1_kW", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8) | XCAS_ONLY},
+    {" usimplify(a)", 0, "Simplify unit", "100_l/10_cm^2", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8) | XCAS_ONLY},
+  {"!", "!", "\xc2\xdf\xbc\xad\xb7\xc7\xa3\xa8\xc7\xb0\xd7\xba\xa3\xa9\xbb\xf2 n \xb5\xc4\xbd\xd7\xb3\xcb\xa3\xa8\xba\xf3\xd7\xba\xa3\xa9\xa1\xa3", "#7!", "~!b", CAT_CATEGORY_PROGCMD},
+
+  {"#", "#", "Python \xd7\xa2\xca\xcd\xa3\xbbXcas \xd7\xa2\xca\xcd\xd3\xc3 //\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc ALPHA F2", 0, 0, CAT_CATEGORY_PROG},
+
+  {"%", "%", "a % b \xb1\xed\xca\xbe a \xc4\xa3 b", 0, 0, CAT_CATEGORY_ARIT | (CAT_CATEGORY_PROGCMD << 8)},
+
+  {"&", "&", "\xc2\xdf\xbc\xad\xd3\xeb\xa3\xac\xbb\xf2 +\xa3\xa8\xcd\xac\xbb\xf2\xa3\xa9", "#1&2", 0, CAT_CATEGORY_PROGCMD},
+
+  {":=", ":=", "Set variable value. Shortcut SHIFT F1", "#a:=3", 0, CAT_CATEGORY_PROGCMD|(CAT_CATEGORY_SOFUS<<8)|XCAS_ONLY},
+  {"<", "<", "\xbf\xec\xbd\xdd\xbc\xfc SHIFT F2", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"=>", "=>", "Store value in variable or conversion (touche ->). For example 5=>a or x^4-1=>* or (x+1)^2=>+ or sin(x)^2=>cos.", "#5=>a", "#15_ft=>_cm", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_PHYS <<8) | (CAT_CATEGORY_UNIT << 16) | XCAS_ONLY},
+  {">", ">", "\xbf\xec\xbd\xdd\xbc\xfc F2", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"\\", "\\", "\\\\ \xd7\xd6\xb7\xfb", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"_", "_", "_ \xd7\xd6\xb7\xfb\xa3\xac\xbf\xec\xbd\xdd\xbc\xfc (-)", 0, 0, CAT_CATEGORY_PROGCMD},
+
+    {"_(km/h)", "_(km/h)", "Speed kilometer per hour", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m/s)", "_(m/s)", "Speed meter/second", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m/s^2)", "_(m/s^2)", "Acceleration", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m^2/s)", "_(m^2/s)", "Viscosity", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_A", 0, "Ampere", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Bq", 0, "Becquerel", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_C", 0, "Coulomb", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Ci", 0, "Curie", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_F", 0, "Farad", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_F_", 0, "Faraday constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_G_", 0, "Gravitation force=_G_*m1*m2/r^2", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_H", 0, "Henry", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Hz", 0, "Hertz", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_J", 0, "Joule=kg*m^2/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_K", 0, "Temperature in Kelvin", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Kcal", 0, "Energy kilo-calorie", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_MeV", 0, "Energy mega-electron-Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_N", 0, "Force Newton=kg*m/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_NA_", 0, "Avogadro constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Ohm", 0, "Ohm", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_PSun_", 0, "Sun power", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Pa", 0, "Pressure in Pascal=kg/m/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_REarth_", 0, "Earth radius", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_RSun_", 0, "Sun radius", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_R_", 0, "Boltzmann constant (per mol)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_S", 0, "", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_StdP_", 0, "Standard pressure", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_StdT_", 0, "Standard temperature (0 degre Celsius in Kelvins)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Sv", 0, "Sievert", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_T", 0, "Tesla", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_V", 0, "Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Vm_", 0, "Volume molaire", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_W", 0, "Watt=kg*m^2/s^3", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Wb", 0, "Weber", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_alpha_", 0, "fine structure constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_c_", 0, "speed of light", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_cd", 0, "candela", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+  {"_cdf", "_cdf", "Suffix to get a cumulative distribution function. Type F2 for inverse cumulative distribution function _icdf suffix.", "#_icdf", 0, CAT_CATEGORY_PROBA|XCAS_ONLY},
+    {"_d", 0, "day", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_deg", 0, "degree", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_eV", 0, "electron-Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_epsilon0_", 0, "vacuum permittivity", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_ft", 0, "feet", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_g_", 0, "Earth gravity (ground)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_grad", 0, "grades (angle unit(", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_h", 0, "Hour", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_h_", 0, "Planck constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_ha", 0, "hectare", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_hbar_", 0, "Planck constant/(2*pi)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_inch", 0, "inches", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_kWh", 0, "kWh", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_k_", 0, "Boltzmann constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_kg", 0, "kilogram", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_l", 0, "liter", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_m", 0, "meter", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mEarth_", 0, "Earth mass", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_m^2", 0, "Area in m^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_m^3", 0, "Volume in m^3", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_me_", 0, "electron mass", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_miUS", 0, "US miles", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mn", 0, "minute", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mp_", 0, "proton mass", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_mpme_", 0, "proton/electron mass-ratio", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_mu0_", 0, "", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_phi_", 0, "magnetic flux quantum", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_plot", "_plot", "\xbb\xd8\xb9\xe9\xc7\xfa\xcf\xdf\xc3\xfb\xb3\xc6\xba\xf3\xd7\xba\xa1\xa3", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
+
+    {"_qe_", 0, "electron charge", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_qme_", 0, "_q_/_me_", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_rad", 0, "radians", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_rem", 0, "rem", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_s", 0, "second", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_sd_", 0, "Sideral day", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_syr_", 0, "Siderale year", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_tr", 0, "tour (angle unit)", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_yd", 0, "yards", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+  {"a and b", " and ", "\xc2\xdf\xbc\xad\xd3\xeb", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"a or b", " or ", "\xc2\xdf\xbc\xad\xbb\xf2", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"abcuv(a,b,c)", 0, "\xc7\xf3\xb6\xe0\xcf\xee\xca\xbd u,v \xca\xb9 a*u+b*v=c","x+1,x^2-2,x", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"abs(x)", 0, "x \xb5\xc4\xbe\xf8\xb6\xd4\xd6\xb5\xbb\xf2\xb7\xb6\xca\xfd", "-3", "[1,2,3]", CAT_CATEGORY_COMPLEXNUM | (CAT_CATEGORY_REAL<<8)},
+
+  {"altitude(A,B,C)", 0, "\xc8\xfd\xbd\xc7\xd0\xce ABC \xd6\xd0\xd3\xc9 A \xd2\xfd\xb3\xf6\xb5\xc4\xb8\xdf", "1,i,2+i", 0,CAT_CATEGORY_2D},
+
+  {"append", 0, "\xd4\xda\xc1\xd0\xb1\xed\xc4\xa9\xce\xb2\xcc\xed\xbc\xd3\xd2\xbb\xb8\xf6\xd4\xaa\xcb\xd8","#l.append(x)", 0, CAT_CATEGORY_LIST},
+
+  {"approx(x)", 0, "x \xb5\xc4\xbd\xfc\xcb\xc6\xd6\xb5\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc S-D", "pi", 0, CAT_CATEGORY_REAL},
+
+  {"area(objet)", 0, "\xb4\xfa\xca\xfd\xc3\xe6\xbb\xfd", "circle(0,1)", "triangle(-1,1+i,3)", CAT_CATEGORY_2D  },
+
+  {"arg(z)", 0, "\xb8\xb4\xca\xfd z \xb5\xc4\xb7\xf8\xbd\xc7", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
+
+  {"asc(string)", 0, "\xd7\xd6\xb7\xfb\xb4\xae\xb5\xc4 ASCII \xc2\xeb\xc1\xd0\xb1\xed", "\"Hello\"", 0, CAT_CATEGORY_ARIT},
+
+  {"assume(hyp)", 0, "\xb6\xd4\xb1\xe4\xc1\xbf\xb5\xc4\xbc\xd9\xc9\xe8", "x>1", "x>-1 and x<1", CAT_CATEGORY_PROGCMD|(CAT_CATEGORY_SOFUS<<8)},
+
+  {"avance n", "avance ", "\xba\xa3\xb9\xea\xc7\xb0\xbd\xf8 n \xb2\xbd\xa3\xac\xc4\xac\xc8\xcf n=10", "#avance 30", 0, CAT_CATEGORY_LOGO},
+
+  {"axes", "axes", "Axes visible or not axes=1 or 0", "#axes=0", 0, CAT_CATEGORY_PROGCMD << 8|XCAS_ONLY},
+  {"baisse_crayon ", "baisse_crayon ", "\xba\xa3\xb9\xea\xd2\xc6\xb6\xaf\xca\xb1\xc2\xe4\xb1\xca\xa3\xa8\xbb\xad\xcf\xdf\xa3\xa9", 0, 0, CAT_CATEGORY_LOGO},
+
+  {"barplot(list)", 0, "list \xd6\xd0\xd2\xbb\xce\xac\xcd\xb3\xbc\xc6\xca\xfd\xbe\xdd\xb5\xc4\xcc\xf5\xd0\xce\xcd\xbc", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
+
+  {"barycenter([pnt,coeff],...)", 0, "\xd2\xbb\xd7\xe9 [\xb5\xe3,\xcf\xb5\xca\xfd] \xb5\xc4\xd6\xd8\xd0\xc4\xa3\xbb\xc8\xf4\xcf\xb5\xca\xfd\xc8\xab\xcf\xe0\xb5\xc8\xd4\xf2\xd6\xb4\xd0\xd0\xb5\xc8\xd6\xd8\xd0\xc4", "[1,1],[i,1],[2,3]", 0, CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
+
+  {"binomial(n,p,k)", 0, "binomial(n,p,k)\xa3\xban \xb4\xce\xca\xd4\xd1\xe9\xd6\xd0\xc7\xa1\xba\xc3 k \xb4\xce\xb3\xc9\xb9\xa6\xb5\xc4\xb8\xc5\xc2\xca\xa3\xa8\xb5\xa5\xb4\xce\xb3\xc9\xb9\xa6\xb8\xc5\xc2\xca p\xa3\xa9\xa1\xa3""binomial_cdf(n,p,k) \xce\xaa\xd7\xee\xb6\xe0 k \xb4\xce\xb3\xc9\xb9\xa6\xb5\xc4\xb8\xc5\xc2\xca\xa1\xa3""binomial_icdf(n,p,t) \xb7\xb5\xbb\xd8\xca\xb9 binomial_cdf(n,p,k)>=t \xb5\xc4\xd7\xee\xd0\xa1 k", "10,.5,4", 0, CAT_CATEGORY_PROBA},
+
+    {"bisector(A,B,C)", 0, "\xbd\xc7 AB\xa1\xa2""AC \xb5\xc4\xbd\xc7\xc6\xbd\xb7\xd6\xcf\xdf", "1,i,2+i", 0,CAT_CATEGORY_2D},
+
+  {"bitxor", "bitxor", "\xd2\xec\xbb\xf2", "#bitxor(1,2)", 0, CAT_CATEGORY_PROGCMD},
+
+  {"black", "black", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=black", 0, CAT_CATEGORY_PROGCMD},
+
+  {"blue", "blue", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=blue", 0, CAT_CATEGORY_PROGCMD},
+
+  {"camembert(list)", 0, "list \xd6\xd0\xd2\xbb\xce\xac\xcd\xb3\xbc\xc6\xd0\xf2\xc1\xd0\xb5\xc4\xb1\xfd\xcd\xbc\xa1\xa3", "[[\"France\",6],[\"Germany\",12],[\"Switzerland\",5]]", 0, CAT_CATEGORY_STATS},
+
+  {"cache_tortue ", "cache_tortue ", "\xd2\xfe\xb2\xd8\xba\xa3\xb9\xea\xa3\xa8\xcd\xbc\xd0\xce\xbb\xad\xcd\xea\xba\xf3\xa3\xa9\xa1\xa3", 0, 0, CAT_CATEGORY_LOGO},
+
+  {"ceil(x)", 0, "\xb2\xbb\xd0\xa1\xd3\xda x \xb5\xc4\xd7\xee\xd0\xa1\xd5\xfb\xca\xfd", "1.2", 0, CAT_CATEGORY_REAL},
+
+  {"center(objet)", 0, "\xd4\xb2\xbb\xf2\xc7\xf2\xd0\xc4\xa1\xa3\xcd\xd6\xd4\xb2/\xcb\xab\xc7\xfa\xcf\xdf\xb7\xb5\xbb\xd8\xd6\xd0\xd0\xc4\xa1\xa2\xd2\xbb\xb8\xf6\xbd\xb9\xb5\xe3\xba\xcd\xc7\xfa\xcf\xdf\xc9\xcf\xd2\xbb\xb5\xe3\xa3\xbb\xc5\xd7\xce\xef\xcf\xdf\xb7\xb5\xbb\xd8\xbd\xb9\xb5\xe3\xba\xcd\xb6\xa5\xb5\xe3\xa1\xa3", "circle(0,1)", "sphere([0,0,0],[1,1,1])", CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
+
+  {"cfactor(p)", 0, "\xd4\xda\xb8\xb4\xca\xfd\xd3\xf2\xc9\xcf\xb7\xd6\xbd\xe2\xd2\xf2\xca\xbd\xa1\xa3", "x^4-1", 0, CAT_CATEGORY_ALGEBRA | (CAT_CATEGORY_COMPLEXNUM << 8)},
+
+  {"char(liste)", 0, "\xbd\xab ASCII \xc2\xeb\xc1\xd0\xb1\xed\xd7\xaa\xbb\xbb\xce\xaa\xd7\xd6\xb7\xfb\xb4\xae\xa1\xa3", "[97,98,99]", 0, CAT_CATEGORY_ARIT},
+
+  {"charpoly(M,x)", 0, "\xbe\xd8\xd5\xf3 M \xb9\xd8\xd3\xda\xb1\xe4\xc1\xbf x \xb5\xc4\xcc\xd8\xd5\xf7\xb6\xe0\xcf\xee\xca\xbd\xa1\xa3", "[[1,2],[3,4]],x", 0, CAT_CATEGORY_MATRIX},
+
+  {"circle(center,radius)", 0, "\xd4\xb2", "2+i,3", "1-i,1+i", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8)},
+
+  {"circumcircle(A,B,C)", 0, "Circumcircle", "-1,2+i,3", 0, CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
+  {"clearscreen()", "clearscreen()", "Clear screen.", 0, 0, CAT_CATEGORY_PROGCMD|XCAS_ONLY},
+  {"coeff(p,x,n)", 0, "\xb6\xe0\xcf\xee\xca\xbd p \xd6\xd0 x^n \xb5\xc4\xcf\xb5\xca\xfd\xa1\xa3", 0, 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"comb(n,k)", 0, "\xb7\xb5\xbb\xd8\xd7\xe9\xba\xcf\xca\xfd C(n,k)", "10,4", 0, CAT_CATEGORY_PROBA},
+
+  {"cond(A,[1,2,inf])", 0, "\xbe\xd8\xd5\xf3\xb9\xd8\xd3\xda\xb8\xf8\xb6\xa8\xb7\xb6\xca\xfd\xb5\xc4\xcc\xf5\xbc\xfe\xca\xfd\xa3\xa8\xc4\xac\xc8\xcf\xb7\xb6\xca\xfd 1\xa3\xa9", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"cone(A,v,theta,[h])", 0, "\xd7\xb6\xcc\xe5\xa3\xba\xb6\xa5\xb5\xe3 A\xa1\xa2\xb7\xbd\xcf\xf2 v\xa1\xa2\xb0\xeb\xbd\xc7 theta\xa3\xa8[\xbf\xc9\xb4\xf8\xb8\xdf h \xba\xcd -h]\xa3\xa9", "[0,0,0],[0,0,1],pi/6", "[0,0,0],[0,0,1],pi/6,4", CAT_CATEGORY_3D},
+
+  {"conic(expression)", 0, "\xd3\xc9\xb6\xfe\xb4\xce\xb6\xe0\xcf\xee\xca\xbd\xb7\xbd\xb3\xcc\xbb\xf2 5 \xb8\xf6\xb5\xe3\xb8\xf8\xb3\xf6\xb5\xc4\xd4\xb2\xd7\xb6\xc7\xfa\xcf\xdf", "x^2+x*y+y^2=5", "1,i,2+i,3-i,4+2i", CAT_CATEGORY_2D},
+
+  {"coordinates(object)", 0, "\xa3\xa8\xb5\xd1\xbf\xa8\xb6\xfb\xa3\xa9\xd7\xf8\xb1\xea", "point(1,2)", "point(1,2,3)", CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
+
+  {"conj(z)", 0, "z \xb5\xc4\xb9\xb2\xe9\xee\xb8\xb4\xca\xfd\xa1\xa3", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
+
+  {"correlation(l1,l2)", 0, "\xc1\xd0\xb1\xed l1 \xd3\xeb l2 \xb5\xc4\xcf\xe0\xb9\xd8\xcf\xb5\xca\xfd", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+
+  {"covariance(l1,l2)", 0, "\xc1\xd0\xb1\xed l1 \xd3\xeb l2 \xb5\xc4\xd0\xad\xb7\xbd\xb2\xee", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+
+  {"cpartfrac(p,x)", 0, "p \xb9\xd8\xd3\xda x \xd4\xda\xb8\xb4\xca\xfd\xd3\xf2\xc9\xcf\xb5\xc4\xb2\xbf\xb7\xd6\xb7\xd6\xca\xbd\xb7\xd6\xbd\xe2\xa1\xa3", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA | (CAT_CATEGORY_COMPLEXNUM << 8)},
+
+  {"crayon ", "crayon ", "\xba\xa3\xb9\xea\xbb\xad\xcf\xdf\xb5\xc4\xd1\xd5\xc9\xab", "#crayon red", 0, CAT_CATEGORY_LOGO},
+
+  {"cross(u,v)", 0, "\xcf\xf2\xc1\xbf u \xd3\xeb v \xb5\xc4\xb2\xe6\xbb\xfd\xa1\xa3","[1,2,3],[0,1,3]", 0, CAT_CATEGORY_LINALG},
+
+  {"csolve(equation,x)", 0, "\xd4\xda\xb8\xb4\xca\xfd\xd3\xf2\xbe\xab\xc8\xb7\xc7\xf3\xbd\xe2\xb7\xbd\xb3\xcc\xa3\xa8\xbb\xf2\xb6\xe0\xcf\xee\xca\xbd\xb7\xbd\xb3\xcc\xd7\xe9\xa3\xa9\xa1\xa3","x^2+x+1=0", 0, CAT_CATEGORY_SOLVE| (CAT_CATEGORY_COMPLEXNUM << 8)},
+
+  {"cube(A,B,C)", 0, "\xc0\xe2\xce\xaa AB\xa1\xa2\xd2\xbb\xb8\xf6\xc3\xe6\xd4\xda\xc6\xbd\xc3\xe6 ABC \xc4\xda\xb5\xc4\xc1\xa2\xb7\xbd\xcc\xe5", "[0,0,0],[1,0,0],[0,1,0]","[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", CAT_CATEGORY_3D},
+
+  {"curl(u,vars)", 0, "\xcf\xf2\xc1\xbf u \xb5\xc4\xd0\xfd\xb6\xc8\xa1\xa3", "[2*x*y,x*z,y*z],[x,y,z]", 0, CAT_CATEGORY_LINALG},
+
+  {"cyan", "cyan", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=cyan", 0, CAT_CATEGORY_PROGCMD},
+
+  {"cylinder(A,v,r,[h])", 0, "\xd6\xe1 A,v\xa1\xa2\xb0\xeb\xbe\xb6 r \xb5\xc4\xd4\xb2\xd6\xf9\xa3\xa8[\xbf\xc9\xb4\xf8\xb8\xdf h]\xa3\xa9", "[0,0,0],[0,1,0],2", "[0,0,0],[0,1,0],2,3", CAT_CATEGORY_3D},
+
+  {"debug(f(args))", 0, "\xb5\xa5\xb2\xbd\xc4\xa3\xca\xbd\xd4\xcb\xd0\xd0\xd3\xc3\xbb\xa7\xba\xaf\xca\xfd f\xa1\xa3", 0, 0, CAT_CATEGORY_PROG},
+
+  {"degree(p,x)", 0, "\xb6\xe0\xcf\xee\xca\xbd p \xb9\xd8\xd3\xda x \xb5\xc4\xb4\xce\xca\xfd\xa1\xa3", "x^4-1", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"denom(x)", 0, "\xb1\xed\xb4\xef\xca\xbd x \xb5\xc4\xb7\xd6\xc4\xb8\xa1\xa3", "3/4", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"desolve(equation,t,y)", 0, "\xbe\xab\xc8\xb7\xc7\xf3\xbd\xe2\xce\xa2\xb7\xd6\xb7\xbd\xb3\xcc\xa1\xa3", "desolve([y'+y=exp(x),y(0)=1])", "[y'=[[1,2],[2,1]]*y+[x,x+1],y(0)=[1,2]]", CAT_CATEGORY_SOLVE | (CAT_CATEGORY_CALCULUS << 8)},
+
+  {"det(A)", 0, "\xbe\xd8\xd5\xf3 A \xb5\xc4\xd0\xd0\xc1\xd0\xca\xbd\xa1\xa3", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"diff(f,var,[n])", 0, "\xb1\xed\xb4\xef\xca\xbd f \xb6\xd4 var \xb5\xc4\xb5\xbc\xca\xfd\xa3\xa8n \xbd\xd7\xa3\xac\xc4\xac\xc8\xcf 1\xa3\xa9\xa1\xa3\xc0\xfd\xc8\xe7 diff(sin(x),x)\xa1\xa2""diff(x^3,x,2)\xa1\xa3\xb6\xd4 x \xc7\xf3\xb5\xbc\xbf\xc9\xd3\xc3 f'\xa3\xa8\xbf\xec\xbd\xdd\xbc\xfc F3\xa3\xa9\xa1\xa3var \xce\xaa\xb1\xe4\xc1\xbf\xc1\xd0\xb1\xed\xca\xb1\xc7\xf3\xcc\xdd\xb6\xc8\xa1\xa3", "sin(x),x", "sin(x^2),x,3", CAT_CATEGORY_CALCULUS},
+
+  {"display", "display", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=red", 0, CAT_CATEGORY_PROGCMD},
+
+  {"disque n", "disque ", "\xd3\xeb\xba\xa3\xb9\xea\xcf\xe0\xc7\xd0\xb5\xc4\xca\xb5\xd0\xc4\xd4\xb2\xa3\xac\xb0\xeb\xbe\xb6 n\xa1\xa3""disque n,theta \xbb\xad theta \xb6\xc8\xb5\xc4\xca\xb5\xd0\xc4\xc9\xc8\xd0\xce\xa3\xbb""disque n,theta,segment \xbb\xad\xd4\xb2\xbb\xa1\xb6\xce\xa1\xa3", "#disque 30", "#disque(30,90)", CAT_CATEGORY_LOGO},
+
+  {"dodecahedron(A,B,C)", 0, "\xc0\xe2 AB\xa1\xa2\xd2\xbb\xb8\xf6\xc3\xe6\xd4\xda\xc6\xbd\xc3\xe6 ABC \xc4\xda\xb5\xc4\xd5\xfd\xca\xae\xb6\xfe\xc3\xe6\xcc\xe5", "[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", 0, CAT_CATEGORY_3D},
+
+  {"dot(a,b)", 0, "\xc1\xbd\xb8\xf6\xcf\xf2\xc1\xbf\xb5\xc4\xb5\xe3\xbb\xfd\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc *", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_LINALG},
+
+  {"draw_arc(x1,y1,rx,ry,theta1,theta2,c)", 0, "\xcf\xf1\xcb\xd8\xbb\xaf\xb5\xc4\xcd\xd6\xd4\xb2\xbb\xa1\xa1\xa3", "100,100,60,80,0,pi,magenta", 0, CAT_CATEGORY_PROGCMD},
+
+  {"draw_circle(x1,y1,r,c)", 0, "\xcf\xf1\xcb\xd8\xbb\xaf\xd4\xb2\xa1\xa3\xd1\xa1\xcf\xee\xa3\xba""filled\xa3\xa8\xca\xb5\xd0\xc4\xa3\xa9", "100,100,60,cyan+filled", 0, CAT_CATEGORY_PROGCMD},
+
+  {"draw_line(x1,y1,x2,y2,c)", 0, "\xcf\xf1\xcb\xd8\xbb\xaf\xd6\xb1\xcf\xdf\xa1\xa3", "100,50,300,200,blue", 0, CAT_CATEGORY_PROGCMD},
+
+  {"draw_pixel(x,y,color)", 0, "\xb8\xf8\xcf\xf1\xcb\xd8 x,y \xd7\xc5\xc9\xab\xa1\xa3""draw_pixel() \xd3\xc3\xd3\xda\xcd\xac\xb2\xbd\xc6\xc1\xc4\xbb\xa1\xa3", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"draw_polygon([[x1,y1],...],c)", 0, "\xcf\xf1\xcb\xd8\xbb\xaf\xb6\xe0\xb1\xdf\xd0\xce\xa1\xa3", "[[100,50],[30,20],[60,70]],red+filled", 0, CAT_CATEGORY_PROGCMD},
+
+  {"draw_rectangle(x,y,w,h,c)", 0, "\xbe\xd8\xd0\xce\xa1\xa3", "100,50,30,20,red+filled", 0, CAT_CATEGORY_PROGCMD},
+
+  {"draw_string(s,x,y,c)", 0, "\xd4\xda\xcf\xf1\xcb\xd8 x,y \xb4\xa6\xcf\xd4\xca\xbe\xd7\xd6\xb7\xfb\xb4\xae s", "\"Bonjour\",80,60", 0, CAT_CATEGORY_PROGCMD},
+
+  {"egcd(A,B)", 0, "\xc7\xf3\xb6\xe0\xcf\xee\xca\xbd U,V,D \xca\xb9 A*U+B*V=D=gcd(A,B)","x^2+3x+1,x^2-5x-1", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"elif test", "elif ", "\xbc\xb6\xc1\xaa\xcc\xf5\xbc\xfe\xb2\xe2\xca\xd4", 0, 0, CAT_CATEGORY_PROG},
+
+  {"ellipse(F1,F2,M)", 0, "\xd3\xc9\xc1\xbd\xb8\xf6\xbd\xb9\xb5\xe3\xba\xcd\xd2\xbb\xb5\xe3\xc8\xb7\xb6\xa8\xb5\xc4\xcd\xd6\xd4\xb2", "-1,1,2", 0, CAT_CATEGORY_2D},
+
+  {"eigenvals(A)", 0, "Eigenvalues of matrix  A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX |XCAS_ONLY},
+  {"eigenvects(A)", 0, "\xbe\xd8\xd5\xf3 A \xb5\xc4\xcc\xd8\xd5\xf7\xcf\xf2\xc1\xbf\xa1\xa3", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"equation(object)", 0, "\xb5\xd1\xbf\xa8\xb6\xfb\xb7\xbd\xb3\xcc\xa1\xa3\xb2\xce\xca\xfd\xb7\xbd\xb3\xcc\xd3\xc3 parameq\xa1\xa3", "circle(0,1)", "ellipse(-1,1,3)", CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
+
+  {"erf(x)", 0, "x \xb5\xc4\xce\xf3\xb2\xee\xba\xaf\xca\xfd\xa1\xa3", "1.2", 0, CAT_CATEGORY_PROBA},
+
+  {"erfc(x)", 0, "x \xb5\xc4\xd3\xe0\xce\xf3\xb2\xee\xba\xaf\xca\xfd\xa1\xa3", "1.2", 0, CAT_CATEGORY_PROBA},
+
+  {"euler(n)",0,"\xc5\xb7\xc0\xad\xba\xaf\xca\xfd\xa3\xba\xd0\xa1\xd3\xda n \xc7\xd2\xd3\xeb n \xbb\xa5\xcb\xd8\xb5\xc4\xd5\xfb\xca\xfd\xb8\xf6\xca\xfd","25",0,CAT_CATEGORY_ARIT},
+
+  {"eval(f)", 0, "\xd6\xb4\xd0\xd0 f\xa1\xa3", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"evalc(z)", 0, "\xb0\xd1 z \xd0\xb4\xb3\xc9 x+i*y\xa1\xa3", "1/(1+i*sqrt(3))", 0, CAT_CATEGORY_COMPLEXNUM},
+
+  {"exact(x)", 0, "\xb0\xd1 x \xd7\xaa\xbb\xbb\xce\xaa\xd3\xd0\xc0\xed\xca\xfd\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc shift S-D", "1.2", 0, CAT_CATEGORY_REAL},
+
+  {"exp2trig(expr)", 0, "\xb0\xd1\xb8\xb4\xd6\xb8\xca\xfd\xd7\xaa\xbb\xbb\xce\xaa sin/cos", "exp(i*x)", 0, CAT_CATEGORY_TRIG},
+
+  {"exponential_regression(Xlist,Ylist)", 0, "\xd6\xb8\xca\xfd\xbb\xd8\xb9\xe9\xa1\xa3", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+
+  {"exponential_regression_plot(Xlist,Ylist)", 0, "\xd6\xb8\xca\xfd\xbb\xd8\xb9\xe9\xc7\xfa\xcf\xdf\xcd\xbc\xa1\xa3", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];exponential_regression_plot(X,Y);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
+
+  {"exponentiald(lambda,x)", 0, "\xb2\xce\xca\xfd lambda \xb5\xc4\xd6\xb8\xca\xfd\xb7\xd6\xb2\xbc\xa1\xa3""exponentiald_cdf(lambda,x)\xa3\xbaP(\xd6\xb8\xca\xfd\xb7\xd6\xb2\xbc<=x)\xa3\xac\xc8\xe7 exponentiald_cdf(2,3)\xa3\xbb""exponentiald_icdf(lambda,t) \xb7\xb5\xbb\xd8\xca\xb9\xb8\xc5\xc2\xca\xce\xaa t \xb5\xc4 x\xa3\xac\xc8\xe7 exponentiald_icdf(2,0.95)", "5.1,3.4", 0, CAT_CATEGORY_PROBA},
+
+  {"extend", 0, "\xba\xcf\xb2\xa2\xc1\xbd\xb8\xf6\xc1\xd0\xb1\xed\xa1\xa3\xd7\xa2\xd2\xe2 + \xb2\xbb\xba\xcf\xb2\xa2\xc1\xd0\xb1\xed\xa3\xa8\xcf\xf2\xc1\xbf\xb2\xc5\xcf\xe0\xbc\xd3\xa3\xa9","#l1.extend(l2)", 0, CAT_CATEGORY_LIST},
+
+  {"factor(p,[x])", 0, "\xb6\xd4\xb6\xe0\xcf\xee\xca\xbd p \xd2\xf2\xca\xbd\xb7\xd6\xbd\xe2\xa3\xa8\xd5\xfb\xca\xfd\xd3\xc3 ifactor\xa3\xa9\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc p=>*", "x^4-1", "x^6+1,sqrt(3)", CAT_CATEGORY_ALGEBRA| (CAT_CATEGORY_POLYNOMIAL << 8)},
+
+  {"filled", "filled", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"float(x)", 0, "\xb0\xd1 x \xd7\xaa\xbb\xbb\xce\xaa\xb8\xa1\xb5\xe3\xd6\xb5\xa1\xa3", "pi", 0, CAT_CATEGORY_REAL},
+
+  {"floor(x)", 0, "\xb2\xbb\xb4\xf3\xd3\xda x \xb5\xc4\xd7\xee\xb4\xf3\xd5\xfb\xca\xfd", "pi", 0, CAT_CATEGORY_REAL},
+
+  {"fourier_an(f,x,T,n,a)", 0, "f \xb5\xc4\xd3\xe0\xcf\xd2\xb8\xb5\xc0\xef\xd2\xb6\xcf\xb5\xca\xfd", "x^2,x,2*pi,n,-pi", 0, CAT_CATEGORY_CALCULUS},
+
+  {"fourier_bn(f,x,T,n,a)", 0, "f \xb5\xc4\xd5\xfd\xcf\xd2\xb8\xb5\xc0\xef\xd2\xb6\xcf\xb5\xca\xfd", "x^2,x,2*pi,n,-pi", 0, CAT_CATEGORY_CALCULUS},
+
+  {"fourier_cn(f,x,T,n,a)", 0, "f \xb5\xc4\xb8\xb4\xd6\xb8\xca\xfd\xb8\xb5\xc0\xef\xd2\xb6\xcf\xb5\xca\xfd", "x^2,x,2*pi,n,-pi", 0, CAT_CATEGORY_CALCULUS},
+
+  {"from math/... import *", "from math import *", "\xb7\xc3\xce\xca math \xbb\xf2\xcb\xe6\xbb\xfa\xba\xaf\xca\xfd\xa3\xa8[random]\xa3\xa9\xa1\xa2\xd2\xd4\xbc\xb0\xd3\xa2\xce\xc4\xc3\xfc\xc1\xee\xc3\xfb\xb5\xc4\xba\xa3\xb9\xea\xc4\xa3\xbf\xe9 [turtle]\xa1\xa3KhiCAS \xd6\xd0\xce\xde\xd0\xe8 import math", "#from random import *", "#from turtle import *", CAT_CATEGORY_PROG},
+
+  {"fsolve(equation,x=a..b)", 0, "\xd4\xda\xc7\xf8\xbc\xe4 a..b \xc4\xda\xbd\xfc\xcb\xc6\xc7\xf3\xbd\xe2\xb7\xbd\xb3\xcc\xa1\xa3","cos(x)=x,x=0..1", "cos(x)-x,x=0.0", CAT_CATEGORY_SOLVE},
+
+  {"gauss(q)", 0, "\xb6\xfe\xb4\xce\xd0\xcd\xbb\xaf\xbc\xf2", "x^2+x*y+x*z+y^2+z^2,[x,y,z]", 0, CAT_CATEGORY_LINALG},
+
+  {"gcd(a,b,...)", 0, "\xd7\xee\xb4\xf3\xb9\xab\xd4\xbc\xca\xfd\xa1\xa3\xc0\xa9\xd5\xb9 GCD \xb2\xce\xbc\xfb iegcd \xd3\xeb egcd\xa1\xa3", "23,13", "x^2-1,x^3-1", CAT_CATEGORY_ARIT | (CAT_CATEGORY_POLYNOMIAL << 8)},
+
+  {"gl_x", "gl_x", "\xbb\xe6\xcd\xbc\xc9\xe8\xd6\xc3 X\xa3\xbagl_x=xmin..xmax", "#gl_x=0..2", 0, CAT_CATEGORY_PROGCMD},
+
+  {"gl_y", "gl_y", "\xbb\xe6\xcd\xbc\xc9\xe8\xd6\xc3 Y\xa3\xbagl_y=ymin..ymax", "#gl_y=-1..1", 0, CAT_CATEGORY_PROGCMD},
+
+  {"gramschmidt(M)", 0, "Gram-Schmidt \xd5\xfd\xbd\xbb\xbb\xaf\xa3\xa8\xd0\xd0\xcf\xf2\xc1\xbf\xbb\xf2\xcf\xdf\xd0\xd4\xce\xde\xb9\xd8\xcf\xf2\xc1\xbf\xd7\xe9\xa3\xa9", "[[1,2,3],[4,5,6]]", "[1,1+x],(p,q)->integrate(p*q,x,-1,1)", CAT_CATEGORY_LINALG},
+
+  {"green", "green", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=green", 0, CAT_CATEGORY_PROGCMD},
+
+  {"halftan(expr)", 0, "\xd3\xc3 tan(angle/2) \xb1\xed\xca\xbe cos\xa1\xa2sin\xa1\xa2tan\xa1\xa3","cos(x)", 0, CAT_CATEGORY_TRIG},
+
+  {"hermite(n)", 0, "\xb5\xda n \xb8\xf6 Hermite \xb6\xe0\xcf\xee\xca\xbd", "10", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"hilbert(n)", 0, "n \xbd\xd7 Hilbert \xbe\xd8\xd5\xf3\xa1\xa3", "4", 0, CAT_CATEGORY_MATRIX},
+
+  {"histogram(list,min,size)", 0, "list \xca\xfd\xbe\xdd\xb5\xc4\xd6\xb1\xb7\xbd\xcd\xbc\xa3\xac\xb7\xd6\xd7\xe9\xb4\xd3 min \xbf\xaa\xca\xbc\xa1\xa2\xd7\xe9\xbf\xed size\xa1\xa3","ranv(100,uniformd,0,1),0,0.1", 0, CAT_CATEGORY_STATS},
+
+  {"homothety(center,ratio,object)", 0, "\xb6\xd4\xcf\xf3\xb0\xb4\xb1\xc8\xc0\xfd ratio \xb5\xc4\xd6\xd0\xd0\xc4\xb6\xd4\xb3\xc6\xa3\xa8\xce\xbb\xcb\xc6\xa3\xa9\xcf\xf1", "0,2,circle(1,1)", 0, CAT_CATEGORY_2D },
+
+  {"hyperbola(F1,F2,M)", 0, "\xd3\xc9\xc1\xbd\xb8\xf6\xbd\xb9\xb5\xe3\xba\xcd\xd2\xbb\xb5\xe3\xb8\xf8\xb3\xf6\xb5\xc4\xcb\xab\xc7\xfa\xcf\xdf", "-2-i,2+i,1", 0, CAT_CATEGORY_2D},
+
+  {"iabcuv(a,b,c)", 0, "\xc7\xf3\xd5\xfb\xca\xfd u,v \xca\xb9 a*u+b*v=c","23,13,15", 0, CAT_CATEGORY_ARIT},
+
+  {"ichinrem([a,m],[b,n])", 0,"\xd5\xfb\xca\xfd\xd6\xd0\xb9\xfa\xca\xa3\xd3\xe0\xb6\xa8\xc0\xed\xa3\xba""a mod m \xc7\xd2 b mod n", "[3,13],[2,7]", 0, CAT_CATEGORY_ARIT},
+
+  {"icosahedron(A,B,C)", 0, "\xd6\xd0\xd0\xc4 A\xa1\xa2\xb6\xa5\xb5\xe3 B \xb5\xc4\xd5\xfd\xb6\xfe\xca\xae\xc3\xe6\xcc\xe5\xa3\xa8\xc6\xbd\xc3\xe6 ABC \xba\xac\xbe\xe0 B \xd7\xee\xbd\xfc 5 \xb6\xa5\xb5\xe3\xd6\xae\xd2\xbb\xa3\xa9", "[0,0,0],[sqrt(5),0,0],[1,2,0]", 0, CAT_CATEGORY_3D},
+
+   {"idivis(n)", 0, "\xb7\xb5\xbb\xd8\xd5\xfb\xca\xfd n \xb5\xc4\xd4\xbc\xca\xfd\xc1\xd0\xb1\xed\xa1\xa3", "10", 0, CAT_CATEGORY_ARIT},
+
+  {"idn(n)", 0, "n \xbd\xd7\xb5\xa5\xce\xbb\xbe\xd8\xd5\xf3", "4", 0, CAT_CATEGORY_MATRIX},
+
+  {"iegcd(a,b)", 0, "\xc7\xf3\xd5\xfb\xca\xfd u,v,d \xca\xb9 a*u+b*v=d=gcd(a,b)","23,13", 0, CAT_CATEGORY_ARIT},
+
+  {"ifactor(n)", 0, "\xd5\xfb\xca\xfd\xd2\xf2\xca\xbd\xb7\xd6\xbd\xe2\xa3\xa8\xb2\xbb\xd2\xcb\xcc\xab\xb4\xf3\xa3\xa1\xa3\xa9\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc n=>*", 0, 0, CAT_CATEGORY_ARIT},
+
+  {"ilaplace(f,s,x)", 0, "f \xb5\xc4\xc0\xad\xc6\xd5\xc0\xad\xcb\xb9\xc4\xe6\xb1\xe4\xbb\xbb", "s/(s^2+1),s,x", 0, CAT_CATEGORY_CALCULUS},
+
+  {"im(z)", 0, "\xd0\xe9\xb2\xbf\xa1\xa3", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
+
+  {"incircle(A,B,C)", 0, "Incircle", "-1,2+i,3", 0, CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
+  {"inf", "inf", "\xd5\xfd\xce\xde\xc7\xee\xa1\xa3\xb8\xba\xce\xde\xc7\xee\xd3\xc3 -inf\xa3\xac\xce\xde\xb7\xfb\xba\xc5/\xb8\xb4\xce\xde\xc7\xee\xd3\xc3 infinity\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc shift INS", "oo", 0, CAT_CATEGORY_CALCULUS},
+
+  {"input()", "input()", "\xb4\xd3\xbc\xfc\xc5\xcc\xb6\xc1\xc8\xeb\xd7\xd6\xb7\xfb\xb4\xae", 0, 0, CAT_CATEGORY_PROG},
+
+  {"integrate(f,x,[a,b])", 0, "f \xb6\xd4 x \xb5\xc4\xd4\xad\xba\xaf\xca\xfd\xa3\xac\xc8\xe7 integrate(x*sin(x),x)\xa1\xa3\xb6\xa8\xbb\xfd\xb7\xd6\xbc\xd3\xbf\xc9\xd1\xa1\xb2\xce\xca\xfd a \xba\xcd b\xa3\xac\xc8\xe7 integrate(x*sin(x),x,0,pi)\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc SHIFT F3\xa1\xa3", "x*sin(x),x", "cos(x)/(1+x^4),x,0,inf", CAT_CATEGORY_CALCULUS},
+
+  {"interp(X,Y)", 0, "\xd4\xda\xb5\xe3 (xi,yi) \xb4\xa6 Lagrange \xb2\xe5\xd6\xb5\xa3\xa8X \xce\xaa xi \xc1\xd0\xb1\xed\xa1\xa2Y \xce\xaa yi \xc1\xd0\xb1\xed\xa3\xa9\xa1\xa3\xb5\xda\xc8\xfd\xb2\xce\xca\xfd\xb8\xf8 interp \xca\xb1\xb7\xb5\xbb\xd8\xb2\xee\xc9\xcc\xc1\xd0\xb1\xed\xa1\xa3", "[1,2,3,4,5],[0,1,3,4,4]", "[1,2,3,4,5],[0,1,3,4,4],interp", CAT_CATEGORY_POLYNOMIAL},
+
+  {"inter(A,B)", 0, "Intersections list. Run single_inter if intersection is unique.", "line(y=x),circle(0,1)", 0, CAT_CATEGORY_3D | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
+  {"inv(A)", 0, "A \xb5\xc4\xc4\xe6\xbe\xd8\xd5\xf3\xa1\xa3", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"iquo(a,b)", 0, "a \xb3\xfd\xd2\xd4 b \xb5\xc4\xd5\xfb\xca\xfd\xc9\xcc\xa1\xa3", "23,13", 0, CAT_CATEGORY_ARIT},
+
+  {"irem(a,b)", 0,"a \xb3\xfd\xd2\xd4 b \xb5\xc4\xd5\xfb\xca\xfd\xd3\xe0\xca\xfd\xa1\xa3", "23,13", 0, CAT_CATEGORY_ARIT},
+
+  {"isprime(n)", 0, "n \xce\xaa\xcb\xd8\xca\xfd\xb7\xb5\xbb\xd8 1\xa3\xac\xb7\xf1\xd4\xf2\xb7\xb5\xbb\xd8 0\xa1\xa3", "11", "10", CAT_CATEGORY_ARIT},
+
+  {"is_collinear(A,B,C)", 0, "Returns 1 if A, B, C are collinear, 0 otherwise", "1,i,-1", "i,0,-i", CAT_CATEGORY_2D | XCAS_ONLY },
+  {"is_concyclic(A,B,C,D)", 0, "Returns 1 if A, B, C, D are concyclic, 0 otherwise", "1,i,-1,-i", "1,i,0,-i", CAT_CATEGORY_2D | XCAS_ONLY },
+  {"is_element(A,G)", 0, "Returns 1 if A belongs to G, 0 otherwise.", "point(0),circle(0,1)", "point(i),square(0,1)", CAT_CATEGORY_2D | XCAS_ONLY },
+  {"is_parallel(D,E)", 0, "Returns 1 if D and E are parallel, 0 otherwise", "line(y=x),line(y=-x)", "line(y=x),line(y=x+1)", CAT_CATEGORY_2D | XCAS_ONLY },
+  {"is_perpendicular(D,E)", 0, "Returns 1 if D and E are perpendicular, 0 otherwise", "line(y=x),line(y=-x)", "line(y=x),line(y=x+1)", CAT_CATEGORY_2D | XCAS_ONLY },
+  {"jordan(A)", 0, "\xbe\xd8\xd5\xf3 A \xb5\xc4 Jordan \xb1\xea\xd7\xbc\xd0\xce\xa3\xba\xb7\xb5\xbb\xd8 P \xba\xcd D \xca\xb9 P^-1*A*P=D", "[[1,2],[3,4]]", "[[1,1,-1,2,-1],[2,0,1,-4,-1],[0,1,1,1,1],[0,1,2,0,1],[0,0,-3,3,-1]]", CAT_CATEGORY_MATRIX},
+
+  {"laguerre(n,a,x)", 0, "\xb5\xda n \xb8\xf6 Laguerre \xb6\xe0\xcf\xee\xca\xbd\xa3\xa8\xc4\xac\xc8\xcf a=0\xa3\xa9\xa1\xa3", "10", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"laplace(f,x,s)", 0, "f \xb5\xc4\xc0\xad\xc6\xd5\xc0\xad\xcb\xb9\xb1\xe4\xbb\xbb","sin(x),x,s", 0, CAT_CATEGORY_CALCULUS},
+
+  {"lcm(a,b,...)", 0, "\xd7\xee\xd0\xa1\xb9\xab\xb1\xb6\xca\xfd\xa1\xa3", "23,13", "x^2-1,x^3-1", CAT_CATEGORY_ARIT | (CAT_CATEGORY_POLYNOMIAL << 8)},
+
+  {"lcoeff(p,x)", 0, "\xb6\xe0\xcf\xee\xca\xbd p \xb9\xd8\xd3\xda x \xb5\xc4\xca\xd7\xcf\xee\xcf\xb5\xca\xfd\xa1\xa3", "x^4-1", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"legendre(n)", 0, "\xb5\xda n \xb8\xf6 Legendre \xb6\xe0\xcf\xee\xca\xbd\xa1\xa3", "10", "10,t", CAT_CATEGORY_POLYNOMIAL},
+
+  {"limit(f,x=a)", 0, "f \xd4\xda x=a \xb4\xa6\xb5\xc4\xbc\xab\xcf\xde\xa1\xa3\xbc\xd3 1 \xbb\xf2 -1 \xb1\xed\xca\xbe\xb5\xa5\xb2\xe0\xbc\xab\xcf\xde\xa3\xac\xc8\xe7 limit(sin(x)/x,x=0) \xbb\xf2 limit(abs(x)/x,x=0,1)\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc SHIFT MIXEDFRAC", "sin(x)/x,x=0", "exp(-1/x),x=0,1", CAT_CATEGORY_CALCULUS},
+
+  {"line(equation)", 0, "\xd6\xb1\xcf\xdf\xb7\xbd\xb3\xcc", "y=2x+1", "[0,0,0],[1,-2,3]", CAT_CATEGORY_PROGCMD |(CAT_CATEGORY_2D << 8)|(CAT_CATEGORY_2D << 16)},
+
+  {"line_width_", "line_width_", "\xcf\xdf\xbf\xed\xc7\xb0\xd7\xba\xa3\xa8""2 \xb5\xbd 8\xa3\xa9", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"linear_regression(Xlist,Ylist)", 0, "\xcf\xdf\xd0\xd4\xbb\xd8\xb9\xe9\xa1\xa3", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+
+  {"linear_regression_plot(Xlist,Ylist)", 0, "\xcf\xdf\xd0\xd4\xbb\xd8\xb9\xe9\xc7\xfa\xcf\xdf\xcd\xbc\xa1\xa3", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];linear_regression_plot(X,Y);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
+
+  {"linetan(expr,x,x0)", 0, "\xc7\xfa\xcf\xdf\xd4\xda x=x0 \xb4\xa6\xb5\xc4\xc7\xd0\xcf\xdf\xa1\xa3", "sin(x),x,pi/2", 0, CAT_CATEGORY_PLOT},
+
+  {"linsolve([eq1,eq2,..],[x,y,..])", 0, "\xbd\xe2\xcf\xdf\xd0\xd4\xb7\xbd\xb3\xcc\xd7\xe9\xa1\xa3\xbf\xc9\xd3\xc3 lu \xb5\xc4\xca\xe4\xb3\xf6\xd7\xf6 O(n^2) \xc7\xf3\xbd\xe2\xa3\xa8\xbc\xfb\xca\xbe\xc0\xfd 2\xa3\xa9\xa1\xa3","[x+y=1,x-y=2],[x,y]", "#p,l,u:=lu([[1,2],[3,4]]); linsolve(p,l,u,[5,6])", CAT_CATEGORY_SOLVE | (CAT_CATEGORY_LINALG <<8) | (CAT_CATEGORY_MATRIX << 16)},
+
+  {"logarithmic_regression(Xlist,Ylist)", 0, "\xb6\xd4\xca\xfd\xbb\xd8\xb9\xe9\xa1\xa3", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+
+  {"logarithmic_regression_plot(Xlist,Ylist)", 0, "\xb6\xd4\xca\xfd\xbb\xd8\xb9\xe9\xc7\xfa\xcf\xdf\xcd\xbc\xa1\xa3", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];logarithmic_regression_plot(X,Y);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
+
+  {"lu(A)", 0, "\xbe\xd8\xd5\xf3 A \xb5\xc4 LU \xb7\xd6\xbd\xe2\xa3\xbaP*A=L*U", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"magenta", "magenta", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=magenta", 0, CAT_CATEGORY_PROGCMD},
+
+  {"map(f,l)", 0, "\xb0\xd1\xba\xaf\xca\xfd f \xd3\xb3\xc9\xe4\xb5\xbd\xc1\xd0\xb1\xed l \xb5\xc4\xd4\xaa\xcb\xd8\xc9\xcf\xa1\xa3","lambda x:x*x,[1,2,3]", 0, CAT_CATEGORY_LIST},
+
+  {"matpow(A,n)", 0, "\xb7\xb5\xbb\xd8\xbe\xd8\xd5\xf3 A^n", "[[1,2],[3,4]],n","#assume(n>=1);matpow([[0,2],[0,4]],n)",  CAT_CATEGORY_MATRIX},
+
+  {"matrix(r,c,func)", 0, "\xd3\xc9\xb6\xa8\xd2\xe5\xba\xaf\xca\xfd\xc9\xfa\xb3\xc9\xbe\xd8\xd5\xf3\xa1\xa3", "2,3,(j,k)->j^k", 0, CAT_CATEGORY_MATRIX},
+
+  {"mean(l)", 0, "\xc1\xd0\xb1\xed l \xb5\xc4\xcb\xe3\xca\xf5\xc6\xbd\xbe\xf9\xd6\xb5", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
+
+  {"median(l)", 0, "\xd6\xd0\xce\xbb\xca\xfd", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
+
+  {"median_line(A,B,C)", 0, "\xc8\xfd\xbd\xc7\xd0\xce ABC \xd6\xd0\xd3\xc9\xb6\xa5\xb5\xe3 A \xd2\xfd\xb3\xf6\xb5\xc4\xd6\xd0\xcf\xdf", "1,i,2+i", 0,CAT_CATEGORY_2D},
+
+  {"midpoint(A,B)", 0, "\xcf\xdf\xb6\xce AB \xb5\xc4\xd6\xd0\xb5\xe3", "1,i", 0,CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8)},
+
+  {"montre_tortue ", "montre_tortue ", "\xcf\xd4\xca\xbe\xba\xa3\xb9\xea", 0, 0, CAT_CATEGORY_LOGO},
+
+  {"mult_c_conjugate", 0, "\xb3\xcb\xd2\xd4\xb8\xb4\xb9\xb2\xe9\xee\xa1\xa3", "1+2*i", 0,  (CAT_CATEGORY_COMPLEXNUM << 8)},
+
+  {"mult_conjugate", 0, "\xb3\xcb\xd2\xd4\xb9\xb2\xe9\xee\xa3\xa8\xb8\xf9\xca\xbd\xa3\xa9\xa1\xa3", "sqrt(2)-sqrt(3)", 0, CAT_CATEGORY_ALGEBRA},
+
+  {"normald([mu,sigma],x)", 0, "\xd5\xfd\xcc\xac\xb7\xd6\xb2\xbc\xb8\xc5\xc2\xca\xc3\xdc\xb6\xc8\xa3\xac\xc4\xac\xc8\xcf mu=0\xa1\xa2sigma=1\xa1\xa3normald_cdf([mu,sigma],x)\xa3\xbaP(\xd5\xfd\xcc\xac<=x)\xa3\xac\xc8\xe7 normald_cdf(1.96)\xa3\xbbnormald_icdf([mu,sigma],t) \xb7\xb5\xbb\xd8\xca\xb9 P(\xd5\xfd\xcc\xac<=x)=t \xb5\xc4 x\xa3\xac\xc8\xe7 normald_icdf(0.975)", "1.2", 0, CAT_CATEGORY_PROBA},
+
+  {"not(x)", 0, "\xc2\xdf\xbc\xad\xb7\xc7\xa1\xa3", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"numer(x)", 0, "x \xb5\xc4\xb7\xd6\xd7\xd3\xa1\xa3", "3/4", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"octahedron(A,B,C)", 0, "\xc0\xe2 AB\xa1\xa2\xd2\xbb\xb8\xf6\xc3\xe6\xd4\xda\xc6\xbd\xc3\xe6 ABC \xc4\xda\xb5\xc4\xd5\xfd\xb0\xcb\xc3\xe6\xcc\xe5", "[0,0,0],[3,0,0],[0,1,0]", 0, CAT_CATEGORY_3D},
+
+  {"odesolve(f(t,y),[t,y],[t0,y0],t1)", 0, "\xce\xa2\xb7\xd6\xb7\xbd\xb3\xcc y'=f(t,y)\xa1\xa2y(t0)=y0 \xb5\xc4\xbd\xfc\xcb\xc6\xbd\xe2\xd4\xda t=t1 \xb5\xc4\xd6\xb5\xa3\xa8\xbc\xd3 curve \xb2\xce\xca\xfd\xb7\xb5\xbb\xd8 y \xb5\xc4\xd6\xd0\xbc\xe4\xd6\xb5\xa3\xa9", "sin(t*y),[t,y],[0,1],2", "0..pi,(t,v)->{[-v[1],v[0]]},[0,1]", CAT_CATEGORY_SOLVE},
+
+  {"parabola(F,A)", 0, "\xd3\xc9\xbd\xb9\xb5\xe3\xba\xcd\xb6\xa5\xb5\xe3\xb8\xf8\xb3\xf6\xb5\xc4\xc5\xd7\xce\xef\xcf\xdf", "-2-i,2+i", 0, CAT_CATEGORY_2D},
+
+  {"parameq(object)", 0, "\xb2\xce\xca\xfd\xb7\xbd\xb3\xcc\xa1\xa3\xb5\xd1\xbf\xa8\xb6\xfb\xb7\xbd\xb3\xcc\xd3\xc3 equation", "circle(0,1)", "ellipse(-1,1,3)", CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
+
+  {"partfrac(p,x)", 0, "\xb2\xbf\xb7\xd6\xb7\xd6\xca\xbd\xd5\xb9\xbf\xaa\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc p=>+", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA},
+
+  {"pas_de_cote n", "pas_de_cote ", "\xba\xa3\xb9\xea\xba\xe1\xcf\xf2\xcc\xf8 n \xb2\xbd\xa3\xac\xc4\xac\xc8\xcf n=10", "#pas_de_cote 30", 0, CAT_CATEGORY_LOGO},
+
+  {"perpen_bisector(A,B)", 0, "\xcf\xdf\xb6\xce AB \xb5\xc4\xb4\xb9\xd6\xb1\xc6\xbd\xb7\xd6\xcf\xdf", "1,i", 0,CAT_CATEGORY_2D},
+
+  {"plane(equation)", 0, "Plane given by equation or by 3 points", "z=x+y-1", "[0,0,0],[1,0,0],[0,1,0]", CAT_CATEGORY_3D | XCAS_ONLY},
+  {"plot(expr,x)", 0, "\xbb\xe6\xd6\xc6\xb1\xed\xb4\xef\xca\xbd\xa1\xa3\xc0\xfd\xa3\xbaplot(sin(x))\xa1\xa2plot(ln(x),x,0,5)\xa1\xa2plot(x^2-y^2)\xa1\xa2plot(x^2-y^2<1)\xa1\xa2plot(x^2-y^2=1)", "ln(x),x,0,5", "1/x,x=1..5,xstep=1", (CAT_CATEGORY_PLOT << 8) | (CAT_CATEGORY_3D)},
+
+  {"plotfield(f(t,y),[t=tmin..tmax,y=ymin..ymax])", 0, "\xbb\xe6\xd6\xc6\xce\xa2\xb7\xd6\xb7\xbd\xb3\xcc y'=f(t,y) \xb5\xc4\xb3\xa1\xa3\xa8\xbc\xd3 plotode=[t0,y0] \xbf\xc9\xd1\xa1\xbb\xad\xd2\xbb\xcc\xf5\xbd\xe2\xc7\xfa\xcf\xdf\xa3\xa9", "sin(t*y),[t=-3..3,y=-3..3],plotode=[0,1]", 0, CAT_CATEGORY_PLOT},
+
+  {"plotfunc(expr,[x,y])", 0, "Xcas: graph of a 3d function", "x^2-y^2,[x,y]","x^2-y^2,[x=-2..2,y=-2..2],nstep=700", CAT_CATEGORY_PLOT | (CAT_CATEGORY_3D << 8) | XCAS_ONLY },
+  {"plotlist(list)", 0, "\xbb\xe6\xd6\xc6\xd2\xbb\xb8\xf6\xc1\xd0\xb1\xed", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_PLOT},
+
+  {"plotode(f(t,y),[t=tmin..tmax,y],[t0,y0])", 0, "\xbb\xe6\xd6\xc6\xce\xa2\xb7\xd6\xb7\xbd\xb3\xcc y'=f(t,y)\xa1\xa2y(t0)=y0 \xb5\xc4\xbd\xe2\xc7\xfa\xcf\xdf\xa1\xa3", "sin(t*y),[t=-3..3,y],[0,1]", 0, CAT_CATEGORY_PLOT},
+
+  {"plotparam([x,y],t)", 0, "\xb2\xce\xca\xfd\xc7\xfa\xcf\xdf\xa1\xa3\xc0\xfd\xa3\xbaplotparam([sin(3t),cos(2t)],t,0,pi) \xbb\xf2 plotparam(exp(i*t),t,0,pi)", "[sin(3t),cos(2t)],t,0,pi", "[t^2,t^3],t=-1..1,tstep=0.1", CAT_CATEGORY_PLOT},
+
+  {"plotpolar(r,theta)", 0, "\xbc\xab\xd7\xf8\xb1\xea\xc7\xfa\xcf\xdf\xa1\xa3","cos(3*x),x,0,pi", "1/(1+cos(x)),x=0..pi,xstep=0.05", CAT_CATEGORY_PLOT},
+
+  {"plotseq(f(x),x=[u0,m,M],n)", 0, "\xd4\xda [m,M] \xc9\xcf\xbb\xe6\xd6\xc6 f(x) \xd3\xeb\xb5\xdd\xcd\xc6 u_{n+1}=f(u_n)\xa3\xa8\xb3\xf5\xd6\xb5 u0\xa3\xa9\xb5\xc4\xc7\xb0 n \xcf\xee\xa1\xa3","sqrt(2+x),x=[6,0,7],5", 0, CAT_CATEGORY_PLOT},
+
+  {"plus_point", "plus_point", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=blue+plus_point", 0, CAT_CATEGORY_PROGCMD},
+
+  {"point(x,y[,z])", 0, "\xb5\xe3", "1,2", "1,2,3", CAT_CATEGORY_PLOT | (CAT_CATEGORY_2D << 8)},
+
+  {"polygon(list)", 0, "\xd3\xc9\xb6\xa5\xb5\xe3\xc1\xd0\xb1\xed\xb8\xf8\xb3\xf6\xb5\xc4\xb1\xd5\xba\xcf\xb6\xe0\xb1\xdf\xd0\xce\xa1\xa3", "1-i,2+i,3,3-2i", 0, CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) },
+
+  {"polygonscatterplot(Xlist,Ylist)", 0, "\xbb\xe6\xd6\xc6\xb5\xe3\xd3\xeb\xd5\xdb\xcf\xdf\xa1\xa3", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+
+  {"polyhedron(A,B,C,D,...)", 0, "\xb6\xa5\xb5\xe3 A,B,C,D,... \xb5\xc4\xcd\xb9\xb6\xe0\xc3\xe6\xcc\xe5\xa1\xa3", "[0,0,0],[0,5,0],[0,0,5],[1,2,6]", 0, CAT_CATEGORY_3D},
+
+  {"polynomial_regression(Xlist,Ylist,n)", 0, "\xb6\xe0\xcf\xee\xca\xbd\xbb\xd8\xb9\xe9\xa3\xac\xb4\xce\xca\xfd <= n\xa1\xa3", "[1,2,3,4,5],[0,1,3,4,4],2", 0, CAT_CATEGORY_STATS},
+
+  {"polynomial_regression_plot(Xlist,Ylist,n)", 0, "\xb6\xe0\xcf\xee\xca\xbd\xbb\xd8\xb9\xe9\xc7\xfa\xcf\xdf\xa3\xac\xb4\xce\xca\xfd <= n\xa1\xa3", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
+
+  {"power_regression(Xlist,Ylist,n)", 0, "\xc3\xdd\xbb\xd8\xb9\xe9\xa1\xa3", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+
+  {"power_regression_plot(Xlist,Ylist,n)", 0, "\xc3\xdd\xbb\xd8\xb9\xe9\xc7\xfa\xcf\xdf\xcd\xbc", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];power_regression_plot(X,Y);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
+
+  {"powmod(a,n,p)", 0, "\xb7\xb5\xbb\xd8 a^n mod p\xa1\xa3","123,456,789", 0, CAT_CATEGORY_ARIT},
+
+  {"print(expr)", 0, "\xd4\xda\xbf\xd8\xd6\xc6\xcc\xa8\xca\xe4\xb3\xf6 expr", 0, 0, CAT_CATEGORY_PROG},
+
+  {"projection(obj1,obj2)", 0, "obj2 \xd4\xda obj1 \xc9\xcf\xb5\xc4\xcd\xb6\xd3\xb0", "line(y=x),point(2,3)", 0, CAT_CATEGORY_2D },
+
+  {"proot(p)", 0, "\xb7\xb5\xbb\xd8\xb6\xe0\xcf\xee\xca\xbd p \xb5\xc4\xca\xb5\xb8\xf9\xd3\xeb\xb8\xb4\xb8\xf9\xa1\xa3\xc0\xfd\xa3\xbaproot([1,2.1,3,4.2]) \xbb\xf2 proot(x^3+2.1*x^2+3x+4.2)", "x^3+2.1*x^2+3x+4.2", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"purge(x)", 0, "\xc7\xe5\xb3\xfd\xb1\xe4\xc1\xbf x \xb5\xc4\xb8\xb3\xd6\xb5\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc SHIFT-FORMAT", 0, 0, CAT_CATEGORY_PROGCMD|(CAT_CATEGORY_SOFUS<<8)},
+
+  {"python(f)", 0, "\xd3\xc3 Python \xd3\xef\xb7\xa8\xcf\xd4\xca\xbe f\xa1\xa3", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"python_compat(0|1|2)", 0, "python_compat(0) Xcas \xd3\xef\xb7\xa8\xa3\xbbpython_compat(1) Python \xd3\xef\xb7\xa8\xa3\xa8^ \xce\xaa\xb3\xcb\xb7\xbd\xa3\xa9\xa3\xbbpython_compat(2) ^ \xce\xaa\xb0\xb4\xce\xbb\xd2\xec\xbb\xf2", "0", "1", CAT_CATEGORY_PROG},
+
+  {"qr(A)", 0, "A=Q*R \xb7\xd6\xbd\xe2\xa3\xbaQ \xd5\xfd\xbd\xbb\xa1\xa2R \xc9\xcf\xc8\xfd\xbd\xc7", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"quadric(equation)", 0, "\xd3\xc9\xb7\xbd\xb3\xcc\xa3\xa8\xbb\xf2 9 \xb8\xf6\xb5\xe3\xa3\xa9\xb8\xf8\xb3\xf6\xb5\xc4\xb6\xfe\xb4\xce\xc7\xfa\xc3\xe6", "x^2-y^2+z^2", "x^2+x*y+y^2+z^2-3", CAT_CATEGORY_3D},
+
+  {"quartile1(l)", 0, "\xb5\xda 1 \xcb\xc4\xb7\xd6\xce\xbb\xca\xfd", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
+
+  {"quartile3(l)", 0, "\xb5\xda 3 \xcb\xc4\xb7\xd6\xce\xbb\xca\xfd", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
+
+  {"quo(p,q,x)", 0, "\xb6\xe0\xcf\xee\xca\xbd p\xa1\xa2q \xd7\xdb\xba\xcf\xb3\xfd\xb7\xa8\xa3\xa8\xb1\xe4\xc1\xbf x\xa3\xa9\xb5\xc4\xc9\xcc\xa1\xa3", 0, 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"quote(x)", 0, "\xb7\xb5\xbb\xd8\xb2\xbb\xc7\xf3\xd6\xb5\xb5\xc4\xb1\xed\xb4\xef\xca\xbd x\xa1\xa3", 0, 0, CAT_CATEGORY_ALGEBRA},
+
+  {"radius(objet)", 0, "\xd4\xb2\xbb\xf2\xc7\xf2\xb5\xc4\xb0\xeb\xbe\xb6", "circle(0,1)", "sphere([0,0,0],[1,1,1])", CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
+
+  {"rand()", "rand()", "0 \xb5\xbd 1 \xd6\xae\xbc\xe4\xb5\xc4\xcb\xe6\xbb\xfa\xca\xb5\xca\xfd", 0, 0, CAT_CATEGORY_PROBA},
+
+  {"randint(a,b)", 0, "a\xa1\xa2""b \xd6\xae\xbc\xe4\xa3\xa8\xba\xac\xa3\xa9\xb5\xc4\xcb\xe6\xbb\xfa\xd5\xfb\xca\xfd\xa1\xa3Xcas \xb5\xa5\xb2\xce\xca\xfd\xca\xb1\xb7\xb5\xbb\xd8 1..n \xcb\xe6\xbb\xfa\xd5\xfb\xca\xfd\xa1\xa3", "5,25", "6", CAT_CATEGORY_PROBA},
+
+  {"ranm(n,m,[loi,parametres])", 0, "\xd5\xfb\xca\xfd\xcf\xb5\xca\xfd\xbb\xf2\xb0\xb4\xb8\xc5\xc2\xca\xc2\xc9\xb5\xc4\xcb\xe6\xbb\xfa\xbe\xd8\xd5\xf3\xa3\xa8\xcf\xf2\xc1\xbf\xd3\xc3 ranv\xa3\xa9\xa1\xa3\xc0\xfd\xa3\xbaranm(2,3)\xa1\xa2ranm(3,2,binomial,20,.3)\xa1\xa2ranm(4,2,normald,0,1)", "3,3","4,2,normald,0,1",  CAT_CATEGORY_MATRIX},
+
+  {"ranv(n,[loi,parametres])", 0, "\xcb\xe6\xbb\xfa\xcf\xf2\xc1\xbf\xa1\xa3", "10","4,normald,0,1", CAT_CATEGORY_LINALG},
+
+  {"ratnormal(x)", 0, "\xcd\xa8\xb7\xd6\xba\xcf\xb2\xa2\xce\xaa\xb5\xa5\xd2\xbb\xb7\xd6\xc4\xb8\xa1\xa3", 0, 0, CAT_CATEGORY_ALGEBRA},
+
+  {"re(z)", 0, "\xca\xb5\xb2\xbf\xa1\xa3", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
+
+  {"read(\"filename\")", "read(\"", "\xb6\xc1\xc8\xa1\xce\xc4\xbc\xfe\xa1\xa3", 0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"rectangle_plein a,b", "rectangle_plein ", "\xb4\xd3\xba\xa3\xb9\xea\xce\xbb\xd6\xc3\xd6\xb1\xbd\xd3\xbb\xad\xca\xb5\xd0\xc4\xbe\xd8\xd0\xce\xa3\xbb\xca\xa1\xc2\xd4 b \xca\xb1 b==a", "#rectangle_plein 30","#rectangle_plein 20,40", CAT_CATEGORY_LOGO},
+
+  {"recule n", "recule ", "\xba\xa3\xb9\xea\xba\xf3\xcd\xcb n \xb2\xbd\xa3\xac\xc4\xac\xc8\xcf n=10", "#recule 30", 0, CAT_CATEGORY_LOGO},
+
+  {"red", "red", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=red", 0, CAT_CATEGORY_PROGCMD},
+
+  {"reflection(obj1,obj2)", 0, "obj2 \xb9\xd8\xd3\xda obj1 \xb5\xc4\xb6\xd4\xb3\xc6/\xb7\xb4\xc9\xe4", "line(y=x),cercle(1,1)", 0, CAT_CATEGORY_2D },
+
+  {"rem(p,q,x)", 0, "\xb6\xe0\xcf\xee\xca\xbd p\xa1\xa2q \xd7\xdb\xba\xcf\xb3\xfd\xb7\xa8\xa3\xa8\xb1\xe4\xc1\xbf x\xa3\xa9\xb5\xc4\xd3\xe0\xca\xfd", 0, 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"revert(p[,x])", 0, "Taylor \xbc\xb6\xca\xfd\xb7\xb4\xd1\xdd","x+x^2+x^4", 0, CAT_CATEGORY_CALCULUS},
+
+  {"rgb(r,g,b)", 0, "\xd3\xc9\xba\xec\xc2\xcc\xc0\xb6 0-255 \xb6\xa8\xd2\xe5\xd1\xd5\xc9\xab", "255,0,255", 0, CAT_CATEGORY_PROGCMD},
+
+  {"rhombus_point", "rhombus_point", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=magenta+rhombus_point", 0, CAT_CATEGORY_PROGCMD},
+
+  {"rond n", "rond ", "\xd3\xeb\xba\xa3\xb9\xea\xcf\xe0\xc7\xd0\xb5\xc4\xd4\xb2\xa3\xac\xb0\xeb\xbe\xb6 n\xa1\xa3rond n,theta \xbb\xad theta \xb6\xc8\xb5\xc4\xd4\xb2\xbb\xa1", 0, 0, CAT_CATEGORY_LOGO},
+
+  {"rotation(center,angle,objcet)", 0, "\xb6\xd4\xcf\xf3\xc8\xc6\xd2\xbb\xb5\xe3\xd0\xfd\xd7\xaa\xb5\xc4\xcf\xf1", "2-i,pi/2,circle(0,1)", "sphere([0,0,0],[1,1,1])", CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
+
+  {"rsolve(equation,u(n),[init])", 0, "\xbd\xe2\xb5\xdd\xcd\xc6\xb9\xd8\xcf\xb5\xa1\xa3","u(n+1)=2*u(n)+3,u(n),u(0)=1", "([u(n+1)=3*v(n)+u(n),v(n+1)=v(n)+u(n)],[u(n),v(n)],[u(0)=1,v(0)=2]", CAT_CATEGORY_SOLVE},
+
+  {"saute n", "saute ", "\xba\xa3\xb9\xea\xcc\xf8 n \xb2\xbd\xa3\xac\xc4\xac\xc8\xcf n=10", "#saute 30", 0, CAT_CATEGORY_LOGO},
+
+  {"scatterplot(Xlist,Ylist)", 0, "\xbb\xe6\xd6\xc6\xb5\xe3", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+
+  {"segment(A,B)", 0, "\xcf\xdf\xb6\xce", "1,2+i", "[1,2,1],[-1,3,2]", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
+  {"seq(expr,var,a,b)", 0, "\xd3\xc9\xb1\xed\xb4\xef\xca\xbd\xc9\xfa\xb3\xc9\xc1\xd0\xb1\xed\xa1\xa3","j^2,j,1,10", 0, CAT_CATEGORY_PROGCMD},
+
+  {"sign(x)", 0, "Returns -1 if x is negative, 0 if x is zero and 1 if x is positive.", 0, 0, CAT_CATEGORY_REAL|XCAS_ONLY},
+  {"similarity(center,ratio,angle,object)", 0, "\xb6\xd4\xcf\xf3\xb5\xc4\xcf\xe0\xcb\xc6\xa3\xa8\xce\xbb\xcb\xc6+\xd0\xfd\xd7\xaa\xa3\xa9\xcf\xf1", "0,2,pi/2,circle(1,1)", 0, CAT_CATEGORY_2D },
+
+  {"simplify(expr)", 0, "\xbb\xaf\xbc\xf2\xb1\xed\xb4\xef\xca\xbd\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc expr=>/", "sin(3x)/sin(x)", 0, CAT_CATEGORY_ALGEBRA},
+
+  {"single_inter(A,B)", 0, "First intersection. Run inter for a list of intersections.", "line(y=x),line(x+y=3)", 0, CAT_CATEGORY_3D | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
+  {"solve(equation,x)", 0, "\xb6\xd4 x \xbe\xab\xc8\xb7\xc7\xf3\xbd\xe2\xb7\xbd\xb3\xcc\xa3\xa8\xbb\xf2\xb6\xe0\xcf\xee\xca\xbd\xb7\xbd\xb3\xcc\xd7\xe9\xa3\xa9\xa1\xa3\xb8\xb4\xca\xfd\xbd\xe2\xd3\xc3 csolve\xa3\xac\xcf\xdf\xd0\xd4\xb7\xbd\xb3\xcc\xd7\xe9\xd3\xc3 linsolve\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc SHIFT XthetaT", "x^2-x-1=0,x", "[x^2-y^2=0,x^2-z^2=0],[x,y,z]", CAT_CATEGORY_SOLVE},
+
+  {"sorted(l)", 0, "\xc1\xd0\xb1\xed\xc5\xc5\xd0\xf2\xa1\xa3","[3/2,2,1,1/2,3,2,3/2]", "[[1,2],[2,3],[4,3]],(x,y)->when(x[1]==y[1],x[0]>y[0],x[1]>y[1]", CAT_CATEGORY_LIST},
+
+  {"sphere(A,r)", 0, "\xd6\xd0\xd0\xc4 A\xa1\xa2\xb0\xeb\xbe\xb6 r \xb5\xc4\xc7\xf2\xa3\xa8\xbb\xf2\xd6\xb1\xbe\xb6 AB \xb5\xc4\xc7\xf2\xa3\xa9", "[0,0,0],1", "[0,0,0],[1,1,1]", CAT_CATEGORY_3D},
+
+  {"square_point", "square_point", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=cyan+square_point", 0, CAT_CATEGORY_PROGCMD},
+
+  {"star_point", "star_point", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=magenta+star_point", 0, CAT_CATEGORY_PROGCMD},
+
+  {"stddev(l)", 0, "\xc1\xd0\xb1\xed l \xb5\xc4\xb1\xea\xd7\xbc\xb2\xee", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
+
+  {"subst(a,b=c)", 0, "\xb0\xd1 a \xd6\xd0\xb5\xc4 b \xcc\xe6\xbb\xbb\xce\xaa c\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc a(b=c)\xa1\xa3", "x^2,x=3", 0, CAT_CATEGORY_ALGEBRA},
+
+  {"sum(f,k,m,M)", 0, "\xc7\xf3\xba\xcd\xa3\xba""f \xd6\xd0 k \xb4\xd3 m \xb5\xbd M\xa1\xa3\xc0\xfd\xa3\xbasum(k^2,k,1,n)=>*\xa1\xa3\xbf\xec\xbd\xdd\xbc\xfc ALPHA F3", "k,k,1,n", 0, CAT_CATEGORY_CALCULUS},
+
+  {"svd(A)", 0, "\xc6\xe6\xd2\xec\xd6\xb5\xb7\xd6\xbd\xe2\xa3\xba\xb7\xb5\xbb\xd8\xd5\xfd\xbd\xbb U\xa1\xa2\xc6\xe6\xd2\xec\xd6\xb5\xcf\xf2\xc1\xbf S\xa1\xa2\xd5\xfd\xbd\xbb Q\xa3\xac\xca\xb9 A=U*diag(S)*tran(Q)", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"tabvar(f,[x=a..b])", 0, "\xb1\xed\xb4\xef\xca\xbd f \xb5\xc4\xb1\xe4\xb2\xee\xb1\xed\xa3\xa8\xbf\xc9\xd1\xa1\xb1\xe4\xc1\xbf x \xbc\xb0\xc7\xf8\xbc\xe4 a..b\xa3\xa9", "sqrt(x^2+x+1)",  "[cos(t),sin(3t)],t", CAT_CATEGORY_CALCULUS},
+
+  {"taylor(f,x=a,n,[polynom])", 0, "f \xd4\xda x=a \xb4\xa6 n \xbd\xd7 Taylor \xd5\xb9\xbf\xaa\xa3\xa8\xbc\xd3 polynom \xb2\xce\xca\xfd\xbf\xc9\xc8\xa5\xb5\xf4\xd3\xe0\xcf\xee\xa3\xa9\xa1\xa3","sin(x),x=0,5", "sin(x),x=0,5,polynom", CAT_CATEGORY_CALCULUS},
+
+  {"tchebyshev1(n)", 0, "\xb5\xda 1 \xc0\xe0 Tchebyshev \xb6\xe0\xcf\xee\xca\xbd\xa3\xba""cos(n*x)=T_n(cos(x))", "10", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"tchebyshev2(n)", 0, "\xb5\xda 2 \xc0\xe0 Tchebyshev \xb6\xe0\xcf\xee\xca\xbd\xa3\xbasin((n+1)*x)=sin(x)*U_n(cos(x))", "10", 0, CAT_CATEGORY_POLYNOMIAL},
+
+  {"tcollect(expr)", 0, "\xc8\xfd\xbd\xc7\xba\xaf\xca\xfd\xb5\xc4\xcf\xdf\xd0\xd4\xbb\xaf\xd3\xeb\xba\xcf\xb2\xa2\xa1\xa3","sin(x)+cos(x)", 0, CAT_CATEGORY_TRIG},
+
+  {"texpand(expr)", 0, "\xd5\xb9\xbf\xaa\xc8\xfd\xbd\xc7\xa1\xa2\xd6\xb8\xca\xfd\xd3\xeb\xb6\xd4\xca\xfd\xba\xaf\xca\xfd\xa1\xa3","sin(3x)", 0, CAT_CATEGORY_TRIG},
+
+  {"time(cmd)", 0, "\xd4\xcb\xd0\xd0\xc3\xfc\xc1\xee\xb2\xa2\xbc\xc6\xca\xb1\xa3\xa8\xbb\xf2\xc9\xe8\xd6\xc3\xca\xb1\xd6\xd3\xa3\xa9","int(1/(x^4+1),x)","8,0", CAT_CATEGORY_PROG},
+
+  {"tlin(expr)", 0, "\xc8\xfd\xbd\xc7\xba\xaf\xca\xfd\xb5\xc4\xcf\xdf\xd0\xd4\xbb\xaf\xa1\xa3","sin(x)^3", 0, CAT_CATEGORY_TRIG},
+
+  {"tourne_droite n", "tourne_droite ", "\xba\xa3\xb9\xea\xd3\xd2\xd7\xaa n \xb6\xc8\xa3\xac\xc4\xac\xc8\xcf n=90", 0, 0, CAT_CATEGORY_LOGO},
+
+  {"tourne_gauche n", "tourne_gauche ", "\xba\xa3\xb9\xea\xd7\xf3\xd7\xaa n \xb6\xc8\xa3\xac\xc4\xac\xc8\xcf n=90", 0, 0, CAT_CATEGORY_LOGO},
+
+  {"trace(A)", 0, "\xbe\xd8\xd5\xf3 A \xb5\xc4\xbc\xa3\xa1\xa3", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"transpose(A)", 0, "\xbe\xd8\xd5\xf3 A \xb5\xc4\xd7\xaa\xd6\xc3\xa1\xa3\xb9\xb2\xe9\xee\xd7\xaa\xd6\xc3\xc3\xfc\xc1\xee\xce\xaa trn(A) \xbb\xf2 A^*\xa1\xa3", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+
+  {"translation(vect,obj)", 0, "\xb6\xd4\xcf\xf3\xb0\xb4\xcf\xf2\xc1\xbf vect \xc6\xbd\xd2\xc6", "[1,2],cercle(0,1)", 0, CAT_CATEGORY_2D },
+
+  {"triangle(A,B,C)", 0, "\xd3\xc9 3 \xb8\xf6\xb6\xa5\xb5\xe3\xb8\xf8\xb3\xf6\xb5\xc4\xc8\xfd\xbd\xc7\xd0\xce", "1+i,1-i,-1", "A,B,C", CAT_CATEGORY_2D},
+
+  {"triangle_point", "triangle_point", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=yellow+triangle_point", 0, CAT_CATEGORY_PROGCMD},
+
+  {"trig2exp(expr)", 0, "\xb0\xd1\xb8\xb4\xd6\xb8\xca\xfd\xd7\xaa\xbb\xbb\xce\xaa\xc8\xfd\xbd\xc7\xba\xaf\xca\xfd","cos(x)^3", 0, CAT_CATEGORY_TRIG},
+
+  {"trigcos(expr)", 0, "\xb0\xd1 sin^2\xa1\xa2tan^2 \xd7\xaa\xbb\xbb\xce\xaa cos^2\xa1\xa3","sin(x)^4", 0, CAT_CATEGORY_TRIG},
+
+  {"trigsin(expr)", 0, "\xb0\xd1 cos^2\xa1\xa2tan^2 \xd7\xaa\xbb\xbb\xce\xaa sin^2\xa1\xa3","cos(x)^4", 0, CAT_CATEGORY_TRIG},
+
+  {"trigtan(expr)", 0, "\xb0\xd1 cos^2\xa1\xa2sin^2 \xd7\xaa\xbb\xbb\xce\xaa tan^2\xa1\xa3","cos(x)^4", 0, CAT_CATEGORY_TRIG},
+
+  {"uniformd(a,b,x)", "uniformd", "[a,b] \xc9\xcf\xb5\xc4\xbe\xf9\xd4\xc8\xb7\xd6\xb2\xbc\xa3\xac\xc3\xdc\xb6\xc8 1/(b-a)", 0, 0, CAT_CATEGORY_PROBA},
+
+  {"vertices(objet)", 0, "\xb6\xe0\xb1\xdf\xd0\xce\xbb\xf2\xb6\xe0\xc3\xe6\xcc\xe5\xb5\xc4\xb6\xa5\xb5\xe3\xc1\xd0\xb1\xed", "triangle(1,i,2)", "cube([0,0,0],[1,0,0],[0,1,0])", CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
+
+  {"write(\"filename\",var)", "write(\"", "\xb0\xd1\xd2\xbb\xb8\xf6\xbb\xf2\xb6\xe0\xb8\xf6\xb1\xe4\xc1\xbf\xb1\xa3\xb4\xe6\xb5\xbd\xce\xc4\xbc\xfe\xa1\xa3\xc0\xfd\xa3\xba""f(x):=x^2; write(\"func_f\",f)\xa1\xa3",  0, 0, CAT_CATEGORY_PROGCMD},
+
+  {"yellow", "yellow", "\xcf\xd4\xca\xbe\xd1\xa1\xcf\xee", "#display=yellow", 0, CAT_CATEGORY_PROGCMD},
+
+  {"|", "|", "\xc2\xdf\xbc\xad\xbb\xf2", "#1|2", 0, CAT_CATEGORY_PROGCMD},
+
+  {"~", "~", "\xb2\xb9\xbc\xaf/\xb0\xb4\xce\xbb\xc8\xa1\xb7\xb4", "#~7", 0, CAT_CATEGORY_PROGCMD},
+};
+
+
+
 
   const char aide_khicas_string[]="KhiCAS Help";
 #ifdef NUMWORKS
@@ -1721,10 +2340,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   const int CAT_COMPLETE_COUNT_FR=sizeof(completeCatfr)/sizeof(catalogFunc);
   const int CAT_COMPLETE_COUNT_EN=sizeof(completeCaten)/sizeof(catalogFunc);
+  const int CAT_COMPLETE_COUNT_ZH=sizeof(completeCatzh)/sizeof(catalogFunc);
 
   std::string insert_string(int index){
     std::string s;
-    const catalogFunc * completeCat=completeCaten; // 帮助统一英文（completeCatfr 法语版待汉化）
+    const catalogFunc * completeCat = (lang ? completeCatzh : completeCaten); // 中文帮助目录（lang=1）
     if (completeCat[index].insert)
       s=completeCat[index].insert;
     else {
@@ -1882,7 +2502,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #else
     int iii=0;
 #endif
-    const catalogFunc * completeCat=completeCaten; // 帮助统一英文（completeCatfr 法语版待汉化）
+    const catalogFunc * completeCat = (lang ? completeCatzh : completeCaten); // 中文帮助目录（lang=1）
     for (;iii<nfunc;++iii){
       if (xcas_python_eval>0 && (completeCat[iii].category & XCAS_ONLY) )
 	continue;
@@ -2085,7 +2705,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   // 0 on exit, 1 on success
   int doCatalogMenu(char* insertText, const char* title, int category,GIAC_CONTEXT) {
-    const catalogFunc * completeCat=completeCaten; // 帮助统一英文（completeCatfr 法语版待汉化）
+    const catalogFunc * completeCat = (lang ? completeCatzh : completeCaten); // 中文帮助目录（lang=1）
     for (;;){
       int allcmds=builtin_lexer_functions_end()-builtin_lexer_functions_begin();
       int allopts=lexer_tab_int_values_end-lexer_tab_int_values_begin;
