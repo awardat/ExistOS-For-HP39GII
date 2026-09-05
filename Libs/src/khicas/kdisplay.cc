@@ -14482,7 +14482,9 @@ namespace xcas {
         }
       }
     }
-    X += ((minimini || color == 2016 || color == 4) ? 6 : 7) * strlen(buf);
+    // 2026-09-04 中文宽度修正：按字节×7（中文 14px）推进会与 16px 实际渲染漂移 → ASCII 盖上中文、行尾挤压；
+    // 改按 hp39_text_width（GBK 双字节=16px）推进与渲染一致
+    X += hp39_text_width(buf, (minimini || color == 2016 || color == 4) ? 6 : 7);
   }
 
 #else
