@@ -355,18 +355,19 @@ static void drawStdRow(int form, int i) {
     int y = base + i * step;
     char tmp[40];
     const FcFld *f = &finFmts[form].f[i];
+    int vx = 136; // 值列起点：abbr 最长 5 字符（x84+40=124）不与其重叠
     if (i == foc) {
         uidisp->draw_box(0, y - 1, 255, y + 15, 255, 0);
         fDrawMix(4, y, f->nm, 255, 0);
         uidisp->draw_printf(84, y, 12, 255, 0, "%s", f->ab);
-        if (eAct) uidisp->draw_printf(120, y, 16, 255, 0, "%s", ebuf);
-        else if (fh_[1][form][i]) { fmtVal(f->ft, fv_[1][form][i], tmp); uidisp->draw_printf(120, y, 16, 255, 0, "%s", tmp); }
-        else uidisp->draw_printf(120, y, 16, 255, 0, "--");
+        if (eAct) uidisp->draw_printf(vx, y, 16, 255, 0, "%s", ebuf);
+        else if (fh_[1][form][i]) { fmtVal(f->ft, fv_[1][form][i], tmp); uidisp->draw_printf(vx, y, 16, 255, 0, "%s", tmp); }
+        else uidisp->draw_printf(vx, y, 16, 255, 0, "--");
     } else {
         uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255);
         fDrawMix(4, y, f->nm, 0, 255);
         uidisp->draw_printf(84, y, 12, 0, 255, "%s", f->ab);
-        if (fh_[1][form][i]) { fmtVal(f->ft, fv_[1][form][i], tmp); uidisp->draw_printf(120, y, 16, 0, 255, "%s", tmp); }
+        if (fh_[1][form][i]) { fmtVal(f->ft, fv_[1][form][i], tmp); uidisp->draw_printf(vx, y, 16, 0, 255, "%s", tmp); }
     }
 }
 
@@ -375,7 +376,8 @@ static void drawCflowRow(int idx) { // idx 0=r 1-13=CF0-12
     char tmp[40];
     char lab[24];
     if (idx == 0) {
-        strcpy(lab, ZH_LILV);
+        strcpy(lab, "r% "); // 前缀标识：折现率行（用户测试要点）
+        strcat(lab, ZH_LILV);
     } else {
         sprintf(lab, "\xCF\xD6\xBD\xF0\xC1\xF7 CF%d", idx - 1); // 现金流 CFk（GBK 现金流+ascii）
     }
@@ -471,11 +473,10 @@ static int actTvm(int slot) {
     if (slot < 0 || slot > 4) return 1;
     double *v = fv_[1][0];
     unsigned char *h = fh_[1][0];
+    // 12C 语义：寄存器总有值——未填字段当 0 参与计算（FV 留空即可解 PMT）
     double n = v[0], i = v[1] / 100.0, pv = v[2], pmt = v[3], fv2 = v[4];
     int b = fs_[1][0] & 1;
     double r = 0;
-    for (int k = 0; k < 5; k++)
-        if (k != slot && !h[k]) return 1; // 缺已知量
     switch (slot) {
         case 0:
             if (fabs(i) < 1e-12) {
@@ -760,7 +761,7 @@ static int actDate(int slot) {
         long j = dateJdn(v[0]) + (long)v[2];
         int y, m, d;
         jdnYmd(j, &y, &m, &d);
-        v[1] = m + d / 100.0 + y / 10000.0; // 组装 MM.DDYYYY
+        v[1] = m + d / 100.0 + y / 1000000.0; // 组装 MM.DDYYYY（12C：9.052026 = 9月05日2026）
         h[1] = 1;
         fcSave();
         return 0;
@@ -768,23 +769,24 @@ static int actDate(int slot) {
     return 0;
 }
 
-// ICONV（form 6）：名义%/有效%/复利期数；槽 0=算 EFF 1=算 NOM
+// ICONV（form 6）：名义%/有效%/复利期数；菜单键=所求目标（12C 语义）
+// F1(NOM)=求名义利率（需有效%已填）；F2(EFF)=求有效利率（需名义%已填）
 static int actIconv(int slot) {
     double *v = fv_[1][6];
     unsigned char *h = fh_[1][6];
-    if (slot == 0) {
-        if (!h[0] || !h[2] || v[2] < 1) return 1;
-        double cy = v[2];
-        v[1] = (pow(1.0 + v[0] / 100.0 / cy, cy) - 1.0) * 100.0;
-        h[1] = 1;
-        fcSave();
-        return 0;
-    }
-    if (slot == 1) {
+    if (slot == 0) { // 求 NOM
         if (!h[1] || !h[2] || v[2] < 1) return 1;
         double cy = v[2];
         v[0] = (pow(1.0 + v[1] / 100.0, 1.0 / cy) - 1.0) * cy * 100.0;
         h[0] = 1;
+        fcSave();
+        return 0;
+    }
+    if (slot == 1) { // 求 EFF
+        if (!h[0] || !h[2] || v[2] < 1) return 1;
+        double cy = v[2];
+        v[1] = (pow(1.0 + v[0] / 100.0 / cy, cy) - 1.0) * 100.0;
+        h[1] = 1;
         fcSave();
         return 0;
     }
@@ -1239,13 +1241,13 @@ static void formcalcTask(void *_) {
                         if (fcClrArm) { fcClrArm = 0; fcMsg[0] = 0; }
                         if (fcLevel == 3) { fcLevel = 2; fcMsg[0] = 0; fcDraw(); }
                         else if (fcLevel == 2) { fcLevel = 1; fcMsg[0] = 0; fcDraw(); }
-                        else if (fcLevel == 1) { fcLevel = 0; fcMsg[0] = 0; fcDraw(); }
+                        else if (fcLevel == 1) { fcLevel = 0; fcSel = fcMod - 1; fcMsg[0] = 0; fcDraw(); }
                         else if (fcLevel == 4) { fcLevel = 0; fcDraw(); }
                     } else if (key == KEY_HOME) {
-                        if (fcLevel != 0) { fcCommit(); fcClrArm = 0; fcLevel = 0; fcMsg[0] = 0; fcDraw(); }
+                        if (fcLevel != 0) { fcCommit(); fcClrArm = 0; fcSel = fcMod - 1; fcLevel = 0; fcMsg[0] = 0; fcDraw(); }
                     } else if (key == KEY_APPS) {
                         if (fcLevel >= 2 && fcMod == 1) { fcLevel = 1; fcMsg[0] = 0; fcDraw(); }
-                        else if (fcLevel == 1 && fcMod == 1) { fcLevel = 0; fcDraw(); }
+                        else if (fcLevel == 1 && fcMod == 1) { fcLevel = 0; fcSel = 0; fcDraw(); }
                     } else if (key == KEY_VIEWS) {
                         if (fcLevel == 2 && fcMod == 1 && fcForm == 0) { fcLevel = 3; fcDraw(); }
                         else if (fcLevel == 3) { fcLevel = 2; fcDraw(); }

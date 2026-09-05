@@ -322,17 +322,19 @@ void drawPage(int page) {
         uidisp->draw_printf(mainw->content_x0 + 12 + 80,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
 
-        // FormCalc 图标（48x48：表单页缩影——机壳 + 亮屏 3 行输入字段 + 底部粗黑结果条；无外框线）
+        // FormCalc 图标（48x48：徽章式——白色外圈带 + 灰芯表单字段；底部黑字 F+ 压过外圈下沿（断框））
         {
             int ix = mainw->content_x0 + 12 + 160, iy = mainw->content_y0 + 12;
-            uidisp->draw_box(ix + 2, iy + 2, ix + 45, iy + 45, 45, -1);       // 机壳（深灰）
-            uidisp->draw_box(ix + 6, iy + 4, ix + 41, iy + 41, 255, -1);      // 表单页（全白）
+            uidisp->draw_box(ix + 1, iy + 1, ix + 46, iy + 46, 45, -1);       // 机壳（深灰底）
+            uidisp->draw_box(ix + 3, iy + 3, ix + 44, iy + 44, 255, -1);      // 白色外圈带（3px 边框）
+            uidisp->draw_box(ix + 6, iy + 6, ix + 41, iy + 41, 45, -1);       // 挖回灰芯（露出白框）
             for (int r = 0; r < 3; r++) {                                     // 3 行输入字段：左 label 黑块 + 值灰条
-                int y = iy + 8 + r * 7;
-                uidisp->draw_box(ix + 9, y, ix + 14, y + 2, 0, -1);           // label 黑块
-                uidisp->draw_box(ix + 18, y, ix + 38, y + 2, 190, -1);        // 值区灰条
+                int y = iy + 9 + r * 7;
+                uidisp->draw_box(ix + 9, y, ix + 13, y + 2, 0, -1);
+                uidisp->draw_box(ix + 16, y, ix + 38, y + 2, 190, -1);
             }
-            uidisp->draw_box(ix + 9, iy + 33, ix + 38, iy + 38, 0, -1);       // 底部结果条（粗黑——已计算）
+            // 黑字 "F+"（金融+/表单+）跨芯下部，底缘压过白框下沿形成断口
+            uidisp->draw_printf(ix + 11, iy + 27, 16, 0, 255, "F+");
         }
         uidisp->draw_printf(mainw->content_x0 + 12 + 160,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "FormCalc");
