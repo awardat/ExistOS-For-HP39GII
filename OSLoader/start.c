@@ -554,6 +554,16 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts) {
         // tud_cdc_write_str("\r\nTinyUSB CDC MSC device example\r\n");
         printf("CDC RESET\n");
         // tud_cdc_write_flush();
+    } else {
+        // 2026-09-04：会话断开（工具退出/拔线）——恢复 PING 挂起的监控任务（免重启）
+        // （刷写/握手期间挂起是为了不污染 bin 数据通道；断开即会话结束）
+        vTaskResume(pBattmon);
+        vTaskResume(pStatusPrintTask);
+        vTaskResume(pKevSvcTask);
+        vTaskResume(pDispTask);
+        vTaskResume(pMainThread);
+        vTaskResume(pUSBLOGTask);
+        printf("CDC session closed, tasks resumed\n");
     }
     tud_cdc_get_line_coding(&c);
 
