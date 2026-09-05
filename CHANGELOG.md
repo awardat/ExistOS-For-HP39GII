@@ -4,9 +4,9 @@
 
 ---
 
-## [build 133] - 2026-09-04 (开发中)
+## [build 133] - 2026-09-05 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-133))
 
-### 新增（2026-09-04 充电/功耗/显示修正）
+### 新增（2026-09-04 充电/功耗/显示修正 + 2026-09-05 KhiCAS 汉化/审核整改）
 - **充电固定镍氢**（锂电直插实测失败——AAA 外围电路短路拉低电压；UI 类型选择隐藏、调用点固定镍氢、STOP_ILIMIT=0 + 12h 定时停充；ALKALINE_CHARGE 语义修正为 boost 电感效率位）
 - **充电状态显示修正**：GET_CHARGE_STATUS 由软件开关改为硬件实际充电路径（电池满后 DCDC 关，不再误显"充电中"；三重停充实测——4 并镍氢充满自停）
 - **UI 空闲 CPU 28%→1%**：页面信息刷新 900→3000ms、按键轮询 20→30ms（时钟/状态不常变）、控制台光标独立 1s 节奏；测试保持 28% 恒定 10 分钟
@@ -14,6 +14,7 @@
 - **vTask1（Status Print）忙循环修复**：50ms delay + printTaskList 30s 降频（原空转占 CPU 且串口洪水）
 - **CDC 会话任务恢复**：PING 挂起的监控任务（vBatteryMon 等）在 DTR 断开时自动恢复（免重启）
 - **KhiCAS 帮助中文化**：completeCatzh 全量 355 条（260 条 desc 中文 GBK；XCAS_ONLY 保留原文）；lang=1 切换中文目录；**乱码根治**——textArea print() 宽度推进按字节×7（中文 14px）与 16px 渲染漂移 2px/字导致 ASCII 叠压中文（p 盖式/p= 盖键）→ 改 hp39_text_width（GBK=16px）推进；帮助/只读视图 ON=返回（View 不承担返回，编辑态语义保留）；charmap/脚本保存类型/trace 加 ON 等效退出；命令目录一级分类补译 5 项（算术加密/复数/选项/矩阵/三维）
+- **Round 4 审核整改（A+B 组）**：SMP 样本标准差负值保护（均匀大数据集 NaN 根治）；统计计算提取 statCompute 共用（Welford 单遍在线方差——POP/SMP sd 数值稳定）；STAT 会话重置（RPN39 启动清空——主界面 F4 收集不再续上次数据；旧数据经 Shift+7 页加载查看）；STAT ENT 补 42S 压栈；矩阵光标钳制（matxClamp 覆盖 INV/CLR/R→A/B 全部维度变化路径）；复数除法/倒数溢出保护（±Inf → 0）；MATX F6 编辑槽按页直达（页 1→R / 页 2→A / 页 3→B——原循环 +1 与标签不符）；矩阵分类标签错字（地阵→矩阵）；UICore 档位标签按实际运行档（充电中强制标准档时不再误显 Boost，英文 Off→Standard）
 - RPN39 手册/README 硬件实测记录（锂电失败、整机电流基线、AAA 电池建议）
 
 ### 规划
