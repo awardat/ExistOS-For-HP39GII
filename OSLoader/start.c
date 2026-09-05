@@ -941,7 +941,7 @@ void vBatteryMon(void *__n) {
             printf("Core Temp: %d ℃\n", coreTemp);
             printf("Power Speed:%lu\n", portGetPWRSpeed());
         }
-        if (t % 9 == 0) { // 充电诊断（2026-09-04：充电 29mA 实测 vs 配置 200mA 排查）
+        if (t % 3 == 0) { // 充电诊断，每 3s 与电压组同拍（2026-09-04：充电 29mA vs 200mA 排查；System 抢串口前先验证通道）
             printf("CHRG reg:%08lx STS:%d DCDC:%d BATT:%ld VDD5V:%ld\n",
                    (unsigned long)HW_POWER_CHARGE.U, (int)HW_POWER_STS.B.CHRGSTS,
                    (int)HW_POWER_5VCTRL.B.ENABLE_DCDC, batt_voltage, vdd5v_voltage);
