@@ -672,8 +672,9 @@ static void formcalcTask(void *_) {
                 } else if (key == KEY_APPS) { // APPS：金融模块回退（表单→金融 L1→L0）
                     if (fcLevel >= 2 && fcMod == 1) { fcLevel = 1; fcMsg[0] = 0; fcDraw(); }
                     else if (fcLevel == 1 && fcMod == 1) { fcLevel = 0; fcDraw(); }
-                } else if (key == KEY_VIEWS) { // View 键公式切换（表单态）
+                } else if (key == KEY_VIEWS) { // View 键：表单↔公式视图（双向）
                     if (fcLevel == 2 && fcMod == 1 && fcForm == 0) { fcLevel = 3; fcDraw(); }
+                    else if (fcLevel == 3) { fcLevel = 2; fcDraw(); } // 公式视图 View=返回表单
                 } else {
                     if (fcHandleKey((int)key)) fcDraw();
                 }
