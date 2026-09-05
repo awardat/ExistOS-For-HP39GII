@@ -231,12 +231,14 @@ void pageUpdate() {
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s", UI_TIME, timeStr);
 
             {
+                // 充电中强制标准档（见 case 0 充电开关）：标签按实际运行档显示
                 char ps = config_get_power_save();
+                bool boost = !config_get_enable_charge() && ps == 'B';
                 const char *psn;
                 if (config_get_language()) {
-                    psn = ps=='B' ? "\xbc\xd3\xcb\xd9" : "\xb1\xea\xd7\xbc";
+                    psn = boost ? "\xbc\xd3\xcb\xd9" : "\xb1\xea\xd7\xbc";
                 } else {
-                    psn = ps=='B' ? "Boost" : "Off";
+                    psn = boost ? "Boost" : "Standard";
                 }
                 uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)", UI_Power_Save_Mode, psn);
             }

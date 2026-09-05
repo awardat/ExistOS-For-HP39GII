@@ -42,5 +42,6 @@ void rpn39ExtDraw(int mode);
 void rpn39ExtExit(int mode);   // 退出扩展态：最后持久化
 void rpn39ExtEnter(int mode);  // 进入扩展态：初始化
 void rpn39StatAccum(int add);  // 主界面 F4/F5：Σ+/Σ− 收集
+void rpn39StatSessionReset(void); // RPN39 启动：统计新会话从空开始（旧数据经 Shift+7 页加载查看）
 
 #endif

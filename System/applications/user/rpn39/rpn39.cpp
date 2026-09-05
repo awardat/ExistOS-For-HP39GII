@@ -744,6 +744,7 @@ void rpn39Task(void *_) {
     uidisp->restoreBuffer(); // UI_Suspend 已释放 disp_buf（releaseBuffer），重新分配堆缓冲（panic 尝试：避开 emergencyBuffer 固定区）
     rpn39Running = 1;
     loadRegs();
+    rpn39StatSessionReset(); // 统计新会话从空开始（F4 收集不续上次数据；旧数据经 Shift+7 加载查看）
     draw();
     int lastKey = -1;
     shiftHeld = 0;

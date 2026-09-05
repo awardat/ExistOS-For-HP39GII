@@ -120,6 +120,8 @@ static void cplxOp(int op) {
             s = (b * c - a * d) / den;
         }
     }
+    if (!valid(r)) r = 0; // den 极小非零可溢出 ±Inf（主模块 unaryOp/binaryOp 同策略）
+    if (!valid(s)) s = 0;
     cZ0re = r; cZ0im = s;
     saveCplx();
 }
@@ -129,7 +131,12 @@ static void cplxOp1(int op) { // 页 1：CONJ/|Z0|/1/Z0/ARG
     if (op == 0) { cZ0im = -d; }                       // CONJ
     else if (op == 1) { cZ0re = hypot(c, d); cZ0im = 0; }        // |Z0|
     else if (op == 2) { double den = c * c + d * d;   // 1/Z0
-        if (den != 0) { cZ0re = c / den; cZ0im = -d / den; } }
+        if (den != 0) {
+            double r = c / den, s = -d / den;
+            if (!valid(r)) r = 0; // 极小模倒数溢出 ±Inf → 0（与除法同策略）
+            if (!valid(s)) s = 0;
+            cZ0re = r; cZ0im = s;
+        } }
     else if (op == 3) { cZ0re = fromRad(atan2(d, c)); cZ0im = 0; } // ARG
     saveCplx();
 }
@@ -248,6 +255,13 @@ static const char *matxMenus[3][6] = {
 static double *edM(int s) { return s == 0 ? mA : (s == 1 ? mB : mR); }
 static int *edD(int s) { return s == 0 ? &dA : (s == 1 ? &dB : &dR); }
 
+// 当前编辑槽维度变化后钳制光标（dR/dA/dB 缩小如 4→2 时 cx/cy 可能越界 → 光标不可见/编辑落死区）
+static void matxClamp(void) {
+    int n = *edD(edSlot);
+    if (cx > n - 1) cx = 0;
+    if (cy > n - 1) cy = 0;
+}
+
 static void saveMatx(void) {
     FIL f;
     if (f_open(&f, "/rpn39_matx.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
@@ -309,6 +323,7 @@ static void matxOp(int op) { // 0=A+B 1=A-B 2=A*B 3=T(A) 4=T(B)（结果→R）
     }
     dR = n;
     saveMatx();
+    matxClamp();
 }
 
 // 高斯消元求 det（复制输入不改原矩阵）；奇异常返回 0
@@ -386,6 +401,7 @@ static void matxOp2(int op) { // 页 2：INV A / INV B / DET A / DET B / CLR R
         dR = 1;
     }
     saveMatx();
+    matxClamp();
 }
 
 static void matxDraw(void) {
@@ -520,10 +536,10 @@ static int matxKey(int key, int shift) {
             if (cx > *d - 1) cx = 0;
             if (cy > *d - 1) cy = 0;
             saveMatx();
-        } else if (slot == 1) { memcpy(mA, mR, sizeof(mA)); dA = dR; saveMatx(); }
-        else if (slot == 2) { memcpy(mB, mR, sizeof(mB)); dB = dR; saveMatx(); }
-        else if (slot == 3) { memset(mA, 0, sizeof(mA)); dA = 1; saveMatx(); }
-        else if (slot == 4) { memset(mB, 0, sizeof(mB)); dB = 1; saveMatx(); }
+        } else if (slot == 1) { memcpy(mA, mR, sizeof(mA)); dA = dR; saveMatx(); matxClamp(); }
+        else if (slot == 2) { memcpy(mB, mR, sizeof(mB)); dB = dR; saveMatx(); matxClamp(); }
+        else if (slot == 3) { memset(mA, 0, sizeof(mA)); dA = 1; saveMatx(); matxClamp(); }
+        else if (slot == 4) { memset(mB, 0, sizeof(mB)); dB = 1; saveMatx(); matxClamp(); }
     }
     return 0;
 }
@@ -534,8 +550,34 @@ static int matxKey(int key, int shift) {
 static double statData[STAT_MAX] = {0};
 static int statN = 0;
 static int statSel = 0; // 高亮统计行 0-7
+static int statInit = 0; // 首入加载标志（退出重进不自动续旧数据——设计：新会话从空收集）
 
 static const char *statNames[8] = {"N", "MEAN", "POP sd", "SMP sd", "MIN", "MAX", "SUM", "SQ SUM"};
+
+// 单遍统计：Welford 在线方差（数值稳定，避免 s2/N-mean² 大值抵消）+ min/max/和/平方和
+static void statCompute(double vals[8]) {
+    double mean = 0, m2 = 0, s = 0, s2 = 0, mn = 0, mx = 0;
+    int i;
+    for (i = 0; i < statN; i++) {
+        double v = statData[i], d1;
+        s += v; s2 += v * v;
+        if (i == 0) mn = mx = v;
+        else { if (v < mn) mn = v; if (v > mx) mx = v; }
+        d1 = v - mean; mean += d1 / (i + 1); m2 += d1 * (v - mean);
+    }
+    vals[0] = statN;
+    vals[1] = mean;
+    double varp = statN ? m2 / statN : 0;
+    double vars = statN > 1 ? m2 / (statN - 1) : 0;
+    if (varp < 0) varp = 0;
+    if (vars < 0) vars = 0;
+    vals[2] = statN ? sqrt(varp) : 0;
+    vals[3] = statN > 1 ? sqrt(vars) : 0;
+    vals[4] = mn;
+    vals[5] = mx;
+    vals[6] = s;
+    vals[7] = s2;
+}
 
 static void saveStat(void) {
     FIL f;
@@ -558,6 +600,7 @@ static void loadStat(void) {
 
 // 主界面收集入口（F4/F5 调用）：Σ+ 收 X；Σ− 撤最后点
 // 注意：不自动加载持久化旧数据（新会话从空收集；查看旧数据先进 Shift+7 页加载）
+void rpn39StatSessionReset(void) { statN = 0; statSel = 0; statInit = 0; }
 void rpn39StatAccum(int add) {
     double x;
     if (add) {
@@ -574,26 +617,10 @@ void rpn39StatAccum(int add) {
 static void statDraw(void) {
     char buf[64], vb[40];
     int i;
+    double vals[8];
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
     drawTextMix(0, 0, "STAT \xcd\xb3\xbc\xc6", 0, 255);
-    double s = 0, s2 = 0, mn = 0, mx = 0;
-    for (i = 0; i < statN; i++) {
-        double v = statData[i];
-        s += v; s2 += v * v;
-        if (i == 0) mn = mx = v;
-        else { if (v < mn) mn = v; if (v > mx) mx = v; }
-    }
-    double vals[8];
-    vals[0] = statN;
-    vals[1] = statN ? s / statN : 0;
-    double varp = statN ? s2 / statN - vals[1] * vals[1] : 0;
-    if (varp < 0) varp = 0;
-    vals[2] = statN ? sqrt(varp) : 0;
-    vals[3] = statN > 1 ? sqrt(s2 / (statN - 1) - s * s / (statN * (statN - 1.0))) : 0;
-    vals[4] = statN ? mn : 0;
-    vals[5] = statN ? mx : 0;
-    vals[6] = s;
-    vals[7] = s2;
+    statCompute(vals);
     for (i = 0; i < 8; i++) {
         fmtNum(vals[i], vb);
         sprintf(buf, "%-8s %s", statNames[i], vb);
@@ -615,30 +642,14 @@ static int statKey(int key, int shift) {
     (void)shift;
     if (key == KEY_UP) { if (statSel > 0) statSel--; return 0; }
     if (key == KEY_DOWN) { if (statSel < 7) statSel++; return 0; }
-    if (key == KEY_ENTER) { // 选中统计值 → 主栈 X
-        double s = 0, s2 = 0, mn = 0, mx = 0, vv;
-        int i;
-        for (i = 0; i < statN; i++) {
-            vv = statData[i];
-            s += vv; s2 += vv * vv;
-            if (i == 0) mn = mx = vv;
-            else { if (vv < mn) mn = vv; if (vv > mx) mx = vv; }
-        }
+    if (key == KEY_ENTER) { // 选中统计值 → 主栈 X（42S 压栈语义：旧 X→Y）
         double vals[8];
-        vals[0] = statN;
-        vals[1] = statN ? s / statN : 0;
-        double varp = statN ? s2 / statN - vals[1] * vals[1] : 0;
-        if (varp < 0) varp = 0;
-        vals[2] = statN ? sqrt(varp) : 0;
-        vals[3] = statN > 1 ? sqrt(s2 / (statN - 1) - s * s / (statN * (statN - 1.0))) : 0;
-        vals[4] = statN ? mn : 0;
-        vals[5] = statN ? mx : 0;
-        vals[6] = s;
-        vals[7] = s2;
+        statCompute(vals);
         if (entering) { stX = atof(inbuf); entering = 0; inlen = 0; }
         lastX = stX;
+        stackLift();
         stX = vals[statSel];
-        autoLift = 1;
+        autoLift = 0;
         rpnMode = 0;
         return 0;
     }
@@ -666,7 +677,7 @@ void rpn39ExtEnter(int mode) {
         if (!matxInit) { loadMatx(); matxInit = 1; }
         matxPage = 0;
     }
-    if (mode == 7) { if (statN == 0) loadStat(); statSel = 0; }
+    if (mode == 7) { if (!statInit) { loadStat(); statInit = 1; } statSel = 0; }
 }
 void rpn39ExtExit(int mode) {
     if (mode == 5) saveCplx();
