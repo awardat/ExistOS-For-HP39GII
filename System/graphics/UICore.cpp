@@ -322,7 +322,22 @@ void drawPage(int page) {
         uidisp->draw_printf(mainw->content_x0 + 12 + 80,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
 
-        uidisp->draw_box((mainw->content_x0 + 12) + appPage_select * (48 + appPage_select * 32),
+        // FormCalc 图标（48x48：表单页缩影——机壳 + 亮屏 3 行输入字段 + 底部粗黑结果条；无外框线）
+        {
+            int ix = mainw->content_x0 + 12 + 160, iy = mainw->content_y0 + 12;
+            uidisp->draw_box(ix + 2, iy + 2, ix + 45, iy + 45, 45, -1);       // 机壳（深灰）
+            uidisp->draw_box(ix + 6, iy + 4, ix + 41, iy + 41, 255, -1);      // 表单页（全白）
+            for (int r = 0; r < 3; r++) {                                     // 3 行输入字段：左 label 黑块 + 值灰条
+                int y = iy + 8 + r * 7;
+                uidisp->draw_box(ix + 9, y, ix + 14, y + 2, 0, -1);           // label 黑块
+                uidisp->draw_box(ix + 18, y, ix + 38, y + 2, 190, -1);        // 值区灰条
+            }
+            uidisp->draw_box(ix + 9, iy + 33, ix + 38, iy + 38, 0, -1);       // 底部结果条（粗黑——已计算）
+        }
+        uidisp->draw_printf(mainw->content_x0 + 12 + 160,
+                            mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "FormCalc");
+
+        uidisp->draw_box((mainw->content_x0 + 12) + appPage_select * 80,
                          mainw->content_y0 + 12,
                          (mainw->content_x0 + 12) + 48 + appPage_select * (48 + appPage_select * 32),
                          mainw->content_y0 + 12 + 48,
@@ -674,7 +689,7 @@ void keyMsg(uint32_t key, int state) {
                 goto CONSOLE_KEY_EVENT;
             }
             if (curPage == 0) {
-                if (appPage_select < 1) {
+                if (appPage_select < 2) {
                     appPage_select++;
                     drawPage(curPage);
                 }
@@ -727,6 +742,10 @@ void keyMsg(uint32_t key, int state) {
 
                     void StartRPN39();
                     StartRPN39();
+                } else if (appPage_select == 2) {
+
+                    void StartFormCalc();
+                    StartFormCalc();
                 }
             } else if (curPage == 1) {
                 goto CONSOLE_KEY_EVENT;
