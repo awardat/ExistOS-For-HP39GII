@@ -322,18 +322,14 @@ void drawPage(int page) {
         uidisp->draw_printf(mainw->content_x0 + 12 + 80,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
 
-        // FormCalc 图标（48x48：与 RPN39 同尺寸同构——灰机壳 + 实心白表单纸，无框线元素）
+        // FormCalc 图标（48x48：与 RPN39 完全同构——机壳 + 上白屏（F+ 屏字）+ 下软键行；无任何框线元素）
         {
             int ix = mainw->content_x0 + 12 + 160, iy = mainw->content_y0 + 12;
-            uidisp->draw_box(ix + 2, iy + 2, ix + 45, iy + 45, 45, -1);       // 机壳（RPN39 同款 44x44 灰）
-            uidisp->draw_box(ix + 6, iy + 4, ix + 41, iy + 38, 255, -1);      // 白色表单纸（实心 36x35，无框）
-            for (int r = 0; r < 3; r++) {                                     // 3 行输入字段：黑 label + 值灰条
-                int y = iy + 8 + r * 7;
-                uidisp->draw_box(ix + 8, y, ix + 12, y + 2, 0, -1);
-                uidisp->draw_box(ix + 15, y, ix + 38, y + 2, 190, -1);
-            }
-            // 黑字 "F+" 从纸内伸出，底缘压过纸下缘（断口感）——纸底 38，字底 42
-            uidisp->draw_printf(ix + 12, iy + 26, 16, 0, 255, "F+");
+            uidisp->draw_box(ix + 2, iy + 2, ix + 45, iy + 45, 45, -1);       // 机壳（灰，与 RPN39 同位同尺寸）
+            uidisp->draw_box(ix + 6, iy + 4, ix + 41, iy + 26, 255, -1);      // 白屏（与 RPN39 屏同位置同尺寸）
+            uidisp->draw_printf(ix + 13, iy + 7, 16, 0, 255, "F+");           // 屏字（24px 宽居中）
+            for (int c = 0; c < 6; c++)                                       // 6 软键行（表单 F1-F6 意象，RPN39 键盘同区域）
+                uidisp->draw_box(ix + 7 + c * 6, iy + 35, ix + 10 + c * 6, iy + 41, 190, -1);
         }
         uidisp->draw_printf(mainw->content_x0 + 12 + 160,
                             mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "FormCalc");
