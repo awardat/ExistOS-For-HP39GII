@@ -214,10 +214,6 @@ void pageUpdate() {
 
     getTimeStr(timeStr);
 
-    if (curPage == 1) {
-        console->blink();
-    }
-
     if (curPage <= 2) {
         uidisp->draw_box(180, 0, 255, 11, -1, 0);
         uidisp->draw_printf(180, 0, 16, 255, -1, "%s", timeStr);
@@ -1268,9 +1264,14 @@ void UI_keyScanner(void *_) {
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(30)); // 20→30ms（2026-09-04 降耗实验：UI 空闲 28% CPU 偏高排查）
         cnt++;
-        if (cnt % 45 == 0) {
+        if (cnt % 33 == 0) { // ~1s：控制台光标闪烁节奏保留
+            if (curPage == 1 && console) {
+                console->blink();
+            }
+        }
+        if (cnt % 100 == 0) { // 900→3000ms：页面信息（时钟/设置页）刷新降频
             pageUpdate();
 
             if (UIForceRefresh) {
