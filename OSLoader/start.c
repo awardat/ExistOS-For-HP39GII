@@ -925,14 +925,12 @@ void vBatteryMon(void *__n) {
                 printf("Charge stop (12h)\n");
                 chargeStartTick = 0;
             }
-            if (batt_voltage >= 1420) {
-
+            if (batt_voltage >= 1500) {
+                // 2026-09-04：原 ≥1420 即关 DCDC 且无重开——镍氢 200mA 带载充电电压可达 1.5V+，1.4V 停只充 ~85-90%；
+                // 改为 1.5V（镍氢充满带载电压）一次停：断充电电源 + PWD 关充电器，12h 定时仍兜底
                 HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
-                printf("Disable DCDC\n");
-
-                if (batt_voltage >= 1500) {
-                    portChargeEnable(false);
-                }; //
+                portChargeEnable(false);
+                printf("Charge stop (1.5V)\n");
             }
         }
 
