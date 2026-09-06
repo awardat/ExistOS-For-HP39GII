@@ -1,6 +1,6 @@
 # RPN39 用户手册
 
-> RPN39 是 ExistOS 内置的 HP-42S 风格 RPN（逆波兰）计算器，适用于 HP 39GII（build 128+，当前 build 132）。
+> RPN39 是 ExistOS 内置的 HP-42S 风格 RPN（逆波兰）计算器，适用于 HP 39GII（build 128+，当前 build 134）。
 > 手册示例均为实测预期值；显示精度固定 12 位有效数字（更高精度请用 KhiCAS）。
 
 ---

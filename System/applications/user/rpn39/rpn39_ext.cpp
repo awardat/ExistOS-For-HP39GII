@@ -86,12 +86,17 @@ static void saveCplx(void) {
 }
 static void loadCplx(void) {
     FIL f; UINT br = 0;
-    if (f_open(&f, "/rpn39/cplx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径
+    if (f_open(&f, "/rpn39/cplx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径优先
+        double d[5] = {0};
+        f_read(&f, d, sizeof(d), &br);
+        if (br >= 4 * sizeof(double)) { cZ0re = d[0]; cZ0im = d[1]; cZ1re = d[2]; cZ1im = d[3]; }
+        if (br >= 5 * sizeof(double)) cplxPolar = (int)d[4];
+        f_close(&f);
     } else if (f_open(&f, "/rpn39_cplx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移）
         double d[5] = {0};
         f_read(&f, d, sizeof(d), &br);
         if (br >= 4 * sizeof(double)) { cZ0re = d[0]; cZ0im = d[1]; cZ1re = d[2]; cZ1im = d[3]; }
-        if (br >= 5 * sizeof(double)) cplxPolar = (int)d[4]; // 旧 4 值文件保持默认 0
+        if (br >= 5 * sizeof(double)) cplxPolar = (int)d[4];
         f_close(&f);
     }
 }
@@ -279,7 +284,17 @@ static void saveMatx(void) {
 }
 static void loadMatx(void) {
     FIL f; UINT br = 0;
-    if (f_open(&f, "/rpn39/matx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径
+    if (f_open(&f, "/rpn39/matx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径优先
+        f_read(&f, mA, sizeof(mA), &br);
+        if (br == sizeof(mA)) {
+            f_read(&f, mB, sizeof(mB), &br);
+            f_read(&f, mR, sizeof(mR), &br);
+            f_read(&f, &dA, sizeof(int), &br);
+            f_read(&f, &dB, sizeof(int), &br);
+            f_read(&f, &dR, sizeof(int), &br);
+            f_read(&f, &edSlot, sizeof(int), &br);
+        }
+        f_close(&f);
     } else if (f_open(&f, "/rpn39_matx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移）
         f_read(&f, mA, sizeof(mA), &br);
         if (br == sizeof(mA)) {
@@ -592,7 +607,11 @@ static void saveStat(void) {
 }
 static void loadStat(void) {
     FIL f; UINT br = 0;
-    if (f_open(&f, "/rpn39/stat.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径
+    if (f_open(&f, "/rpn39/stat.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径优先
+        f_read(&f, &statN, sizeof(int), &br);
+        if (statN < 0 || statN > STAT_MAX) statN = 0;
+        if (statN > 0) f_read(&f, statData, statN * sizeof(double), &br);
+        f_close(&f);
     } else if (f_open(&f, "/rpn39_stat.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移）
         f_read(&f, &statN, sizeof(int), &br);
         if (statN < 0 || statN > STAT_MAX) statN = 0;

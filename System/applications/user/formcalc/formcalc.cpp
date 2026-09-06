@@ -125,7 +125,7 @@ static const char *finItems[8] = {
     "\xD5\xDB\xBE\xC9", "\xC8\xD5\xC6\xDA", "\xC0\xFB\xC2\xCA\xBB\xBB\xCB\xE3", "\xC0\xFB\xC8\xF3" };
 static const char *finAbbr[8] = { "TVM", "CFLOW", "AMORT", "BOND", "DEPREC", "DATE", "ICONV", "MARGIN" };
 static const char *eeItems[9] = {
-    "\xC5\xB7\xC4\xB7\xB6\xA8\xC2\xC9", "\xB7\xD6\xD1\xB9\xC6\xF7", "\xB5\xE7\xD7\xE8\xB2\xA2\xC1\xAA",
+    "\xC5\xB7\xC4\xB7\xB6\xA8\xC2\xC9", "\xB7\xD6\xD1\xB9\xC6\xF7", "\xB4\xAE\xB2\xA2\xC1\xAA",
     "\xCA\xB1\xBC\xE4\xB3\xA3\xCA\xFD", "\xD0\xB3\xD5\xF1\xC6\xB5\xC2\xCA", "\xC6\xB5\xC2\xCA\xD6\xDC\xC6\xDA",
     "\xD5\xFD\xCF\xD2\xB7\xF9\xD6\xB5", "dBm \xB9\xA6\xC2\xCA", "\xB1\xE4\xD1\xB9\xC6\xF7" };
 static const char *eeAbbr[9] = { "OHM", "VDIV", "RPAR", "RC", "RESO", "FREQ", "SINE", "DBM", "XFMR" };
@@ -386,15 +386,24 @@ static void fmtVal(int ft, double v, char *buf) {
 }
 
 // ---- 通用绘制 ----
+static int fcMixW(const char *s) { // GBK 混排文本宽度（GBK 字 16px / ASCII 8px）
+    int w = 0;
+    while (*s) {
+        unsigned char c = (unsigned char)*s;
+        if (c >= 0x81 && c < 0xFE && s[1]) { w += 16; s += 2; }
+        else { w += 8; s++; }
+    }
+    return w;
+}
 static void drawTitle(const char *left, const char *right) {
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
     fDrawMix(2, 0, left, 0, 255);
     if (fcMsg[0]) {
         int l = (int)strlen(fcMsg);
-        uidisp->draw_printf(254 - l * 8, 2, 12, 0, 255, "%s", fcMsg);
+        uidisp->draw_printf(254 - l * 8, 2, 12, 0, 255, "%s", fcMsg); // 消息纯 ASCII 12px
     } else if (right) {
-        int l = (int)strlen(right);
-        uidisp->draw_printf(254 - l * 8, 2, 12, 0, 255, "%s", right);
+        // 状态含 GBK（期初/期末）——16px 混排（12px ascii 渲染 GBK 会雪花）；右对齐
+        fDrawMix(254 - fcMixW(right), 1, right, 0, 255);
     }
 }
 
@@ -539,6 +548,7 @@ static int solveI(double n, double pv, double pmt, double fv, int b, double *ri)
     for (int k = 0; k < 200; k++) {
         double mid = (lo + hi) * 0.5;
         double fm = tvmF(mid, n, pv, pmt, fv, b);
+        if (fm != fm) return -1; // NaN 早退（审核四.4）
         if (fm * flo <= 0) { hi = mid; fhi = fm; }
         else { lo = mid; flo = fm; }
         if (fabs(hi - lo) < 1e-14 * (fabs(hi) + 1)) break;
@@ -615,6 +625,13 @@ static double npvAt(double r) { // r 比率
     }
     return s;
 }
+static void fcMsgFmt(const char *pre, double v, int pct) { // fcMsg[24] 防溢出：超长转 %.6e
+    double a = v < 0 ? -v : v;
+    if (a >= 1e7 || (a != 0 && a < 1e-4))
+        snprintf(fcMsg, sizeof(fcMsg), "%s%.6e%s", pre, v, pct ? "%%" : "");
+    else
+        snprintf(fcMsg, sizeof(fcMsg), "%s%.*f%s", pre, fcFix, v, pct ? "%%" : "");
+}
 static int actCflow(int slot) {
     if (slot == 4) { // CLR 现金流（含 r）
         for (int i = 0; i < 14; i++) { fv_[1][1][i] = 0; fh_[1][1][i] = 0; }
@@ -622,15 +639,15 @@ static int actCflow(int slot) {
         strcpy(fcMsg, "Cleared");
         return 0;
     }
-    if (!fh_[1][1][0]) return 1; // r 缺
     int cnt = 0;
     for (int i = 1; i < 14; i++) if (fh_[1][1][i]) cnt++;
     if (cnt == 0) return 1;
-    if (slot == 0) { // NPV
+    if (slot == 0) { // NPV（需 r）
+        if (!fh_[1][1][0]) return 1;
         double r = fv_[1][1][0] / 100.0;
         double s = npvAt(r);
         if (s != s) return 1;
-        sprintf(fcMsg, "NPV=%.*f", fcFix, s);
+        fcMsgFmt("NPV=", s, 0);
         return 0;
     }
     if (slot == 1) { // IRR：NPV(r)=0 二分（r 百分数语义同 TVM i 求解）
@@ -657,13 +674,14 @@ static int actCflow(int slot) {
         if (!found) return 1;
         for (int k = 0; k < 200; k++) {
             double mid = (lo + hi) * 0.5, fm = npvAt(mid);
+            if (fm != fm) return 1; // NaN 早退（审核四.4）
             if (fm * flo <= 0) { hi = mid; }
             else { lo = mid; flo = fm; }
             if (fabs(hi - lo) < 1e-14 * (fabs(hi) + 1)) break;
         }
         double ri = (lo + hi) * 0.5 * 100.0;
         if (ri != ri) return 1;
-        sprintf(fcMsg, "IRR=%.*f%%", fcFix, ri);
+        fcMsgFmt("IRR=", ri, 1);
         return 0;
     }
     return 0;
@@ -683,6 +701,7 @@ static int actAmort(int slot) {
     if (p2 < p1) p2 = p1;
     long nn = (long)(n + 0.5);
     if (nn < 1) return 1;
+    if (nn > 1000000) return 1; // 大期数防 UI 冻结（审核四.1）
     if (p2 > nn) p2 = nn;
     double i = ip / 100.0;
     double pmt;
@@ -732,7 +751,9 @@ static int bondCalcNc(int *Nc) {
     long months = 12L * (y2 - y1) + (m2 - m1);
     if (months <= 0 || d1 != d2) return -1;   // 需同日号
     if (months > 1200) return -1;             // 期限超 100 年视为输入错误（防 D.MYYYYY 误读）
-    *Nc = (int)(months * f / 12.0 + 0.5);
+    long step = (long)(12.0 / f + 0.5); // 每期月数（f=1→12/2→6/4→3/12→1）
+    if (months % step != 0) return -1;  // 非整付息期静默舍入会算错价——拒绝（审核四.3）
+    *Nc = (int)(months / step);
     if (*Nc <= 0) return -1;
     return 0;
 }
@@ -776,6 +797,7 @@ static int actBond(int slot) {
         for (int k = 0; k < 200; k++) {
             double mid = (lo + hi) * 0.5;
             double fm = bondPrice(0, Nc, c, rv, mid) - target;
+            if (fm != fm) return 1; // NaN 早退（审核四.4）
             if (fm * flo <= 0) hi = mid;
             else { lo = mid; flo = fm; }
             if (fabs(hi - lo) < 1e-15 * (fabs(hi) + 1)) break;
@@ -798,6 +820,7 @@ static int actDeprec(int slot) {
     double c = v[0], s = v[1], l = v[2];
     long per = (long)v[3];
     if (l <= 0 || per < 1 || per > (long)(l + 0.5)) return 1;
+    if (l > 1000000) return 1; // 大寿命防 DB 循环冻结（审核四.1）
     double dep = 0;
     if (slot == 0) { // 直线
         dep = (c - s) / l;
@@ -1317,14 +1340,9 @@ static void drawFocRowOnly(void) {
 static void drawUnit(void);
 static int fcUnitKey(int key);
 
-static int fcFlushMax = 127; // 全刷高度上限：F 求解等动作限 110（保住菜单行 111-127 不重送——菜单不闪）
+static int fcFlushMax = 127;
+static double uVal = 0; // 单位换算：已提交值（eAct 编辑中以 ebuf 为准）——上移供主循环 ON 提交用 // 全刷高度上限：F 求解等动作限 110（保住菜单行 111-127 不重送——菜单不闪）
 static void fcDraw(void) {
-    if (fcRowFoc >= 0 && fcLevel == 2 && (fcMod == 1 || fcMod == 2)) {
-        fcRowFoc = -1;
-        drawFocRowOnly();
-        return;
-    }
-    fcRowFoc = -1;
     if (fcLevel == 3) drawFormula();
     else if (fcLevel == 2) {
         if ((fcMod == 1 && fcForm < 8) || (fcMod == 2 && fcForm < 9)) drawFormScreen();
@@ -1468,10 +1486,6 @@ static int fcFormKey(int key) {
         fcFlushMax = 110; // 求解结果/消息变化只送内容区，菜单行不闪
         return 1;
     }
-    if (key == KEY_VIEWS) {
-        if ((fcMod == 1 && fcForm == 0) || fcMod == 2) fcLevel = 3; // 公式视图
-        return 1;
-    }
     return 0;
 }
 
@@ -1578,11 +1592,15 @@ static void formcalcTask(void *_) {
                     if (key == KEY_ON) {
                         if (fcClrArm) { fcClrArm = 0; fcMsg[0] = 0; }
                         if (fcLevel == 3) { fcLevel = 2; fcMsg[0] = 0; fcDraw(); }
-                        else if (fcLevel == 2) { fcLevel = 1; fcMsg[0] = 0; fcDraw(); }
-                        else if (fcLevel == 1) { fcLevel = 0; fcSel = fcMod - 1; fcMsg[0] = 0; fcDraw(); }
+                        else if (fcLevel == 2) {
+                            if (fcMod == 3 && eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; fcSave(); } // 单位页值提交（fcUnitKey 的 ON 分支被主循环拦截）
+                            fcCommit();
+                            fcLevel = 1; fcMsg[0] = 0; fcDraw();
+                        }
+                        else if (fcLevel == 1) { fcLevel = 0; fcSel = (fcMod == 3) ? 0 : fcMod; fcMsg[0] = 0; fcDraw(); } // L0 显示序：单位换算0/金融1/工程2
                         else if (fcLevel == 4) { fcLevel = 0; fcDraw(); }
                     } else if (key == KEY_HOME) {
-                        if (fcLevel != 0) { fcCommit(); fcClrArm = 0; fcSel = fcMod - 1; fcLevel = 0; fcMsg[0] = 0; fcDraw(); }
+                        if (fcLevel != 0) { fcCommit(); fcClrArm = 0; fcSel = (fcMod == 3) ? 0 : fcMod; fcLevel = 0; fcMsg[0] = 0; fcDraw(); }
                     } else if (key == KEY_APPS) {
                         if (fcLevel >= 2 && fcMod == 1) { fcLevel = 1; fcMsg[0] = 0; fcDraw(); }
                         else if (fcLevel == 1 && fcMod == 1) { fcLevel = 0; fcSel = 0; fcDraw(); }
@@ -1662,7 +1680,6 @@ static const UnCat unCats[10] = {
     { "MASS", 5, 0, itMas }, { "TEMP", 3, 1, itTmp }, { "VEL",  4, 0, itVel },
     { "PRES", 7, 0, itPre }, { "ENER", 6, 0, itEne }, { "POW",  4, 0, itPow },
     { "DATA", 6, 0, itDat } };
-static double uVal = 0; // 已提交值（eAct 编辑中以 ebuf 为准）
 
 static double tmpToK(double v, int s) {
     if (s == 0) return v + 273.15;        // C
@@ -1746,14 +1763,14 @@ static void unDrawValueCol(void) {
         if (idx >= c->n) break;
         int y = 62 + r * 12;
         int sel = (idx == uSrc);
-        uidisp->draw_box(150, y - 1, 254, y + 11, 255, sel ? 190 : 255); // 值列清底（旧文本残留清除）
+        uidisp->draw_box(140, y - 1, 254, y + 11, 255, sel ? 190 : 255); // 值列清底（140 覆盖长值左端——审核五.13）
         double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
         char vb[24];
         unFmt(v, vb);
         uidisp->draw_printf(252 - (int)strlen(vb) * 8, y, 12, 0, sel ? 190 : 255, "%s", vb);
     }
     uidisp->flushRect(136, 18, 254, 35);   // 值行值区
-    uidisp->flushRect(150, 61, 254, 111);  // 结果值列
+    uidisp->flushRect(140, 61, 254, 111);  // 结果值列
 }
 
 // 整行内容变化（←→ 源单位切换、↑↓ 滚动）：整行重画 + 全宽条 flush
@@ -1784,6 +1801,7 @@ static void unDrawRowsFull(int r0, int r1) {
             y = 62 + (r - 2) * 12;
             int sel = (idx == uSrc);
             if (sel) uidisp->draw_box(0, y - 1, 255, y + 11, 255, 190);
+            else uidisp->draw_box(0, y - 1, 255, y + 11, 255, 255); // 非选中行清白底（滚动残留灰条——审核五.12）
             const UnItem *it = &c->it[idx];
             uidisp->draw_printf(6, y, 12, 0, sel ? 190 : 255, "%s", it->sy);
             double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
@@ -1842,13 +1860,6 @@ static int fcUnitKey(int key) {
     if (key == KEY_DOWN) { if (uTop + 4 < c->n) { uTop++; unDrawRowsFull(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
     if (key == KEY_ENTER) { if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; fcFlushMax = 110; return 1; } return 0; }
     if (key == KEY_F1) { eAct = 0; elen = 0; ebuf[0] = 0; uVal = 0; fcFlushMax = 110; return 1; }
-    if (key == KEY_ON || key == KEY_HOME || key == KEY_APPS) {
-        if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; }
-        fcLevel = (key == KEY_HOME) ? 0 : 1;
-        fcMsg[0] = 0;
-        if (fcLevel == 1) { fcTop = (uCat / 5) * 5; fcSel = uCat - fcTop; } // 回到当前类别行
-        fcFlushMax = 110; return 1;
-    }
-    if (key == KEY_VIEWS) return 0;
+    // ON/HOME/APPS 被主循环在 fcHandleKey 前拦截（含提交），此处无此分支（审核五.11 死代码已清）
     return 0;
 }

@@ -108,9 +108,7 @@ void loadRegs(void) {
     UINT br = 0;
     memset(regs, 0, sizeof(regs));
     angMode = 0;
-    if (f_open(&f, "/rpn39/sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径
-        /* 新路径优先 */
-    } else if (f_open(&f, "/rpn39_sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移到新路径）
+    if (f_open(&f, "/rpn39/sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径优先
         f_read(&f, regs, sizeof(regs), &br); // regs 区（br 出参）
         if (br >= sizeof(regs)) {            // 有栈区（新版文件）
             double st[5] = {0};
@@ -118,6 +116,16 @@ void loadRegs(void) {
             f_read(&f, st, sizeof(st), &br2);
             if (br2 >= 4 * sizeof(double)) { stX = st[0]; stY = st[1]; stZ = st[2]; stT = st[3]; }
             if (br2 >= 5 * sizeof(double)) { angMode = (int)st[4]; if (angMode < 0 || angMode > 2) angMode = 0; } // 角度模式（含 31 值新版；坏文件钳制）
+        }
+        f_close(&f);
+    } else if (f_open(&f, "/rpn39_sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移到新路径）
+        f_read(&f, regs, sizeof(regs), &br); // regs 区（br 出参）
+        if (br >= sizeof(regs)) {            // 有栈区（新版文件）
+            double st[5] = {0};
+            UINT br2 = 0;
+            f_read(&f, st, sizeof(st), &br2);
+            if (br2 >= 4 * sizeof(double)) { stX = st[0]; stY = st[1]; stZ = st[2]; stT = st[3]; }
+            if (br2 >= 5 * sizeof(double)) { angMode = (int)st[4]; if (angMode < 0 || angMode > 2) angMode = 0; }
         }
         f_close(&f);
     }

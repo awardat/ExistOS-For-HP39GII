@@ -38,6 +38,8 @@ public:
         this->drawf(this->disp_buf, 0, 0, this->disp_w - 1, this->disp_h - 1);
     }
     void flushRect(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
+        // 参数防御（审核五.15）：非法区间直接拒绝——x1<x0/w 回绕可致巨量拷贝
+        if (x1 < x0 || y1 < y0 || x1 >= (uint32_t)this->disp_w || y1 >= (uint32_t)this->disp_h) return;
         // 整行宽（x0=0, 宽=disp_w）：disp_buf 连续可直接送
         if (x0 == 0 && (x1 + 1) == (uint32_t)this->disp_w) {
             this->drawf(this->disp_buf + y0 * this->disp_w, x0, y0, x1, y1);
