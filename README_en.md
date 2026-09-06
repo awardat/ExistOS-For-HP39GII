@@ -53,9 +53,14 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (since build 126, see CHANGELOG.md)
 
-### build 134 (in development)
-- [ ] RPN39 Phase 3 remaining UX iteration; KhiCAS physical key mapping / demo features; limited giac 2.0.0 port
-- [ ] FormCalc (form-based: full 12C financial + engineering) planning
+### build 135 (in development)
+- [ ] FormCalc on-device feedback iteration; KhiCAS physical key mapping / demo features; limited giac 2.0.0 port
+- [ ] D4 FTL_Sync power-loss test
+
+### build 134 (2026-09-06 released)
+- [x] **FormCalc complete**: full 12C financial set (TVM/CashFlow/Amort/Bond/Deprec/Date/ICONV/Margin) + Electronic Engineering (9 forms) + Unit Converter (10 categories, no FX); form UI with row-level refresh / wrap menus / Shift+BKSP clear
+- [x] **Session directory** (/rpn39/, /formcalc/, legacy files auto-migrated); charge stop on 5V loss
+- [x] **Round 5 review fixes** (persistence empty-branch P0, solver hardening, title snowflake fix)
 
 ### build 133 (2026-09-05 released)
 - [x] **KhiCAS help fully localized** (260 GBK descriptions + root-cause fix of glyph overlap; ON=back unified; catalog category translations)

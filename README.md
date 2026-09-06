@@ -52,9 +52,14 @@
 
 ## 目前工作进展（build 126 起，详见 CHANGELOG.md）
 
-### build 134（开发中）
-- [ ] RPN39 阶段 3 残余体验迭代；KhiCAS 物理按键映射加强 / 示例功能；giac 2.0.0 有限移植
-- [ ] FormCalc（表单计算：财务 12C 全集 + 工程）规划
+### build 135（开发中）
+- [ ] FormCalc 实测反馈迭代；KhiCAS 物理按键映射加强 / 示例功能；giac 2.0.0 有限移植
+- [ ] D4 FTL_Sync 真机掉电测试
+
+### build 134（2026-09-06 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-134)）
+- [x] **FormCalc 表单计算完整实现**：金融 12C 全集 8 项（TVM/现金流/摊销/债券/折旧/日期/利率换算/利润）+ 电子工程 9 项 + 单位换算 10 类（无汇率）；表单交互（行级局部刷新/循环菜单/Shift+BKSP 清空）
+- [x] **session 目录化**（/rpn39/、/formcalc/，旧文件自动迁移）；充电拔电立即停充
+- [x] **Round 5 审核整改**（持久化空分支 P0、求解器健壮性、雪花根治）
 
 ### build 133（2026-09-05 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-133)）
 - [x] **KhiCAS 帮助全面中文化**（260 条描述 GBK + 乱码根治——渲染宽度与 GBK 双字节对齐；ON 返回统一；命令目录分类补译）
