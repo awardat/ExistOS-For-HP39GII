@@ -1317,6 +1317,7 @@ static void drawFocRowOnly(void) {
 static void drawUnit(void);
 static int fcUnitKey(int key);
 
+static int fcFlushMax = 127; // 全刷高度上限：F 求解等动作限 110（保住菜单行 111-127 不重送——菜单不闪）
 static void fcDraw(void) {
     if (fcRowFoc >= 0 && fcLevel == 2 && (fcMod == 1 || fcMod == 2)) {
         fcRowFoc = -1;
@@ -1332,7 +1333,8 @@ static void fcDraw(void) {
     } else if (fcLevel == 4) drawFixPage();
     else if (fcLevel == 1) drawL1();
     else drawL0();
-    uidisp->flush();
+    if (fcFlushMax >= 127) uidisp->flush();
+    else { uidisp->flushRect(0, 0, 255, fcFlushMax); fcFlushMax = 127; }
 }
 
 static void drawUnderConstruction(void) {
@@ -1463,6 +1465,7 @@ static int fcFormKey(int key) {
             if (eeActTbl[fcForm](slot) != 0) strcpy(fcMsg, "err");
             else fcMsg[0] = 0;
         }
+        fcFlushMax = 110; // 求解结果/消息变化只送内容区，菜单行不闪
         return 1;
     }
     if (key == KEY_VIEWS) {
@@ -1584,7 +1587,7 @@ static void formcalcTask(void *_) {
                         if (fcLevel >= 2 && fcMod == 1) { fcLevel = 1; fcMsg[0] = 0; fcDraw(); }
                         else if (fcLevel == 1 && fcMod == 1) { fcLevel = 0; fcSel = 0; fcDraw(); }
                     } else if (key == KEY_VIEWS) {
-                        if (fcLevel == 2 && fcMod == 1 && fcForm == 0) { fcLevel = 3; fcDraw(); }
+                        if (fcLevel == 2 && ((fcMod == 1 && fcForm == 0) || fcMod == 2)) { fcLevel = 3; fcDraw(); }
                         else if (fcLevel == 3) { fcLevel = 2; fcDraw(); }
                     } else {
                         if (fcHandleKey((int)key)) fcDraw();
@@ -1837,14 +1840,14 @@ static int fcUnitKey(int key) {
     }
     if (key == KEY_UP) { if (uTop > 0) { uTop--; unDrawRowsFull(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
     if (key == KEY_DOWN) { if (uTop + 4 < c->n) { uTop++; unDrawRowsFull(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
-    if (key == KEY_ENTER) { if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; return 1; } return 0; }
-    if (key == KEY_F1) { eAct = 0; elen = 0; ebuf[0] = 0; uVal = 0; return 1; }
+    if (key == KEY_ENTER) { if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; fcFlushMax = 110; return 1; } return 0; }
+    if (key == KEY_F1) { eAct = 0; elen = 0; ebuf[0] = 0; uVal = 0; fcFlushMax = 110; return 1; }
     if (key == KEY_ON || key == KEY_HOME || key == KEY_APPS) {
         if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; }
         fcLevel = (key == KEY_HOME) ? 0 : 1;
         fcMsg[0] = 0;
         if (fcLevel == 1) { fcTop = (uCat / 5) * 5; fcSel = uCat - fcTop; } // 回到当前类别行
-        return 1;
+        fcFlushMax = 110; return 1;
     }
     if (key == KEY_VIEWS) return 0;
     return 0;
