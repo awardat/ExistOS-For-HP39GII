@@ -409,7 +409,7 @@ static void drawCflowRow(int idx) { // idx 0=r 1-13=CF0-12
     int y = cfRowY(idx);
     char tmp[40];
     const char *nm;
-    char ab[12]; // CF13 最长 4 字符——扩缓冲防格式告警
+    char ab[16]; // CF13 最长 4 字符——扩缓冲防格式告警
     if (idx == 0) {
         nm = ZH_LILV;             // 名：利率（中文前，与标准表单一致）
         strcpy(ab, "r%");         // 缩写位：r%（x84）
@@ -956,7 +956,7 @@ static void drawFormula(void) { // TVM 公式视图（只读）
         uidisp->draw_printf(2, 16 + i * 10, 8, 0, 255, "%s", lines[i]);
 }
 
-static const char *l0Names[3] = { ZH_JINRONGQI, ZH_DIANZI, ZH_DANWEI };
+static const char *l0Names[3] = { ZH_DANWEI, ZH_JINRONGQI, ZH_DIANZI };
 static const char *fcItemName(int mod, int idx) {
     if (mod == 1) return finItems[idx];
     if (mod == 2) return eeItems[idx];
@@ -973,7 +973,7 @@ static int fcModCount(void) {
 }
 
 static void drawL0(void) {
-    const char *menus[6] = { "FIN", "EE", "UNIT", "_", "_", "FIX" };
+    const char *menus[6] = { "UNIT", "FIN", "EE", "_", "_", "FIX" };
     drawTitle("FormCalc " ZH_BIAODAN, NULL);
     for (int i = 0; i < 3; i++) {
         int y = 20 + i * 24;
@@ -1055,6 +1055,10 @@ static void drawFocRowOnly(void) {
     uidisp->flushRect(0, y - 1, 255, y + 15);
 }
 
+// ---- 单位换算（fcMod==3，定义见文件尾）----
+static void drawUnit(void);
+static int fcUnitKey(int key);
+
 static void fcDraw(void) {
     if (fcRowFoc >= 0 && fcLevel == 2 && fcMod == 1) {
         fcRowFoc = -1;
@@ -1065,6 +1069,7 @@ static void fcDraw(void) {
     if (fcLevel == 3) drawFormula();
     else if (fcLevel == 2) {
         if (fcMod == 1 && fcForm < 8) drawFormScreen();
+        else if (fcMod == 3 && fcForm >= 0) drawUnit();
         else drawUnderConstruction();
     } else if (fcLevel == 4) drawFixPage();
     else if (fcLevel == 1) drawL1();
@@ -1086,9 +1091,12 @@ static void drawUnderConstruction(void) {
 }
 
 // ---- L0/L1 进入 ----
+static int uCat = 0; // 单位换算当前类别（==fcForm）
+static int uSrc = 0; // 源单位索引
+static int uTop = 0; // 结果滚动顶
 static void fcListSel(void) {
     if (fcLevel == 0) {
-        fcMod = fcSel + 1;
+        fcMod = fcSel == 0 ? 3 : (fcSel == 1 ? 1 : 2); // 显示序：单位换算/金融/电子工程
         fcSel = 0;
         fcTop = 0;
         fcLevel = 1;
@@ -1099,7 +1107,8 @@ static void fcListSel(void) {
     int idx = fcTop + fcSel;
     if (idx >= cnt) { idx = cnt - 1; fcSel = cnt - 1 - fcTop; }
     fcForm = idx;
-    if (fcMod == 2 || fcMod == 3) fcForm = 0; // 工程/换算 P3/P4 占位
+    if (fcMod == 2) fcForm = 0;      // 电子工程 P3 占位
+    if (fcMod == 3) { fcForm = idx; uCat = idx; uSrc = 0; uTop = 0; } // 单位换算：类别进入
     fcLevel = 2;
     fcMsg[0] = 0;
     foc = 0;
@@ -1196,6 +1205,7 @@ static int fcHandleKey(int key) {
         return 0;
     }
     if (fcLevel == 2 && fcMod == 1 && fcForm < 8) return fcFormKey(key);
+    if (fcLevel == 2 && fcMod == 3) return fcUnitKey(key);
     if (fcLevel == 2) { // 建设中页
         if (key == KEY_ON || key == KEY_HOME || key == KEY_BACKSPACE || key == KEY_APPS) {
             fcLevel = 1;
@@ -1315,4 +1325,191 @@ static void formcalcTask(void *_) {
 
 extern "C" void StartFormCalc() {
     xTaskCreate(formcalcTask, "FormCalc", 4096, NULL, configMAX_PRIORITIES - 3, NULL);
+}
+
+// ==================== 单位换算（P4，fcMod==3） ====================
+// 类别表：中文名在 unItems（L1 列表）；这里符号/系数/温度标志
+struct UnItem { const char *nm; const char *sy; double f; }; // nm=中文 16px；sy=ASCII 符号；f=相对基准系数（温度类 f 未用）
+struct UnCat  { const char *ab; int n; int tmp; const UnItem *it; }; // tmp=1 温度（公式对，非线性）
+
+static const UnItem itLen[] = { // 基准 m
+    { "\xB0\xAC\xC3\xD7", "mm", 1e-3 }, { "\xC0\xE5\xC3\xD7", "cm", 1e-2 },
+    { "\xC3\xD7", "m", 1 }, { "\xC7\xA7\xC3\xD7", "km", 1e3 },
+    { "\xD3\xA2\xB4\xE7", "in", 0.0254 }, { "\xD3\xA2\xB3\xDF", "ft", 0.3048 },
+    { "\xC2\xEB", "yd", 0.9144 }, { "\xD3\xA2\xC0\xEF", "mile", 1609.344 } };
+static const UnItem itAre[] = { // 基准 m2
+    { "\xC6\xBD\xB7\xBD\xC3\xD7", "m2", 1 }, { "\xC6\xBD\xB7\xBD\xC0\xE5\xC3\xD7", "cm2", 1e-4 },
+    { "\xC6\xBD\xB7\xBD\xD3\xA2\xB3\xDF", "ft2", 0.09290304 }, { "\xC6\xBD\xB7\xBD\xD3\xA2\xB4\xE7", "in2", 6.4516e-4 },
+    { "\xC4\xB6", "mu", 666.6666667 } };
+static const UnItem itVol[] = { // 基准 m3
+    { "\xBA\xC1\xC9\xFD", "mL", 1e-6 }, { "\xC9\xFD", "L", 1e-3 },
+    { "\xC1\xA2\xB7\xBD\xC3\xD7", "m3", 1 }, { "\xBC\xD3\xC2\xD8\x28\xC3\xC0\x29", "gal", 3.785411784e-3 },
+    { "\xD2\xBA\xB0\xBB\xCB\xBE\x28\xC3\xC0\x29", "floz", 2.95735295625e-5 } };
+static const UnItem itMas[] = { // 基准 kg
+    { "\xBF\xCB", "g", 1e-3 }, { "\xC7\xA7\xBF\xCB", "kg", 1 },
+    { "\xB6\xD6", "t", 1e3 }, { "\xB0\xBB\xCB\xBE", "oz", 0.028349523125 },
+    { "\xB0\xF5", "lb", 0.45359237 } };
+static const UnItem itTmp[] = { // 温度：C/F/K（公式对）
+    { "\xC9\xE3\xCA\xCF\xB6\xC8", "C", 0 }, { "\xBB\xAA\xCA\xCF\xB6\xC8", "F", 0 },
+    { "\xBF\xAA\xB6\xFB\xCE\xC4", "K", 0 } };
+static const UnItem itVel[] = { // 基准 m/s
+    { "\xC3\xD7\xC3\xBF\xC3\xEB", "m/s", 1 }, { "\xC7\xA7\xC3\xD7\xC3\xBF\xCA\xB1", "km/h", 1.0 / 3.6 },
+    { "\xD3\xA2\xC0\xEF\xC3\xBF\xCA\xB1", "mph", 0.44704 }, { "\xBD\xDA", "kn", 0.5144444444 } };
+static const UnItem itPre[] = { // 基准 Pa
+    { "\xC5\xC1\xCB\xB9\xBF\xA8", "Pa", 1 }, { "\xC7\xA7\xC5\xC1", "kPa", 1e3 },
+    { "\xD5\xD7\xC5\xC1", "MPa", 1e6 }, { "\xB0\xCD", "bar", 1e5 },
+    { "\xB0\xF5\xC3\xBF\xC6\xBD\xB7\xBD\xD3\xA2\xB4\xE7", "psi", 6894.757 },
+    { "\xB4\xF3\xC6\xF8\xD1\xB9", "atm", 101325.0 }, { "\xBA\xC1\xC3\xD7\xB9\xAF\xD6\xF9", "mmHg", 133.3224 } };
+static const UnItem itEne[] = { // 基准 J
+    { "\xBD\xB9\xB6\xFA", "J", 1 }, { "\xC7\xA7\xBD\xB9", "kJ", 1e3 },
+    { "\xBF\xA8", "cal", 4.184 }, { "\xC7\xA7\xBF\xA8", "kcal", 4184 },
+    { "\xCD\xDF\xCA\xB1", "Wh", 3600 }, { "\xC7\xA7\xCD\xDF\xCA\xB1", "kWh", 3.6e6 } };
+static const UnItem itPow[] = { // 基准 W
+    { "\xCD\xDF", "W", 1 }, { "\xC7\xA7\xCD\xDF", "kW", 1e3 },
+    { "\xC2\xED\xC1\xA6", "hp", 745.699872 }, { "\xD3\xA2\xC8\xC8\xC3\xBF\xCA\xB1", "Btu/h", 0.29307107 } };
+static const UnItem itDat[] = { // 基准 B（1024 进制）
+    { "\xD7\xD6\xBD\xDA", "B", 1 }, { "\xC7\xA7\xD7\xD6\xBD\xDA", "KB", 1.024e3 },
+    { "\xD5\xD7\xD7\xD6\xBD\xDA", "MB", 1.048576e6 }, { "\xBC\xAA\xD7\xD6\xBD\xDA", "GB", 1.073741824e9 },
+    { "\xCC\xAB\xD7\xD6\xBD\xDA", "TB", 1.099511627776e12 }, { "\xB1\xC8\xCC\xD8", "bit", 0.125 } };
+
+static const UnCat unCats[10] = {
+    { "LEN",  8, 0, itLen }, { "AREA", 5, 0, itAre }, { "VOL",  5, 0, itVol },
+    { "MASS", 5, 0, itMas }, { "TEMP", 3, 1, itTmp }, { "VEL",  4, 0, itVel },
+    { "PRES", 7, 0, itPre }, { "ENER", 6, 0, itEne }, { "POW",  4, 0, itPow },
+    { "DATA", 6, 0, itDat } };
+static double uVal = 0; // 已提交值（eAct 编辑中以 ebuf 为准）
+
+static double tmpToK(double v, int s) {
+    if (s == 0) return v + 273.15;        // C
+    if (s == 1) return (v - 32) * 5 / 9 + 273.15; // F
+    return v;                              // K
+}
+static double tmpFromK(double k, int t) {
+    if (t == 0) return k - 273.15;
+    if (t == 1) return (k - 273.15) * 9 / 5 + 32;
+    return k;
+}
+static double unConv(int cat, int src, int dst, double v) {
+    if (unCats[cat].tmp) { double k = tmpToK(v, src); return tmpFromK(k, dst); }
+    return v * unCats[cat].it[src].f / unCats[cat].it[dst].f;
+}
+
+// 数值格式化（12 位内：极值 e 记法，其余 %g）
+static void unFmt(double v, char *b) {
+    double a = v < 0 ? -v : v;
+    if (a == 0) { strcpy(b, "0"); return; }
+    if (a >= 1e10 || a < 1e-5) sprintf(b, "%.5e", v);
+    else sprintf(b, "%.8g", v);
+}
+
+static const char *unMenus[6] = { "CLR", "_", "_", "_", "_", "_" };
+
+static void drawUnit(void) {
+    const UnCat *c = &unCats[uCat];
+    char tt[48], rb[20];
+    sprintf(tt, "UNIT %s", unItems[uCat]);
+    sprintf(rb, "%d/%d", uSrc + 1, c->n);
+    drawTitle(tt, rb);
+    // 值行：名（数值）+ 值（编辑中黑底白字块 / 常态格式化右对齐）
+    fDrawMix(4, 20, "\xCA\xFD\xD6\xB5", 0, 255);
+    uidisp->draw_printf(84, 22, 12, 0, 255, "VALUE");
+    if (eAct) {
+        uidisp->draw_box(136, 18, 254, 35, 0, 0);
+        const char *ed = (elen > 12) ? ebuf + elen - 12 : ebuf; // 超长显尾部 12 字符
+        uidisp->draw_printf(140, 20, 16, 255, 0, "%s", ed);
+    } else {
+        char vb[24];
+        unFmt(uVal, vb);
+        uidisp->draw_printf(252 - (int)strlen(vb) * 8, 20, 16, 0, 255, "%s", vb);
+    }
+    // 源单位行：中文名（16px）+ 符号
+    const UnItem *src = &c->it[uSrc];
+    fDrawMix(4, 40, src->nm, 0, 255);
+    uidisp->draw_printf(150, 42, 12, 0, 255, src->sy);
+    uidisp->draw_printf(206, 42, 12, 0, 255, "<->");
+    uidisp->draw_line(0, 60, 255, 60, 200);
+    // 结果 4 行（可视，行高 12 紧排）；当前源单位行整行反显
+    for (int r = 0; r < 4; r++) {
+        int idx = uTop + r;
+        if (idx >= c->n) break;
+        int y = 62 + r * 12;
+        int sel = (idx == uSrc);
+        if (sel) uidisp->draw_box(0, y - 1, 255, y + 11, 255, 0);
+        const UnItem *it = &c->it[idx];
+        uidisp->draw_printf(6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", it->sy);
+        double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
+        char vb[24];
+        unFmt(v, vb);
+        uidisp->draw_printf(252 - (int)strlen(vb) * 6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", vb);
+    }
+    drawMenu(unMenus);
+}
+
+// 输入局部刷新：值行值区（136..254）+ 结果 4 行值列（156..254）
+static void unRedrawValue(void) {
+    const UnCat *c = &unCats[uCat];
+    uidisp->draw_box(136, 18, 254, 35, 255, 255);
+    if (eAct) {
+        uidisp->draw_box(136, 18, 254, 35, 0, 0);
+        const char *ed = (elen > 12) ? ebuf + elen - 12 : ebuf;
+        uidisp->draw_printf(140, 20, 16, 255, 0, "%s", ed);
+    } else {
+        char vb[24];
+        unFmt(uVal, vb);
+        uidisp->draw_printf(252 - (int)strlen(vb) * 8, 20, 16, 0, 255, "%s", vb);
+    }
+    for (int r = 0; r < 4; r++) {
+        int idx = uTop + r;
+        if (idx >= c->n) break;
+        int y = 62 + r * 12;
+        int sel = (idx == uSrc);
+        uidisp->draw_box(156, y - 1, 254, y + 11, 255, 0); // 值列底色（白——反显行整行已白）
+        double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
+        char vb[24];
+        unFmt(v, vb);
+        uidisp->draw_printf(252 - (int)strlen(vb) * 6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", vb);
+    }
+    uidisp->flushRect(136, 18, 254, 35);
+    uidisp->flushRect(156, 61, 254, 111);
+}
+
+static void unEdit(char c) {
+    if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; }
+    if (elen < 20) { ebuf[elen++] = c; ebuf[elen] = 0; }
+    unRedrawValue();
+}
+static void unEditNeg(void) {
+    if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; }
+    if (ebuf[0] == '-') { memmove(ebuf, ebuf + 1, elen); elen--; }
+    else { memmove(ebuf + 1, ebuf, elen + 1); ebuf[0] = '-'; elen++; }
+    unRedrawValue();
+}
+
+static int fcUnitKey(int key) {
+    int d = fcDigit(key);
+    if (d >= 0) { unEdit((char)('0' + d)); return 0; }
+    if (key == KEY_DOT) { unEdit('.'); return 0; }
+    if (key == KEY_NEGATIVE) { unEditNeg(); return 0; }
+    if (key == KEY_BACKSPACE) {
+        if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; }
+        else if (elen > 0) { elen--; ebuf[elen] = 0; if (elen == 0) eAct = 0; }
+        unRedrawValue();
+        return 0;
+    }
+    const UnCat *c = &unCats[uCat];
+    if (key == KEY_LEFT) { uSrc = (uSrc + c->n - 1) % c->n; if (uSrc < uTop) uTop = uSrc; if (uSrc > uTop + 3) uTop = uSrc - 3; return 1; }
+    if (key == KEY_RIGHT) { uSrc = (uSrc + 1) % c->n; if (uSrc < uTop) uTop = uSrc; if (uSrc > uTop + 3) uTop = uSrc - 3; return 1; }
+    if (key == KEY_UP) { if (uTop > 0) uTop--; return 1; }
+    if (key == KEY_DOWN) { if (uTop + 4 < c->n) uTop++; return 1; }
+    if (key == KEY_ENTER) { if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; return 1; } return 0; }
+    if (key == KEY_F1) { eAct = 0; elen = 0; ebuf[0] = 0; uVal = 0; return 1; }
+    if (key == KEY_ON || key == KEY_HOME || key == KEY_APPS) {
+        if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; }
+        fcLevel = (key == KEY_HOME) ? 0 : 1;
+        fcMsg[0] = 0;
+        if (fcLevel == 1) { fcTop = (uCat / 5) * 5; fcSel = uCat - fcTop; } // 回到当前类别行
+        return 1;
+    }
+    if (key == KEY_VIEWS) return 0;
+    return 0;
 }
