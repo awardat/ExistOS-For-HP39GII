@@ -956,8 +956,8 @@ static const FcFld vdivFlds[4] = {
 static const char *menuVdiv[6] = { "Vout", "R2", "R1", "_", "_", "_" };
 static int actVdiv(int slot) {
     if (slot == 0) { if (!(eeH(1,0) && eeH(1,1) && eeH(1,2))) return 1; double d = eeV(1,1)+eeV(1,2); if (d == 0) return 1; eeW(1,3, eeV(1,0)*eeV(1,2)/d); }
-    else if (slot == 1) { if (!(eeH(1,0) && eeH(1,2) && eeH(1,3))) return 1; double d = eeV(1,0)-eeV(1,3); if (d == 0) return 1; eeW(1,1, eeV(1,3)*eeV(1,2)/d); }
-    else if (slot == 2) { if (!(eeH(1,0) && eeH(1,1) && eeH(1,3))) return 1; double v = eeV(1,3); if (v == 0) return 1; eeW(1,2, eeV(1,1)*(eeV(1,0)-v)/v); }
+    else if (slot == 1) { if (!(eeH(1,0) && eeH(1,1) && eeH(1,3))) return 1; double v = eeV(1,3); if (v == 0) return 1; eeW(1,2, eeV(1,1)*(eeV(1,0)-v)/v); } // F2 求 R2
+    else if (slot == 2) { if (!(eeH(1,0) && eeH(1,2) && eeH(1,3))) return 1; double d = eeV(1,0)-eeV(1,3); if (d == 0) return 1; eeW(1,1, eeV(1,3)*eeV(1,2)/d); } // F3 求 R1
     else return 1;
     fcSave();
     return 0;
@@ -1025,18 +1025,22 @@ static const FcFld sineFlds[3] = {
 static const char *menuSine[6] = { "Vp", "Vrms", "Vpp", "_", "_", "_" };
 static int actSine(int slot) {
     const double S2 = 1.4142135623730951;
-    if (slot == 0) {
-        if (eeH(6,1)) eeW(6,0, eeV(6,1)*S2);
-        else if (eeH(6,2)) eeW(6,0, eeV(6,2)/2);
-        else return 1;
-    } else if (slot == 1) {
-        if (eeH(6,0)) eeW(6,1, eeV(6,0)/S2);
-        else if (eeH(6,2)) eeW(6,1, eeV(6,2)/(2*S2));
-        else return 1;
-    } else if (slot == 2) {
-        if (eeH(6,0)) eeW(6,2, 2*eeV(6,0));
-        else if (eeH(6,1)) eeW(6,2, 2*S2*eeV(6,1));
-        else return 1;
+    double a, b;
+    if (slot == 0) { // 求 Vp：Vrms 优先；两源并存须一致
+        bool b1 = eeH(6,1), b2 = eeH(6,2);
+        a = b1 ? eeV(6,1)*S2 : 0; b = b2 ? eeV(6,2)/2 : 0;
+        if (b1 && b2 && fabs(a-b) > 1e-6*(1+fabs(a))) return 1;
+        if (b1) eeW(6,0, a); else if (b2) eeW(6,0, b); else return 1;
+    } else if (slot == 1) { // 求 Vrms
+        bool b1 = eeH(6,0), b2 = eeH(6,2);
+        a = b1 ? eeV(6,0)/S2 : 0; b = b2 ? eeV(6,2)/(2*S2) : 0;
+        if (b1 && b2 && fabs(a-b) > 1e-6*(1+fabs(a))) return 1;
+        if (b1) eeW(6,1, a); else if (b2) eeW(6,1, b); else return 1;
+    } else if (slot == 2) { // 求 Vpp
+        bool b1 = eeH(6,0), b2 = eeH(6,1);
+        a = b1 ? 2*eeV(6,0) : 0; b = b2 ? 2*S2*eeV(6,1) : 0;
+        if (b1 && b2 && fabs(a-b) > 1e-6*(1+fabs(a))) return 1;
+        if (b1) eeW(6,2, a); else if (b2) eeW(6,2, b); else return 1;
     } else return 1;
     fcSave();
     return 0;
@@ -1142,23 +1146,50 @@ static void drawFormScreen(void) {
     drawMenu(menus);
 }
 
-static void drawFormula(void) { // TVM 公式视图（只读）
+static const char *eeLines[9][8] = {
+    { "V = I * R", "P = V * I = I^2*R = V^2/R", "", "F1: V (need I,R)  F2: I (V,R)", "F3: R (V,I)  F4: P (any 2)", "", "R in ohm, I in A, P in W", "" },
+    { "Vout = Vin * R2/(R1+R2)", "R2 = R1*(Vin-Vout)/Vout", "R1 = Vout*R2/(Vin-Vout)", "", "F1: Vout   F2: R2   F3: R1", "", "Filled with 3 knowns, F the target", "" },
+    { "Rs = R1 + R2", "Rp = R1*R2/(R1+R2)", "", "F1 CALC: computes Rs and Rp", "", "", "", "" },
+    { "tau(ms) = R(ohm) * C(uF) * 1e-3", "", "F1: tau   F2: R   F3: C", "", "", "", "", "" },
+    { "f0(MHz) = 1000/(2*pi*sqrt(L(uH)*C(pF)))", "L = (1000/(2*pi*f0))^2 / C", "C = (1000/(2*pi*f0))^2 / L", "", "F1: f0   F2: L   F3: C", "", "", "" },
+    { "T(ms) = 1000 / f(Hz)", "", "F1: T   F2: f", "", "", "", "", "" },
+    { "Vrms = Vp/sqrt(2)", "Vpp = 2*Vp = 2*sqrt(2)*Vrms", "", "F1: Vp   F2: Vrms   F3: Vpp", "Two sources filled: must agree", "", "", "" },
+    { "dBm = 10*log10(P / 1mW)", "P(W) = 1e-3 * 10^(dBm/10)", "", "F1: dBm   F2: W", "", "", "", "" },
+    { "Vp/Vs = Np/Ns  (ideal)", "", "F1: Vp   F2: Vs   F3: Np   F4: Ns", "", "", "", "", "" },
+};
+static const int eeLineCnt[9] = { 7, 6, 4, 3, 6, 3, 6, 4, 3 };
+
+static void drawFormula(void) { // 公式视图（只读）——TVM / 电子工程
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
-    fDrawMix(2, 0, "TVM " ZH_HSJZ " formula", 0, 255);
-    const char *lines[] = {
-        "END: (1+i)^n*PV + PMT*((1+i)^n-1)/i + FV = 0",
-        "BGN: PMT term times (1+i)  (begin pay)",
-        "n periods, i = I%/100 (per period)",
-        "i=0 case:  PV + PMT*n + FV = 0",
-        "pmt=0:     PV*(1+i)^n + FV = 0",
-        "",
-        "F1-F5: solve that unknown (others filled)",
-        "F6: END <-> BGN toggle",
-        "",
-        "View/ON: back to form",
-    };
-    for (int i = 0; i < 10; i++)
-        uidisp->draw_printf(2, 16 + i * 10, 8, 0, 255, "%s", lines[i]);
+    int nl;
+    if (fcMod == 2) {
+        char tt[40];
+        sprintf(tt, "EE %s formula", eeAbbr[fcForm]);
+        fDrawMix(2, 0, tt, 0, 255);
+        nl = eeLineCnt[fcForm];
+        for (int i = 0; i < nl; i++)
+            uidisp->draw_printf(2, 16 + i * 10, 8, 0, 255, "%s", eeLines[fcForm][i]);
+    } else {
+        fDrawMix(2, 0, "TVM " ZH_HSJZ " formula", 0, 255);
+        const char *tv[10] = {
+            "END: (1+i)^n*PV + PMT*((1+i)^n-1)/i + FV = 0",
+            "BGN: PMT term times (1+i)  (begin pay)",
+            "n periods, i = I%/100 (per period)",
+            "i=0 case:  PV + PMT*n + FV = 0",
+            "pmt=0:     PV*(1+i)^n + FV = 0",
+            "",
+            "F1-F5: solve that unknown (others filled)",
+            "F6: END <-> BGN toggle",
+            "",
+            "View/ON: back to form",
+        };
+        nl = 10;
+        for (int i = 0; i < nl; i++)
+            uidisp->draw_printf(2, 16 + i * 10, 8, 0, 255, "%s", tv[i]);
+    }
+    if (fcMod == 2) {
+        uidisp->draw_printf(2, 16 + nl * 10 + 8, 8, 0, 255, "View/ON: back to form");
+    }
 }
 
 static const char *l0Names[3] = { ZH_DANWEI, ZH_JINRONGQI, ZH_DIANZI };
@@ -1366,10 +1397,16 @@ static int fcFormKey(int key) {
         if (fcForm == 1) { // CFLOW：r → CF0.. 循环
             if (foc < 13) { foc++; if (foc > 1 && foc - 1 > cfTop + 3) cfTop = foc - 4; }
             else { foc = 0; cfTop = 0; }
-        } else {
-            foc = (foc + 1) % nf;
+            return 1;
         }
-        return 1;
+        int oldFoc = foc;
+        foc = (foc + 1) % nf;
+        drawStdRow(fcForm, oldFoc);
+        drawStdRow(fcForm, foc);
+        uidisp->flushRect(0, fcRowBase() + oldFoc * fcRowStep() - 1, 255, fcRowBase() + oldFoc * fcRowStep() + 15);
+        uidisp->flushRect(0, fcRowBase() + foc * fcRowStep() - 1, 255, fcRowBase() + foc * fcRowStep() + 15);
+        fcTitleRightRedraw();
+        return 0;
     }
     if (key == KEY_UP || key == KEY_DOWN) {
         fcMsg[0] = 0;
@@ -1387,11 +1424,17 @@ static int fcFormKey(int key) {
             if (cfTop < 0) cfTop = 0;
             if (cfTop > 9) cfTop = 9;
             foc = nfoc;
-        } else {
-            if (key == KEY_UP) foc = (foc + nf - 1) % nf;
-            else foc = (foc + 1) % nf;
+            return 1;
         }
-        return 1;
+        int oldFoc = foc;
+        if (key == KEY_UP) foc = (foc + nf - 1) % nf;
+        else foc = (foc + 1) % nf;
+        drawStdRow(fcForm, oldFoc);
+        drawStdRow(fcForm, foc);
+        uidisp->flushRect(0, fcRowBase() + oldFoc * fcRowStep() - 1, 255, fcRowBase() + oldFoc * fcRowStep() + 15);
+        uidisp->flushRect(0, fcRowBase() + foc * fcRowStep() - 1, 255, fcRowBase() + foc * fcRowStep() + 15);
+        fcTitleRightRedraw();
+        return 0;
     }
     int slot = -1;
     switch (key) {
@@ -1423,7 +1466,7 @@ static int fcFormKey(int key) {
         return 1;
     }
     if (key == KEY_VIEWS) {
-        if (fcMod == 1 && fcForm == 0) fcLevel = 3; // TVM 公式
+        if ((fcMod == 1 && fcForm == 0) || fcMod == 2) fcLevel = 3; // 公式视图
         return 1;
     }
     return 0;
