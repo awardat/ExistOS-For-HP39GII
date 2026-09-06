@@ -4,14 +4,25 @@
 
 ---
 
-## [build 134] - 2026-09-05 (开发中)
+## [build 134] - 2026-09-06 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-134))
 
-### 规划
-- RPN39 阶段 3 残余体验：按用户实测反馈迭代
-- KhiCAS：物理按键映射加强；示例功能补充；giac 2.0.0 有限移植
-- FormCalc（表单计算：财务 12C 全集 + 工程）规划
-- D4 FTL_Sync 真机掉电测试
-- C 组待办（CDC VMResume 补全 / EN_RCSCALE 统一 / 1.4V+2h 迟滞——用户决定暂缓，充电复测后处理）
+### 新增（FormCalc 完整实现 + 充电拔电修复 + Round 5 审核整改）
+
+- **FormCalc 应用（Apps 页第三个程序，Home 键直达）**：
+  - 首页功能列表：**单位换算 / 金融计算器 / 电子工程**（循环选择，F1-F3 直达）
+  - **金融计算器 8 项**（HP-12C 全集）：TVM（N/i%/PV/PMT/FV 互解 + 期初/期末，FIX 2-9 位）、现金流（r% 常驻行 + CF0-12 滚动列表，NPV/IRR）、摊销（12C 语义区间 INT/PRIN/BAL）、债券（DD.MMYYYY 日期、30/360 价格、YLD 反解、付息频 1/2/4/12）、折旧（SL/DB200/SYD）、日期（儒略日、360/ACT 双日基）、利率换算（NOM↔EFF）、利润（12C 售价基）
+  - **电子工程 9 项**：欧姆定律（V/I/R/P 四向）、分压器、串并联电阻、RC 时间常数、谐振频率、频率周期、正弦幅值、dBm、变压器（全量求解，View 公式视图）
+  - **单位换算 10 类**：长度/面积/体积/质量/温度（℃℉K 公式对）/速度/压力/能量/功率/数据——输入值 + ←→ 选源单位，一页实时显示全部单位结果（超长 ↑↓ 滚动）
+  - 交互：字段名中文 + 缩写（本金 PV 式）、输入 ENT 下框 / ↑↓ 切换 / 直接数字输入、行级局部刷新（输入只闪数值列——UICore flushRect 子宽支持）、循环菜单、Shift+BKSP 两遍确认清空全部、ON 返回层级（带位置记忆）
+  - 持久化 /formcalc/formcalc.dat（FC03，17 表单）
+- **session 文件目录化**：/rpn39/（sto/matx/cplx/stat）+ /formcalc/formcalc.dat；旧根目录文件自动读取迁移（降级兼容）
+- **充电状态回归修复**：充电管理缺"外接电源消失"检测——拔 USB 后软件位保持导致误显"充电中:是"；新增 VDD5V<3500mV 立即停充 + 会话状态重置
+- **FormCalc 图标**：表单纸意象（字段行 + F+ 断口），无衬底框线
+- **Round 5 审核整改（A+B+C）**：
+  - A：RPN39 持久化四件套空分支修复（P0——f_read 移入新路径分支，旧文件兼容迁移）
+  - B：AMORT/DEPREC 期数上限 1e6 拒绝；IRR 不再要求 r%；BOND 整付息期校验；fcMsg snprintf 钳制超长转 e；solveI/IRR/BOND 二分 NaN 早退；UICore flushRect 参数防御
+  - C：L0 返回高亮映射修正；ON 退出提交编辑值；死代码清理三处；**标题右侧 GBK 状态 16px 混排（12px ascii 渲染 GBK 雪花根治）**；单位页灰条/值列残影；电阻"并联"→"串并联"
+- RPN39 手册更新至 build 134
 
 ---
 
