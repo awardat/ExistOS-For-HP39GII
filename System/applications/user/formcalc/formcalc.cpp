@@ -933,8 +933,8 @@ static double eeV(int f, int i) { return fv_[2][f][i]; }
 static int eeH(int f, int i) { return fh_[2][f][i]; }
 
 static const FcFld ohmFlds[4] = {
-    { "' + repr(g('电压')) + '", "V", 0 }, { "' + repr(g('电流')) + '", "A", 0 },
-    { "' + repr(g('电阻')) + '", "OHM", 0 }, { "' + repr(g('功率')) + '", "W", 0 } };
+    { "\xB5\xE7\xD1\xB9", "V", 0 }, { "\xB5\xE7\xC1\xF7", "A", 0 },
+    { "\xB5\xE7\xD7\xE8", "OHM", 0 }, { "\xB9\xA6\xC2\xCA", "W", 0 } };
 static const char *menuOhm[6] = { "V", "I", "R", "P", "_", "_" };
 static int actOhm(int slot) {
     if (slot == 0) { if (!(eeH(0,1) && eeH(0,2))) return 1; eeW(0,0, eeV(0,1)*eeV(0,2)); }
@@ -951,8 +951,8 @@ static int actOhm(int slot) {
 }
 
 static const FcFld vdivFlds[4] = {
-    { "' + repr(g('输入电压')) + '", "Vin", 0 }, { "' + repr(g('上电阻')) + '", "R1", 0 },
-    { "' + repr(g('下电阻')) + '", "R2", 0 }, { "' + repr(g('输出电压')) + '", "Vout", 0 } };
+    { "\xCA\xE4\xC8\xEB\xB5\xE7\xD1\xB9", "Vin", 0 }, { "\xC9\xCF\xB5\xE7\xD7\xE8", "R1", 0 },
+    { "\xCF\xC2\xB5\xE7\xD7\xE8", "R2", 0 }, { "\xCA\xE4\xB3\xF6\xB5\xE7\xD1\xB9", "Vout", 0 } };
 static const char *menuVdiv[6] = { "Vout", "R2", "R1", "_", "_", "_" };
 static int actVdiv(int slot) {
     if (slot == 0) { if (!(eeH(1,0) && eeH(1,1) && eeH(1,2))) return 1; double d = eeV(1,1)+eeV(1,2); if (d == 0) return 1; eeW(1,3, eeV(1,0)*eeV(1,2)/d); }
@@ -965,7 +965,7 @@ static int actVdiv(int slot) {
 
 static const FcFld rparFlds[4] = {
     { "R1", "R1", 4 }, { "R2", "R2", 4 },
-    { "' + repr(g('串联')) + '", "Rs", 4 }, { "' + repr(g('并联')) + '", "Rp", 4 } };
+    { "\xB4\xAE\xC1\xAA", "Rs", 4 }, { "\xB2\xA2\xC1\xAA", "Rp", 4 } };
 static const char *menuRpar[6] = { "CALC", "_", "_", "_", "_", "_" };
 static int actRpar(int slot) {
     if (slot != 0) return 1;
@@ -979,8 +979,8 @@ static int actRpar(int slot) {
 }
 
 static const FcFld rcFlds[3] = {
-    { "R", "OHM", 4 }, { "' + repr(g('电容')) + '", "uF", 4 },
-    { "' + repr(g('时间常数')) + '", "TAU", 4 } };
+    { "R", "OHM", 4 }, { "\xB5\xE7\xC8\xDD", "uF", 4 },
+    { "\xCA\xB1\xBC\xE4\xB3\xA3\xCA\xFD", "TAU", 4 } };
 static const char *menuRc[6] = { "TAU", "R", "C", "_", "_", "_" };
 static int actRc(int slot) {
     if (slot == 0) { if (!(eeH(3,0) && eeH(3,1))) return 1; eeW(3,2, eeV(3,0)*eeV(3,1)*1e-3); } // τ(ms)=R×C(µF)×1e-3
@@ -992,8 +992,8 @@ static int actRc(int slot) {
 }
 
 static const FcFld resoFlds[3] = {
-    { "' + repr(g('电感')) + '", "uH", 4 }, { "' + repr(g('电容')) + '", "pF", 4 },
-    { "' + repr(g('谐振频率')) + '", "f0", 4 } };
+    { "\xB5\xE7\xB8\xD0", "uH", 4 }, { "\xB5\xE7\xC8\xDD", "pF", 4 },
+    { "\xD0\xB3\xD5\xF1\xC6\xB5\xC2\xCA", "f0", 4 } };
 static const char *menuReso[6] = { "f0", "L", "C", "_", "_", "_" };
 static int actReso(int slot) {
     // L µH × C pF → f0(MHz) = 1000/(2π√(LC))
@@ -1009,7 +1009,7 @@ static int actReso(int slot) {
 }
 
 static const FcFld freqFlds[2] = {
-    { "' + repr(g('频率')) + '", "Hz", 4 }, { "' + repr(g('周期')) + '", "Tms", 4 } };
+    { "\xC6\xB5\xC2\xCA", "Hz", 4 }, { "\xD6\xDC\xC6\xDA", "Tms", 4 } };
 static const char *menuFreq[6] = { "T", "f", "_", "_", "_", "_" };
 static int actFreq(int slot) {
     if (slot == 0) { if (!eeH(5,0) || eeV(5,0) == 0) return 1; eeW(5,1, 1000.0/eeV(5,0)); } // T(ms)=1000/f
@@ -1020,8 +1020,8 @@ static int actFreq(int slot) {
 }
 
 static const FcFld sineFlds[3] = {
-    { "' + repr(g('峰值')) + '", "Vp", 4 }, { "' + repr(g('有效值')) + '", "Vrms", 4 },
-    { "' + repr(g('峰峰值')) + '", "Vpp", 4 } };
+    { "\xB7\xE5\xD6\xB5", "Vp", 4 }, { "\xD3\xD0\xD0\xA7\xD6\xB5", "Vrms", 4 },
+    { "\xB7\xE5\xB7\xE5\xD6\xB5", "Vpp", 4 } };
 static const char *menuSine[6] = { "Vp", "Vrms", "Vpp", "_", "_", "_" };
 static int actSine(int slot) {
     const double S2 = 1.4142135623730951;
@@ -1043,7 +1043,7 @@ static int actSine(int slot) {
 }
 
 static const FcFld dbmFlds[2] = {
-    { "' + repr(g('功率')) + '", "W", 4 }, { "' + repr(g('分贝毫瓦')) + '", "dBm", 4 } };
+    { "\xB9\xA6\xC2\xCA", "W", 4 }, { "\xB7\xD6\xB1\xB4\xBA\xC1\xCD\xDF", "dBm", 4 } };
 static const char *menuDbm[6] = { "dBm", "W", "_", "_", "_", "_" };
 static int actDbm(int slot) {
     if (slot == 0) { if (!eeH(7,0) || eeV(7,0) <= 0) return 1; eeW(7,1, 10.0*log10(eeV(7,0)/1e-3)); }
@@ -1054,8 +1054,8 @@ static int actDbm(int slot) {
 }
 
 static const FcFld xfmrFlds[4] = {
-    { "' + repr(g('初级电压')) + '", "Vp", 4 }, { "' + repr(g('次级电压')) + '", "Vs", 4 },
-    { "' + repr(g('初级匝数')) + '", "Np", 4 }, { "' + repr(g('次级匝数')) + '", "Ns", 4 } };
+    { "\xB3\xF5\xBC\xB6\xB5\xE7\xD1\xB9", "Vp", 4 }, { "\xB4\xCE\xBC\xB6\xB5\xE7\xD1\xB9", "Vs", 4 },
+    { "\xB3\xF5\xBC\xB6\xD4\xD1\xCA\xFD", "Np", 4 }, { "\xB4\xCE\xBC\xB6\xD4\xD1\xCA\xFD", "Ns", 4 } };
 static const char *menuXfmr[6] = { "Vp", "Vs", "Np", "Ns", "_", "_" };
 static int actXfmr(int slot) {
     if (slot == 0) { if (!(eeH(8,1) && eeH(8,2) && eeH(8,3)) || eeV(8,3) == 0) return 1; eeW(8,0, eeV(8,1)*eeV(8,2)/eeV(8,3)); }
