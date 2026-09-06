@@ -1421,91 +1421,108 @@ static void drawUnit(void) {
     sprintf(tt, "UNIT %s", unItems[uCat]);
     sprintf(rb, "%d/%d", uSrc + 1, c->n);
     drawTitle(tt, rb);
-    // 值行：名（数值）+ 值（编辑中黑底白字块 / 常态格式化右对齐）
-    fDrawMix(4, 20, "\xCA\xFD\xD6\xB5", 0, 255);
-    uidisp->draw_printf(84, 22, 12, 0, 255, "VALUE");
-    if (eAct) {
-        uidisp->draw_box(136, 18, 254, 35, 0, 0);
-        const char *ed = (elen > 12) ? ebuf + elen - 12 : ebuf; // 超长显尾部 12 字符
-        uidisp->draw_printf(140, 20, 16, 255, 0, "%s", ed);
-    } else {
+    // 值行：整行黑底白字（输入焦点常驻样式——与金融聚焦行一致）
+    uidisp->draw_box(0, 18, 255, 35, 255, 0);
+    fDrawMix(4, 20, "\xCA\xFD\xD6\xB5", 255, 0);
+    uidisp->draw_printf(84, 22, 12, 255, 0, "VALUE");
+    {
         char vb[24];
-        unFmt(uVal, vb);
-        uidisp->draw_printf(252 - (int)strlen(vb) * 8, 20, 16, 0, 255, "%s", vb);
+        const char *txt;
+        if (eAct) { txt = (elen > 12) ? ebuf + elen - 12 : ebuf; }
+        else { unFmt(uVal, vb); txt = vb; }
+        uidisp->draw_printf(252 - (int)strlen(txt) * 8, 20, 16, 255, 0, "%s", txt);
     }
-    // 源单位行：中文名（16px）+ 符号
+    // 源单位行：中文名（16px）+ 符号（普通显示——选择指示在下方列表灰底行）
     const UnItem *src = &c->it[uSrc];
     fDrawMix(4, 40, src->nm, 0, 255);
     uidisp->draw_printf(150, 42, 12, 0, 255, src->sy);
     uidisp->draw_printf(206, 42, 12, 0, 255, "<->");
     uidisp->draw_line(0, 60, 255, 60, 200);
-    // 结果 4 行（可视，行高 12 紧排）；当前源单位行整行反显
+    // 结果 4 行（可视，行高 12 紧排）；当前源单位行灰底黑字（区别于输入行黑底白字）
     for (int r = 0; r < 4; r++) {
         int idx = uTop + r;
         if (idx >= c->n) break;
         int y = 62 + r * 12;
         int sel = (idx == uSrc);
-        if (sel) uidisp->draw_box(0, y - 1, 255, y + 11, 255, 0);
+        if (sel) uidisp->draw_box(0, y - 1, 255, y + 11, 255, 190); // 灰底（fill=190）
         const UnItem *it = &c->it[idx];
-        uidisp->draw_printf(6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", it->sy);
+        uidisp->draw_printf(6, y, 12, 0, sel ? 190 : 255, "%s", it->sy);
         double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
         char vb[24];
         unFmt(v, vb);
-        uidisp->draw_printf(252 - (int)strlen(vb) * 6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", vb);
+        uidisp->draw_printf(252 - (int)strlen(vb) * 8, y, 12, 0, sel ? 190 : 255, "%s", vb);
     }
     drawMenu(unMenus);
 }
 
 // 输入局部刷新：值行 + 结果区整行重画后按全宽横条 flush
-// （flushRect 底层按区域连续读——仅 x0=0 全行宽区域正确；子宽区域会错位花屏）
-static void unDrawRows(int r0, int r1) { // r0..r1 行号（0=值行 1=单位行 2..=结果）
+// 输入局部刷新（值列子宽——UICore.h flushRect 已支持子宽连续化，2026-09-06）
+static void unDrawValueCol(void) {
+    const UnCat *c = &unCats[uCat];
+    uidisp->draw_box(136, 18, 254, 35, 255, 0); // 值区清底（黑底常驻）
+    {
+        char vb[24];
+        const char *txt;
+        if (eAct) { txt = (elen > 12) ? ebuf + elen - 12 : ebuf; }
+        else { unFmt(uVal, vb); txt = vb; }
+        uidisp->draw_printf(252 - (int)strlen(txt) * 8, 20, 16, 255, 0, "%s", txt);
+    }
+    for (int r = 0; r < 4; r++) {
+        int idx = uTop + r;
+        if (idx >= c->n) break;
+        int y = 62 + r * 12;
+        int sel = (idx == uSrc);
+        uidisp->draw_box(150, y - 1, 254, y + 11, 255, sel ? 190 : 255); // 值列清底（旧文本残留清除）
+        double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
+        char vb[24];
+        unFmt(v, vb);
+        uidisp->draw_printf(252 - (int)strlen(vb) * 8, y, 12, 0, sel ? 190 : 255, "%s", vb);
+    }
+    uidisp->flushRect(136, 18, 254, 35);   // 值行值区
+    uidisp->flushRect(150, 61, 254, 111);  // 结果值列
+}
+
+// 整行内容变化（←→ 源单位切换、↑↓ 滚动）：整行重画 + 全宽条 flush
+static void unDrawRowsFull(int r0, int r1) {
     const UnCat *c = &unCats[uCat];
     for (int r = r0; r <= r1; r++) {
         int y;
         if (r == 0) {
             y = 20;
-            uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255);
-            fDrawMix(4, y, "\xCA\xFD\xD6\xB5", 0, 255);
-            uidisp->draw_printf(84, y, 12, 0, 255, "VALUE");
-            if (eAct) {
-                uidisp->draw_box(136, 18, 254, 35, 0, 0);
-                const char *ed = (elen > 12) ? ebuf + elen - 12 : ebuf;
-                uidisp->draw_printf(140, y, 16, 255, 0, "%s", ed);
-            } else {
-                char vb[24];
-                unFmt(uVal, vb);
-                uidisp->draw_printf(252 - (int)strlen(vb) * 8, y, 16, 0, 255, "%s", vb);
-            }
+            uidisp->draw_box(0, 18, 255, 35, 255, 0);
+            fDrawMix(4, y, "\xCA\xFD\xD6\xB5", 255, 0);
+            uidisp->draw_printf(84, y, 12, 255, 0, "VALUE");
+            char vb[24];
+            const char *txt;
+            if (eAct) { txt = (elen > 12) ? ebuf + elen - 12 : ebuf; }
+            else { unFmt(uVal, vb); txt = vb; }
+            uidisp->draw_printf(252 - (int)strlen(txt) * 8, y, 16, 255, 0, "%s", txt);
         } else if (r == 1) {
             y = 40;
-            uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255);
             const UnItem *src = &c->it[uSrc];
+            uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255);
             fDrawMix(4, y, src->nm, 0, 255);
             uidisp->draw_printf(150, y + 2, 12, 0, 255, src->sy);
             uidisp->draw_printf(206, y + 2, 12, 0, 255, "<->");
         } else {
             int idx = uTop + (r - 2);
-            if (idx >= c->n) return;
+            if (idx >= c->n) break;
             y = 62 + (r - 2) * 12;
             int sel = (idx == uSrc);
-            uidisp->draw_box(0, y - 1, 255, y + 11, 255, 0);
+            if (sel) uidisp->draw_box(0, y - 1, 255, y + 11, 255, 190);
             const UnItem *it = &c->it[idx];
-            uidisp->draw_printf(6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", it->sy);
+            uidisp->draw_printf(6, y, 12, 0, sel ? 190 : 255, "%s", it->sy);
             double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
             char vb[24];
             unFmt(v, vb);
-            uidisp->draw_printf(252 - (int)strlen(vb) * 6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", vb);
+            uidisp->draw_printf(252 - (int)strlen(vb) * 8, y, 12, 0, sel ? 190 : 255, "%s", vb);
         }
     }
 }
 
 static void unRedrawValue(void) {
-    unDrawRows(0, 0); // 值行
-    unDrawRows(2, 5); // 结果 4 行
-    uidisp->flushRect(0, 18, 255, 35);
-    uidisp->flushRect(0, 61, 255, 111);
+    unDrawValueCol(); // 输入只变值列——子宽局部
 }
-
 static void unEdit(char c) {
     if (!eAct) { eAct = 1; elen = 0; ebuf[0] = 0; }
     if (elen < 20) { ebuf[elen++] = c; ebuf[elen] = 0; }
@@ -1541,14 +1558,14 @@ static int fcUnitKey(int key) {
         uidisp->draw_box(150, 0, 255, 17, 255, 255);
         uidisp->draw_printf(254 - (int)strlen(rb) * 8, 2, 12, 0, 255, "%s", rb);
         uidisp->flushRect(150, 0, 255, 17);
-        unDrawRows(1, 1); // 单位行
-        unDrawRows(2, 5); // 结果行
+        unDrawRowsFull(1, 1); // 单位行
+        unDrawRowsFull(2, 5); // 结果行
         uidisp->flushRect(0, 39, 255, 56);
         uidisp->flushRect(0, 61, 255, 111);
         return 0;
     }
-    if (key == KEY_UP) { if (uTop > 0) { uTop--; unDrawRows(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
-    if (key == KEY_DOWN) { if (uTop + 4 < c->n) { uTop++; unDrawRows(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
+    if (key == KEY_UP) { if (uTop > 0) { uTop--; unDrawRowsFull(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
+    if (key == KEY_DOWN) { if (uTop + 4 < c->n) { uTop++; unDrawRowsFull(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
     if (key == KEY_ENTER) { if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; return 1; } return 0; }
     if (key == KEY_F1) { eAct = 0; elen = 0; ebuf[0] = 0; uVal = 0; return 1; }
     if (key == KEY_ON || key == KEY_HOME || key == KEY_APPS) {

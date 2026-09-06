@@ -38,8 +38,20 @@ public:
         this->drawf(this->disp_buf, 0, 0, this->disp_w - 1, this->disp_h - 1);
     }
     void flushRect(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
-        // 注意：仅当 x0=0 且区域宽 = disp_w（整行宽）时正确；子宽区域会错位（底层按每行连续读区域宽）
-        this->drawf(this->disp_buf + y0 * this->disp_w + x0, x0, y0, x1, y1);
+        // 整行宽（x0=0, 宽=disp_w）：disp_buf 连续可直接送
+        if (x0 == 0 && (x1 + 1) == (uint32_t)this->disp_w) {
+            this->drawf(this->disp_buf + y0 * this->disp_w, x0, y0, x1, y1);
+            return;
+        }
+        // 子宽区域：底层按区域连续读——先逐行拷成连续块再送（2026-09-06 修复子宽错位/花屏）
+        uint32_t w = x1 - x0 + 1, h = y1 - y0 + 1;
+        if (w == 0 || h == 0 || w * h > 33 * 1024) return;
+        uint8_t *tmp = (uint8_t *)pvPortMalloc(w * h);
+        if (!tmp) return;
+        for (uint32_t r = 0; r < h; r++)
+            memcpy(tmp + r * w, this->disp_buf + (y0 + r) * this->disp_w + x0, w);
+        this->drawf(tmp, x0, y0, x1, y1);
+        vPortFree(tmp);
     }
     UI_Display(int display_width, int display_height, void (*drawf)(uint8_t *buf, uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1)) {
         printf("Create UI Display.\n");
