@@ -115,7 +115,9 @@ static unsigned char fs_[FC_NMOD][FC_NFORM] = {{0}}; // 表单开关（TVM bgn /
 // 字段类型：0 金额（FIX 显示） 1 日期（MM.DDYYYY） 2 整数（%.0f） 3 百分数（FIX 显示）
 struct FcFld { const char *nm; const char *ab; int ft; };
 // 表单定义（名称在 finItems/finAbbr；fields 描述）
-static struct { int nf; int rowBase, rowStep; const FcFld *f; } finFmts[8];
+struct FcFormDef { int nf; int rowBase, rowStep; const FcFld *f; };
+static struct FcFormDef finFmts[8];
+static struct FcFormDef eeFmts[9];
 
 // ---- 模块列表数据（GBK + 缩写）----
 static const char *finItems[8] = {
@@ -198,26 +200,35 @@ static long days360(double a, double b) {
 }
 static long daysAct(double a, double b) { return dateJdn(b) - dateJdn(a); }
 
-// ---- 持久化 /formcalc.dat（FC02）：magic4 + fix1 + fs8 + has8*2 + val8*16*8 = 1053 ----
-static unsigned char saveBuf[1100];
+// ---- 持久化 /formcalc/formcalc.dat（FC03）：金融 8 表 + 工程 9 表
+// FC03 = magic4 + fix1 + fs17 + has(17*2) + val(17*16*8) = 4+1+17+34+2176 = 2232
+// FC02 = 金融 8 表（1053B）——兼容读取（工程数据保持空）
+static unsigned char saveBuf[2300];
 static FIL gfile;
 
 static void fcSave(void) {
     unsigned char *p = saveBuf;
-    memcpy(p, "FC02", 4); p += 4;
+    memcpy(p, "FC03", 4); p += 4;
     *p++ = (unsigned char)fcFix;
-    memcpy(p, fs_[1], 8); p += 8;
-    for (int f = 0; f < 8; f++) {
-        unsigned short msk = 0;
-        for (int i = 0; i < 16; i++) if (fh_[1][f][i]) msk |= (1 << i);
-        *p++ = (unsigned char)msk;
-        *p++ = (unsigned char)(msk >> 8);
-    }
-    for (int f = 0; f < 8; f++)
-        for (int i = 0; i < 16; i++) {
-            double d = fv_[1][f][i];
-            memcpy(p, &d, 8); p += 8;
+    memcpy(p, fs_[1], 8); p += 8;      // 金融 8 表单开关
+    memcpy(p, fs_[2], 9); p += 9;      // 工程 9 表单开关
+    for (int m = 1; m <= 2; m++) {
+        int n = (m == 1) ? 8 : 9;
+        for (int f = 0; f < n; f++) {
+            unsigned short msk = 0;
+            for (int i = 0; i < 16; i++) if (fh_[m][f][i]) msk |= (1 << i);
+            *p++ = (unsigned char)msk;
+            *p++ = (unsigned char)(msk >> 8);
         }
+    }
+    for (int m = 1; m <= 2; m++) {
+        int n = (m == 1) ? 8 : 9;
+        for (int f = 0; f < n; f++)
+            for (int i = 0; i < 16; i++) {
+                double d = fv_[m][f][i];
+                memcpy(p, &d, 8); p += 8;
+            }
+    }
     if (f_open(&gfile, "/formcalc/formcalc.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw;
         f_write(&gfile, saveBuf, p - saveBuf, &bw);
@@ -234,21 +245,32 @@ static void fcLoad(void) {
     f_read(&gfile, saveBuf, sizeof(saveBuf), &br);
     f_close(&gfile);
     unsigned char *p = saveBuf;
-    if (br < 1053 || memcmp(p, "FC02", 4) != 0) return;
+    if (br < 4) return;
+    int ver = -1;
+    if (memcmp(p, "FC03", 4) == 0 && br >= 2232) ver = 3;
+    else if (memcmp(p, "FC02", 4) == 0 && br >= 1053) ver = 2;
+    if (ver < 0) return;
     p += 4;
     fcFix = *p++;
     if (fcFix > 9) fcFix = 2;
+    int mcnt = (ver == 3) ? 2 : 1; // FC02 无工程数据
+    int nf[3] = {0, 8, 9};
     memcpy(fs_[1], p, 8); p += 8;
-    for (int f = 0; f < 8; f++) {
-        unsigned short msk = *p | (unsigned short)(p[1] << 8); p += 2;
-        for (int i = 0; i < 16; i++) fh_[1][f][i] = (msk >> i) & 1;
-    }
-    for (int f = 0; f < 8; f++)
-        for (int i = 0; i < 16; i++) {
-            double d;
-            memcpy(&d, p, 8); p += 8;
-            fv_[1][f][i] = d;
+    if (ver == 3) { memcpy(fs_[2], p, 9); p += 9; }
+    for (int m = 1; m <= mcnt; m++) {
+        for (int f = 0; f < nf[m]; f++) {
+            unsigned short msk = *p | (unsigned short)(p[1] << 8); p += 2;
+            for (int i = 0; i < 16; i++) fh_[m][f][i] = (msk >> i) & 1;
         }
+    }
+    for (int m = 1; m <= mcnt; m++) {
+        for (int f = 0; f < nf[m]; f++)
+            for (int i = 0; i < 16; i++) {
+                double d;
+                memcpy(&d, p, 8); p += 8;
+                fv_[m][f][i] = d;
+            }
+    }
 }
 
 // ---- 清空所有（Shift+BKSP 两遍确认）----
@@ -272,6 +294,10 @@ static void fcCommit(void) { // 当前编辑落值到聚焦字段（L2 表单内
         } else if (fcMod == 1 && fcForm < 8 && foc < finFmts[fcForm].nf) {
             fv_[1][fcForm][foc] = atof(ebuf);
             fh_[1][fcForm][foc] = 1;
+            fcSave();
+        } else if (fcMod == 2 && fcForm < 9 && foc < eeFmts[fcForm].nf) {
+            fv_[2][fcForm][foc] = atof(ebuf);
+            fh_[2][fcForm][foc] = 1;
             fcSave();
         }
     }
@@ -349,6 +375,13 @@ static void fcEditNeg(void) {
 static void fmtVal(int ft, double v, char *buf) {
     if (ft == 1) { fmtDate(v, buf); return; }
     if (ft == 2) { sprintf(buf, "%.0f", v); return; }
+    if (ft == 4) { // 工程通用（8 位有效——不用 FIX）
+        if (v != v) { strcpy(buf, "nan"); return; }
+        double a = v < 0 ? -v : v;
+        if (a != 0 && (a >= 1e12 || a < 1e-6)) sprintf(buf, "%.6e", v);
+        else sprintf(buf, "%.8g", v);
+        return;
+    }
     fmtFin(v, buf);
 }
 
@@ -387,24 +420,30 @@ static int cfRowY(int idx) { // 聚焦绝对下标 → 行 y
 
 // ---- 金融表单绘制 ----
 // 标准字段行（除 CFLOW 特殊）
+static void fcFormDef(int form, int *nf, int *rb, int *rs, const FcFld **f); // 前置（定义见下）
 static void drawStdRow(int form, int i) {
-    int base = finFmts[form].rowBase, step = finFmts[form].rowStep;
+    int base, step, nf;
+    const FcFld *ff;
+    fcFormDef(form, &nf, &base, &step, &ff);
+    if (i >= nf) return;
     int y = base + i * step;
     char tmp[40];
-    const FcFld *f = &finFmts[form].f[i];
+    const FcFld *f = &ff[i];
     int vx = 136; // 值列起点：abbr 最长 5 字符（x84+40=124）不与其重叠
+    int has = fh_[fcMod][form][i];
+    double val = fv_[fcMod][form][i];
     if (i == foc) {
         uidisp->draw_box(0, y - 1, 255, y + 15, 255, 0);
         fDrawMix(4, y, f->nm, 255, 0);
         uidisp->draw_printf(84, y, 12, 255, 0, "%s", f->ab);
         if (eAct) uidisp->draw_printf(vx, y, 16, 255, 0, "%s", ebuf);
-        else if (fh_[1][form][i]) { fmtVal(f->ft, fv_[1][form][i], tmp); uidisp->draw_printf(vx, y, 16, 255, 0, "%s", tmp); }
+        else if (has) { fmtVal(f->ft, val, tmp); uidisp->draw_printf(vx, y, 16, 255, 0, "%s", tmp); }
         else uidisp->draw_printf(vx, y, 16, 255, 0, "--");
     } else {
         uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255);
         fDrawMix(4, y, f->nm, 0, 255);
         uidisp->draw_printf(84, y, 12, 0, 255, "%s", f->ab);
-        if (fh_[1][form][i]) { fmtVal(f->ft, fv_[1][form][i], tmp); uidisp->draw_printf(vx, y, 16, 0, 255, "%s", tmp); }
+        if (has) { fmtVal(f->ft, val, tmp); uidisp->draw_printf(vx, y, 16, 0, 255, "%s", tmp); }
     }
 }
 
@@ -886,6 +925,165 @@ static const char *menuDate[6] = { "DAYS", "+DYS", "_", "_", "_", "360A" };
 static const char *menuIconv[6] = { "NOM", "EFF", "_", "_", "_", "_" };
 static const char *menuMargin[6] = { "PRICE", "COST", "MARG", "_", "_", "_" };
 
+
+// ==================== 电子工程（fcMod==2，P3） ====================
+// 字段类型：ft=4 → 8 位有效工程格式（不用 FIX）
+static void eeW(int f, int i, double v) { fv_[2][f][i] = v; fh_[2][f][i] = 1; }
+static double eeV(int f, int i) { return fv_[2][f][i]; }
+static int eeH(int f, int i) { return fh_[2][f][i]; }
+
+static const FcFld ohmFlds[4] = {
+    { "' + repr(g('电压')) + '", "V", 0 }, { "' + repr(g('电流')) + '", "A", 0 },
+    { "' + repr(g('电阻')) + '", "OHM", 0 }, { "' + repr(g('功率')) + '", "W", 0 } };
+static const char *menuOhm[6] = { "V", "I", "R", "P", "_", "_" };
+static int actOhm(int slot) {
+    if (slot == 0) { if (!(eeH(0,1) && eeH(0,2))) return 1; eeW(0,0, eeV(0,1)*eeV(0,2)); }
+    else if (slot == 1) { if (!(eeH(0,0) && eeH(0,2)) || eeV(0,2) == 0) return 1; eeW(0,1, eeV(0,0)/eeV(0,2)); }
+    else if (slot == 2) { if (!(eeH(0,0) && eeH(0,1)) || eeV(0,1) == 0) return 1; eeW(0,2, eeV(0,0)/eeV(0,1)); }
+    else if (slot == 3) {
+        if (eeH(0,0) && eeH(0,1)) eeW(0,3, eeV(0,0)*eeV(0,1));
+        else if (eeH(0,0) && eeH(0,2)) { if (eeV(0,2) == 0) return 1; eeW(0,3, eeV(0,0)*eeV(0,0)/eeV(0,2)); }
+        else if (eeH(0,1) && eeH(0,2)) eeW(0,3, eeV(0,1)*eeV(0,1)*eeV(0,2));
+        else return 1;
+    } else return 1;
+    fcSave();
+    return 0;
+}
+
+static const FcFld vdivFlds[4] = {
+    { "' + repr(g('输入电压')) + '", "Vin", 0 }, { "' + repr(g('上电阻')) + '", "R1", 0 },
+    { "' + repr(g('下电阻')) + '", "R2", 0 }, { "' + repr(g('输出电压')) + '", "Vout", 0 } };
+static const char *menuVdiv[6] = { "Vout", "R2", "R1", "_", "_", "_" };
+static int actVdiv(int slot) {
+    if (slot == 0) { if (!(eeH(1,0) && eeH(1,1) && eeH(1,2))) return 1; double d = eeV(1,1)+eeV(1,2); if (d == 0) return 1; eeW(1,3, eeV(1,0)*eeV(1,2)/d); }
+    else if (slot == 1) { if (!(eeH(1,0) && eeH(1,2) && eeH(1,3))) return 1; double d = eeV(1,0)-eeV(1,3); if (d == 0) return 1; eeW(1,1, eeV(1,3)*eeV(1,2)/d); }
+    else if (slot == 2) { if (!(eeH(1,0) && eeH(1,1) && eeH(1,3))) return 1; double v = eeV(1,3); if (v == 0) return 1; eeW(1,2, eeV(1,1)*(eeV(1,0)-v)/v); }
+    else return 1;
+    fcSave();
+    return 0;
+}
+
+static const FcFld rparFlds[4] = {
+    { "R1", "R1", 4 }, { "R2", "R2", 4 },
+    { "' + repr(g('串联')) + '", "Rs", 4 }, { "' + repr(g('并联')) + '", "Rp", 4 } };
+static const char *menuRpar[6] = { "CALC", "_", "_", "_", "_", "_" };
+static int actRpar(int slot) {
+    if (slot != 0) return 1;
+    if (!(eeH(2,0) && eeH(2,1))) return 1;
+    double d = eeV(2,0) + eeV(2,1);
+    eeW(2,2, d);
+    if (d != 0) eeW(2,3, eeV(2,0)*eeV(2,1)/d);
+    else fh_[2][2][3] = 0;
+    fcSave();
+    return 0;
+}
+
+static const FcFld rcFlds[3] = {
+    { "R", "OHM", 4 }, { "' + repr(g('电容')) + '", "uF", 4 },
+    { "' + repr(g('时间常数')) + '", "TAU", 4 } };
+static const char *menuRc[6] = { "TAU", "R", "C", "_", "_", "_" };
+static int actRc(int slot) {
+    if (slot == 0) { if (!(eeH(3,0) && eeH(3,1))) return 1; eeW(3,2, eeV(3,0)*eeV(3,1)*1e-3); } // τ(ms)=R×C(µF)×1e-3
+    else if (slot == 1) { if (!(eeH(3,1) && eeH(3,2)) || eeV(3,1) == 0) return 1; eeW(3,0, eeV(3,2)*1000.0/eeV(3,1)); }
+    else if (slot == 2) { if (!(eeH(3,0) && eeH(3,2)) || eeV(3,0) == 0) return 1; eeW(3,1, eeV(3,2)*1000.0/eeV(3,0)); }
+    else return 1;
+    fcSave();
+    return 0;
+}
+
+static const FcFld resoFlds[3] = {
+    { "' + repr(g('电感')) + '", "uH", 4 }, { "' + repr(g('电容')) + '", "pF", 4 },
+    { "' + repr(g('谐振频率')) + '", "f0", 4 } };
+static const char *menuReso[6] = { "f0", "L", "C", "_", "_", "_" };
+static int actReso(int slot) {
+    // L µH × C pF → f0(MHz) = 1000/(2π√(LC))
+    if (slot == 0) { if (!(eeH(4,0) && eeH(4,1)) || eeV(4,0) <= 0 || eeV(4,1) <= 0) return 1;
+        eeW(4,2, 1000.0/(2*3.14159265358979*sqrt(eeV(4,0)*eeV(4,1)))); }
+    else if (slot == 1) { if (!(eeH(4,1) && eeH(4,2)) || eeV(4,1) <= 0 || eeV(4,2) <= 0) return 1;
+        double k = 1000.0/(2*3.14159265358979*eeV(4,2)); eeW(4,0, k*k/eeV(4,1)); }
+    else if (slot == 2) { if (!(eeH(4,0) && eeH(4,2)) || eeV(4,0) <= 0 || eeV(4,2) <= 0) return 1;
+        double k = 1000.0/(2*3.14159265358979*eeV(4,2)); eeW(4,1, k*k/eeV(4,0)); }
+    else return 1;
+    fcSave();
+    return 0;
+}
+
+static const FcFld freqFlds[2] = {
+    { "' + repr(g('频率')) + '", "Hz", 4 }, { "' + repr(g('周期')) + '", "Tms", 4 } };
+static const char *menuFreq[6] = { "T", "f", "_", "_", "_", "_" };
+static int actFreq(int slot) {
+    if (slot == 0) { if (!eeH(5,0) || eeV(5,0) == 0) return 1; eeW(5,1, 1000.0/eeV(5,0)); } // T(ms)=1000/f
+    else if (slot == 1) { if (!eeH(5,1) || eeV(5,1) == 0) return 1; eeW(5,0, 1000.0/eeV(5,1)); }
+    else return 1;
+    fcSave();
+    return 0;
+}
+
+static const FcFld sineFlds[3] = {
+    { "' + repr(g('峰值')) + '", "Vp", 4 }, { "' + repr(g('有效值')) + '", "Vrms", 4 },
+    { "' + repr(g('峰峰值')) + '", "Vpp", 4 } };
+static const char *menuSine[6] = { "Vp", "Vrms", "Vpp", "_", "_", "_" };
+static int actSine(int slot) {
+    const double S2 = 1.4142135623730951;
+    if (slot == 0) {
+        if (eeH(6,1)) eeW(6,0, eeV(6,1)*S2);
+        else if (eeH(6,2)) eeW(6,0, eeV(6,2)/2);
+        else return 1;
+    } else if (slot == 1) {
+        if (eeH(6,0)) eeW(6,1, eeV(6,0)/S2);
+        else if (eeH(6,2)) eeW(6,1, eeV(6,2)/(2*S2));
+        else return 1;
+    } else if (slot == 2) {
+        if (eeH(6,0)) eeW(6,2, 2*eeV(6,0));
+        else if (eeH(6,1)) eeW(6,2, 2*S2*eeV(6,1));
+        else return 1;
+    } else return 1;
+    fcSave();
+    return 0;
+}
+
+static const FcFld dbmFlds[2] = {
+    { "' + repr(g('功率')) + '", "W", 4 }, { "' + repr(g('分贝毫瓦')) + '", "dBm", 4 } };
+static const char *menuDbm[6] = { "dBm", "W", "_", "_", "_", "_" };
+static int actDbm(int slot) {
+    if (slot == 0) { if (!eeH(7,0) || eeV(7,0) <= 0) return 1; eeW(7,1, 10.0*log10(eeV(7,0)/1e-3)); }
+    else if (slot == 1) { if (!eeH(7,1)) return 1; eeW(7,0, 1e-3*pow(10.0, eeV(7,1)/10.0)); }
+    else return 1;
+    fcSave();
+    return 0;
+}
+
+static const FcFld xfmrFlds[4] = {
+    { "' + repr(g('初级电压')) + '", "Vp", 4 }, { "' + repr(g('次级电压')) + '", "Vs", 4 },
+    { "' + repr(g('初级匝数')) + '", "Np", 4 }, { "' + repr(g('次级匝数')) + '", "Ns", 4 } };
+static const char *menuXfmr[6] = { "Vp", "Vs", "Np", "Ns", "_", "_" };
+static int actXfmr(int slot) {
+    if (slot == 0) { if (!(eeH(8,1) && eeH(8,2) && eeH(8,3)) || eeV(8,3) == 0) return 1; eeW(8,0, eeV(8,1)*eeV(8,2)/eeV(8,3)); }
+    else if (slot == 1) { if (!(eeH(8,0) && eeH(8,2) && eeH(8,3)) || eeV(8,2) == 0) return 1; eeW(8,1, eeV(8,0)*eeV(8,3)/eeV(8,2)); }
+    else if (slot == 2) { if (!(eeH(8,0) && eeH(8,1) && eeH(8,3)) || eeV(8,1) == 0) return 1; eeW(8,2, eeV(8,3)*eeV(8,0)/eeV(8,1)); } // Np = Ns*Vp/Vs
+    else if (slot == 3) { if (!(eeH(8,0) && eeH(8,1) && eeH(8,2)) || eeV(8,0) == 0) return 1; eeW(8,3, eeV(8,2)*eeV(8,1)/eeV(8,0)); }
+    else return 1;
+    fcSave();
+    return 0;
+}
+
+static int (*eeActTbl[9])(int slot) = { actOhm, actVdiv, actRpar, actRc, actReso,
+                                        actFreq, actSine, actDbm, actXfmr };
+static const char **eeMenuTbl[9] = { menuOhm, menuVdiv, menuRpar, menuRc, menuReso,
+                                     menuFreq, menuSine, menuDbm, menuXfmr };
+static const FcFld *eeFldSets[9] = { ohmFlds, vdivFlds, rparFlds, rcFlds, resoFlds,
+                                     freqFlds, sineFlds, dbmFlds, xfmrFlds };
+static const int eeFldCnt[9] = { 4, 4, 4, 3, 3, 2, 3, 2, 4 };
+
+static void fcInitEeFmts(void) {
+    for (int f = 0; f < 9; f++) {
+        eeFmts[f].nf = eeFldCnt[f];
+        eeFmts[f].rowBase = 20;
+        eeFmts[f].rowStep = 18;
+        eeFmts[f].f = eeFldSets[f];
+    }
+}
+
 static void fcInitFmts(void) {
     finFmts[0].nf = 5; finFmts[0].rowBase = 20; finFmts[0].rowStep = 18; finFmts[0].f = tvmFlds;
     finFmts[1].nf = 0; // CFLOW 特殊
@@ -895,6 +1093,7 @@ static void fcInitFmts(void) {
     finFmts[5].nf = 3; finFmts[5].rowBase = 20; finFmts[5].rowStep = 18; finFmts[5].f = dateFlds;
     finFmts[6].nf = 3; finFmts[6].rowBase = 20; finFmts[6].rowStep = 18; finFmts[6].f = iconvFlds;
     finFmts[7].nf = 3; finFmts[7].rowBase = 20; finFmts[7].rowStep = 18; finFmts[7].f = marginFlds;
+    fcInitEeFmts();
 }
 
 // 表单动作表
@@ -906,38 +1105,41 @@ static const char **finMenuTbl[8] = { menuTvm, 0, menuAmort, menuBond,
 // ---- 绘制（层）----
 static void drawUnderConstruction(void);
 static void drawFormScreen(void) {
-    if (fcForm == 1) drawCflow();
-    else {
-        const char **ms = (const char **)finMenuTbl[fcForm];
-        const char *menus[6];
-        for (int i = 0; i < 6; i++) menus[i] = ms[i];
-        if (fcForm == 0) { // TVM 标题（期末/期初）
-            char right[24];
-            sprintf(right, "FIX%d %s", fcFix, (fs_[1][0] & 1) ? ZH_QICHU : ZH_QIMMO);
-            char tt[48];
-            sprintf(tt, "TVM %s", finItems[0]);
-            drawTitle(tt, right);
-            for (int i = 0; i < 5; i++) drawStdRow(0, i);
-        } else if (fcForm == 3) { // BOND 标题（付息频）
-            char right[24];
-            sprintf(right, "FIX%d frq%d", fcFix, (int)bondFreq[fs_[1][3] & 3]);
-            char tt[48];
-            sprintf(tt, "BOND %s", finItems[3]);
-            drawTitle(tt, right);
-            for (int i = 0; i < 6; i++) drawStdRow(3, i);
-        } else if (fcForm == 5) { // DATE 标题（日基）
-            char tt[48];
-            sprintf(tt, "DATE %s", finItems[5]);
-            drawTitle(tt, (fs_[1][5] & 1) ? "ACT" : "360");
-            for (int i = 0; i < 3; i++) drawStdRow(5, i);
-        } else {
-            char tt[48];
-            sprintf(tt, "%s %s", finAbbr[fcForm], finItems[fcForm]);
-            drawTitle(tt, NULL);
-            for (int i = 0; i < finFmts[fcForm].nf; i++) drawStdRow(fcForm, i);
-        }
-        drawMenu(menus);
+    if (fcMod == 1 && fcForm == 1) { drawCflow(); return; }
+    const char **ms;
+    if (fcMod == 2) ms = (const char **)eeMenuTbl[fcForm];
+    else ms = (const char **)finMenuTbl[fcForm];
+    const char *menus[6];
+    for (int i = 0; i < 6; i++) menus[i] = ms[i];
+    if (fcMod == 1 && fcForm == 0) { // TVM 标题（期末/期初）
+        char right[24];
+        sprintf(right, "FIX%d %s", fcFix, (fs_[1][0] & 1) ? ZH_QICHU : ZH_QIMMO);
+        char tt[48];
+        sprintf(tt, "TVM %s", finItems[0]);
+        drawTitle(tt, right);
+        for (int i = 0; i < 5; i++) drawStdRow(0, i);
+    } else if (fcMod == 1 && fcForm == 3) { // BOND 标题（付息频）
+        char right[24];
+        sprintf(right, "FIX%d frq%d", fcFix, (int)bondFreq[fs_[1][3] & 3]);
+        char tt[48];
+        sprintf(tt, "BOND %s", finItems[3]);
+        drawTitle(tt, right);
+        for (int i = 0; i < 6; i++) drawStdRow(3, i);
+    } else if (fcMod == 1 && fcForm == 5) { // DATE 标题（日基）
+        char tt[48];
+        sprintf(tt, "DATE %s", finItems[5]);
+        drawTitle(tt, (fs_[1][5] & 1) ? "ACT" : "360");
+        for (int i = 0; i < 3; i++) drawStdRow(5, i);
+    } else {
+        char tt[48];
+        if (fcMod == 2) sprintf(tt, "%s %s", eeAbbr[fcForm], eeItems[fcForm]);
+        else sprintf(tt, "%s %s", finAbbr[fcForm], finItems[fcForm]);
+        drawTitle(tt, NULL);
+        int nf;
+        fcFormDef(fcForm, &nf, 0, 0, 0);
+        for (int i = 0; i < nf; i++) drawStdRow(fcForm, i);
     }
+    drawMenu(menus);
 }
 
 static void drawFormula(void) { // TVM 公式视图（只读）
@@ -1029,26 +1231,48 @@ static void drawFixPage(void) {
     drawMenu(menus);
 }
 
+// 表单布局定义（fcMod 1 金融 / 2 工程）——绘制与按键共用
+static void fcFormDef(int form, int *nf, int *rb, int *rs, const FcFld **f) {
+    if (fcMod == 2 && form < 9) {
+        if (nf) *nf = eeFmts[form].nf;
+        if (rb) *rb = eeFmts[form].rowBase;
+        if (rs) *rs = eeFmts[form].rowStep;
+        if (f) *f = eeFmts[form].f;
+    } else {
+        if (nf) *nf = finFmts[form].nf;
+        if (rb) *rb = finFmts[form].rowBase;
+        if (rs) *rs = finFmts[form].rowStep;
+        if (f) *f = finFmts[form].f;
+    }
+}
+
 // ---- 表单字段行数（CFLOW 特殊）----
 static int fcFieldCount(void) {
     if (fcMod == 1 && fcForm == 1) return 14;
-    if (fcMod == 1 && fcForm < 8) return finFmts[fcForm].nf;
-    return 5;
+    int nf;
+    if (fcMod == 1 && fcForm < 8) fcFormDef(fcForm, &nf, 0, 0, 0);
+    else if (fcMod == 2 && fcForm < 9) fcFormDef(fcForm, &nf, 0, 0, 0);
+    else return 5;
+    return nf;
 }
 static int fcRowBase(void) {
     if (fcMod == 1 && fcForm == 1) return 18;
-    return finFmts[fcForm].rowBase;
+    int rb;
+    fcFormDef(fcForm, 0, &rb, 0, 0);
+    return rb;
 }
 static int fcRowStep(void) {
     if (fcMod == 1 && fcForm == 1) return 16;
-    return finFmts[fcForm].rowStep;
+    int rs;
+    fcFormDef(fcForm, 0, 0, &rs, 0);
+    return rs;
 }
 
 // ---- 重绘（fcRowFoc>=0：仅重画聚焦行并局部 flush）----
 static void drawFocRowOnly(void) {
-    if (fcLevel != 2 || fcMod != 1) return;
+    if (fcLevel != 2 || (fcMod != 1 && fcMod != 2)) return;
     int y;
-    if (fcForm == 1) {
+    if (fcMod == 1 && fcForm == 1) {
         drawCflowRow(foc);
         y = cfRowY(foc);
     } else {
@@ -1063,7 +1287,7 @@ static void drawUnit(void);
 static int fcUnitKey(int key);
 
 static void fcDraw(void) {
-    if (fcRowFoc >= 0 && fcLevel == 2 && fcMod == 1) {
+    if (fcRowFoc >= 0 && fcLevel == 2 && (fcMod == 1 || fcMod == 2)) {
         fcRowFoc = -1;
         drawFocRowOnly();
         return;
@@ -1071,7 +1295,7 @@ static void fcDraw(void) {
     fcRowFoc = -1;
     if (fcLevel == 3) drawFormula();
     else if (fcLevel == 2) {
-        if (fcMod == 1 && fcForm < 8) drawFormScreen();
+        if ((fcMod == 1 && fcForm < 8) || (fcMod == 2 && fcForm < 9)) drawFormScreen();
         else if (fcMod == 3 && fcForm >= 0) drawUnit();
         else drawUnderConstruction();
     } else if (fcLevel == 4) drawFixPage();
@@ -1110,8 +1334,7 @@ static void fcListSel(void) {
     int idx = fcTop + fcSel;
     if (idx >= cnt) { idx = cnt - 1; fcSel = cnt - 1 - fcTop; }
     fcForm = idx;
-    if (fcMod == 2) fcForm = 0;      // 电子工程 P3 占位
-    if (fcMod == 3) { fcForm = idx; uCat = idx; uSrc = 0; uTop = 0; } // 单位换算：类别进入
+    if (fcMod == 3) { uCat = idx; uSrc = 0; uTop = 0; } // 单位换算：类别进入
     fcLevel = 2;
     fcMsg[0] = 0;
     foc = 0;
@@ -1121,7 +1344,7 @@ static void fcListSel(void) {
     ebuf[0] = 0;
 }
 
-// ---- 表单按键（L2 金融表单）----
+// ---- 表单按键（L2 表单）----
 static int fcFormKey(int key) {
     int d = fcDigit(key);
     if (d >= 0) { fcEditAppend('0' + d); return 0; }
@@ -1182,14 +1405,19 @@ static int fcFormKey(int key) {
     }
     if (slot >= 0) {
         fcCommit();
-        if (fcForm == 1) { // CFLOW 动作：act 内自带结果消息（NPV=/IRR=/清空ed）；失败=err
-            if (actCflow(slot) != 0) strcpy(fcMsg, "err");
-        } else if (fcForm == 0) {
-            if (actTvm(slot) != 0) strcpy(fcMsg, "no sol");
-            else fcMsg[0] = 0;
-        } else {
-            if (finActTbl[fcForm](slot) != 0) strcpy(fcMsg, "err");
-            else if (fcForm == 2 || fcForm == 4) { /* 结果写 RES——无消息 */ }
+        if (fcMod == 1) {
+            if (fcForm == 1) { // CFLOW 动作：act 内自带结果消息（NPV=/IRR=/清空ed）；失败=err
+                if (actCflow(slot) != 0) strcpy(fcMsg, "err");
+            } else if (fcForm == 0) {
+                if (actTvm(slot) != 0) strcpy(fcMsg, "no sol");
+                else fcMsg[0] = 0;
+            } else {
+                if (finActTbl[fcForm](slot) != 0) strcpy(fcMsg, "err");
+                else if (fcForm == 2 || fcForm == 4) { /* 结果写 RES——无消息 */ }
+                else fcMsg[0] = 0;
+            }
+        } else { // 电子工程
+            if (eeActTbl[fcForm](slot) != 0) strcpy(fcMsg, "err");
             else fcMsg[0] = 0;
         }
         return 1;
@@ -1207,7 +1435,7 @@ static int fcHandleKey(int key) {
         if (key == KEY_VIEWS || key == KEY_ON) { fcLevel = 2; return 1; }
         return 0;
     }
-    if (fcLevel == 2 && fcMod == 1 && fcForm < 8) return fcFormKey(key);
+    if (fcLevel == 2 && ((fcMod == 1 && fcForm < 8) || (fcMod == 2 && fcForm < 9))) return fcFormKey(key);
     if (fcLevel == 2 && fcMod == 3) return fcUnitKey(key);
     if (fcLevel == 2) { // 建设中页
         if (key == KEY_ON || key == KEY_HOME || key == KEY_BACKSPACE || key == KEY_APPS) {
