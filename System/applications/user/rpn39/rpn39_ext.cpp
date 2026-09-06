@@ -77,7 +77,7 @@ static const char *cplxHints[3] = {
 
 static void saveCplx(void) {
     FIL f;
-    if (f_open(&f, "/rpn39_cplx.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+    if (f_open(&f, "/rpn39/cplx.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw;
         double d[5] = {cZ0re, cZ0im, cZ1re, cZ1im, (double)cplxPolar}; // 第 5 值=显示模式
         f_write(&f, d, sizeof(d), &bw);
@@ -86,7 +86,8 @@ static void saveCplx(void) {
 }
 static void loadCplx(void) {
     FIL f; UINT br = 0;
-    if (f_open(&f, "/rpn39_cplx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) {
+    if (f_open(&f, "/rpn39/cplx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径
+    } else if (f_open(&f, "/rpn39_cplx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移）
         double d[5] = {0};
         f_read(&f, d, sizeof(d), &br);
         if (br >= 4 * sizeof(double)) { cZ0re = d[0]; cZ0im = d[1]; cZ1re = d[2]; cZ1im = d[3]; }
@@ -264,7 +265,7 @@ static void matxClamp(void) {
 
 static void saveMatx(void) {
     FIL f;
-    if (f_open(&f, "/rpn39_matx.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+    if (f_open(&f, "/rpn39/matx.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw;
         f_write(&f, mA, sizeof(mA), &bw);
         f_write(&f, mB, sizeof(mB), &bw);
@@ -278,7 +279,8 @@ static void saveMatx(void) {
 }
 static void loadMatx(void) {
     FIL f; UINT br = 0;
-    if (f_open(&f, "/rpn39_matx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) {
+    if (f_open(&f, "/rpn39/matx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径
+    } else if (f_open(&f, "/rpn39_matx.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移）
         f_read(&f, mA, sizeof(mA), &br);
         if (br == sizeof(mA)) {
             f_read(&f, mB, sizeof(mB), &br);
@@ -581,7 +583,7 @@ static void statCompute(double vals[8]) {
 
 static void saveStat(void) {
     FIL f;
-    if (f_open(&f, "/rpn39_stat.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+    if (f_open(&f, "/rpn39/stat.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw;
         f_write(&f, &statN, sizeof(int), &bw);
         f_write(&f, statData, statN * sizeof(double), &bw);
@@ -590,7 +592,8 @@ static void saveStat(void) {
 }
 static void loadStat(void) {
     FIL f; UINT br = 0;
-    if (f_open(&f, "/rpn39_stat.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) {
+    if (f_open(&f, "/rpn39/stat.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径
+    } else if (f_open(&f, "/rpn39_stat.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移）
         f_read(&f, &statN, sizeof(int), &br);
         if (statN < 0 || statN > STAT_MAX) statN = 0;
         if (statN > 0) f_read(&f, statData, statN * sizeof(double), &br);

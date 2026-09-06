@@ -84,10 +84,18 @@ static int regKeyToIdx(int key) {
     return -1;
 }
 
-// 掉电持久化（/rpn39_sto.dat：26 寄存器 + 4 栈 + 角度模式；旧版 208B/240B 兼容）
+// ---- session 子目录（2026-09-06：程序文件分类存放 /rpn39/）----
+static int rpn39DirsOk = 0;
+void rpn39EnsureDirs(void) {
+    if (rpn39DirsOk) return;
+    f_mkdir("/rpn39"); // 已存在返回 FR_EXIST——忽略
+    rpn39DirsOk = 1;
+}
+
+// 掉电持久化（/rpn39/sto.dat：26 寄存器 + 4 栈 + 角度模式；旧版 208B/240B 兼容）
 void saveRegs(void) {
     FIL f;
-    if (f_open(&f, "/rpn39_sto.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+    if (f_open(&f, "/rpn39/sto.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw = 0;
         f_write(&f, regs, sizeof(regs), &bw);          // 26 regs
         double st[5] = {stX, stY, stZ, stT, (double)angMode};
@@ -100,7 +108,9 @@ void loadRegs(void) {
     UINT br = 0;
     memset(regs, 0, sizeof(regs));
     angMode = 0;
-    if (f_open(&f, "/rpn39_sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) {
+    if (f_open(&f, "/rpn39/sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 新路径
+        /* 新路径优先 */
+    } else if (f_open(&f, "/rpn39_sto.dat", FA_OPEN_EXISTING | FA_READ) == FR_OK) { // 旧路径兼容（下次保存迁移到新路径）
         f_read(&f, regs, sizeof(regs), &br); // regs 区（br 出参）
         if (br >= sizeof(regs)) {            // 有栈区（新版文件）
             double st[5] = {0};
@@ -743,6 +753,7 @@ void rpn39Task(void *_) {
     SystemUISuspend();
     uidisp->restoreBuffer(); // UI_Suspend 已释放 disp_buf（releaseBuffer），重新分配堆缓冲（panic 尝试：避开 emergencyBuffer 固定区）
     rpn39Running = 1;
+    rpn39EnsureDirs();
     loadRegs();
     rpn39StatSessionReset(); // 统计新会话从空开始（F4 收集不续上次数据；旧数据经 Shift+7 加载查看）
     draw();

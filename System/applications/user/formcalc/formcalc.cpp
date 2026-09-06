@@ -218,7 +218,7 @@ static void fcSave(void) {
             double d = fv_[1][f][i];
             memcpy(p, &d, 8); p += 8;
         }
-    if (f_open(&gfile, "/formcalc.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+    if (f_open(&gfile, "/formcalc/formcalc.dat", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
         UINT bw;
         f_write(&gfile, saveBuf, p - saveBuf, &bw);
         f_close(&gfile);
@@ -226,7 +226,10 @@ static void fcSave(void) {
 }
 
 static void fcLoad(void) {
-    if (f_open(&gfile, "/formcalc.dat", FA_READ) != FR_OK) return;
+    f_mkdir("/formcalc"); // session 子目录（2026-09-06：程序文件分类存放；已存在返回 FR_EXIST 忽略）
+    if (f_open(&gfile, "/formcalc/formcalc.dat", FA_READ) != FR_OK) { // 新路径
+        if (f_open(&gfile, "/formcalc.dat", FA_READ) != FR_OK) return; // 旧路径兼容（自动迁移：下次保存写新路径）
+    }
     UINT br = 0;
     f_read(&gfile, saveBuf, sizeof(saveBuf), &br);
     f_close(&gfile);
@@ -1226,13 +1229,21 @@ static int fcHandleKey(int key) {
     }
     if (fcLevel == 1) {
         int cnt = fcModCount();
-        if (key == KEY_UP) { if (fcTop + fcSel > 0) { if (fcSel == 0 && fcTop > 0) fcTop--; else fcSel--; } return 1; }
-        if (key == KEY_DOWN) { if (fcTop + fcSel < cnt - 1) { if (fcSel == 4 && fcTop + 4 < cnt - 1) fcTop++; else fcSel++; } return 1; }
+        if (key == KEY_UP) {
+            if (fcTop + fcSel > 0) { if (fcSel == 0 && fcTop > 0) fcTop--; else fcSel--; }
+            else { fcTop = cnt > 5 ? cnt - 5 : 0; fcSel = cnt - fcTop - 1; } // 顶部再上 → 跳底部（循环）
+            return 1;
+        }
+        if (key == KEY_DOWN) {
+            if (fcTop + fcSel < cnt - 1) { if (fcSel == 4 && fcTop + 4 < cnt - 1) fcTop++; else fcSel++; }
+            else { fcTop = 0; fcSel = 0; } // 底部再下 → 跳顶部（循环）
+            return 1;
+        }
         if (key == KEY_ENTER) { fcListSel(); return 1; }
         return 0;
     }
-    if (key == KEY_UP) { if (fcSel > 0) fcSel--; return 1; }
-    if (key == KEY_DOWN) { if (fcSel < 2) fcSel++; return 1; }
+    if (key == KEY_UP) { fcSel = (fcSel + 2) % 3; return 1; } // 循环
+    if (key == KEY_DOWN) { fcSel = (fcSel + 1) % 3; return 1; } // 循环
     if (key == KEY_ENTER) { fcListSel(); return 1; }
     if (key == KEY_F1) { fcSel = 0; fcListSel(); return 1; }
     if (key == KEY_F2) { fcSel = 1; fcListSel(); return 1; }
@@ -1445,32 +1456,54 @@ static void drawUnit(void) {
     drawMenu(unMenus);
 }
 
-// 输入局部刷新：值行值区（136..254）+ 结果 4 行值列（156..254）
-static void unRedrawValue(void) {
+// 输入局部刷新：值行 + 结果区整行重画后按全宽横条 flush
+// （flushRect 底层按区域连续读——仅 x0=0 全行宽区域正确；子宽区域会错位花屏）
+static void unDrawRows(int r0, int r1) { // r0..r1 行号（0=值行 1=单位行 2..=结果）
     const UnCat *c = &unCats[uCat];
-    uidisp->draw_box(136, 18, 254, 35, 255, 255);
-    if (eAct) {
-        uidisp->draw_box(136, 18, 254, 35, 0, 0);
-        const char *ed = (elen > 12) ? ebuf + elen - 12 : ebuf;
-        uidisp->draw_printf(140, 20, 16, 255, 0, "%s", ed);
-    } else {
-        char vb[24];
-        unFmt(uVal, vb);
-        uidisp->draw_printf(252 - (int)strlen(vb) * 8, 20, 16, 0, 255, "%s", vb);
+    for (int r = r0; r <= r1; r++) {
+        int y;
+        if (r == 0) {
+            y = 20;
+            uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255);
+            fDrawMix(4, y, "\xCA\xFD\xD6\xB5", 0, 255);
+            uidisp->draw_printf(84, y, 12, 0, 255, "VALUE");
+            if (eAct) {
+                uidisp->draw_box(136, 18, 254, 35, 0, 0);
+                const char *ed = (elen > 12) ? ebuf + elen - 12 : ebuf;
+                uidisp->draw_printf(140, y, 16, 255, 0, "%s", ed);
+            } else {
+                char vb[24];
+                unFmt(uVal, vb);
+                uidisp->draw_printf(252 - (int)strlen(vb) * 8, y, 16, 0, 255, "%s", vb);
+            }
+        } else if (r == 1) {
+            y = 40;
+            uidisp->draw_box(0, y - 1, 255, y + 15, 255, 255);
+            const UnItem *src = &c->it[uSrc];
+            fDrawMix(4, y, src->nm, 0, 255);
+            uidisp->draw_printf(150, y + 2, 12, 0, 255, src->sy);
+            uidisp->draw_printf(206, y + 2, 12, 0, 255, "<->");
+        } else {
+            int idx = uTop + (r - 2);
+            if (idx >= c->n) return;
+            y = 62 + (r - 2) * 12;
+            int sel = (idx == uSrc);
+            uidisp->draw_box(0, y - 1, 255, y + 11, 255, 0);
+            const UnItem *it = &c->it[idx];
+            uidisp->draw_printf(6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", it->sy);
+            double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
+            char vb[24];
+            unFmt(v, vb);
+            uidisp->draw_printf(252 - (int)strlen(vb) * 6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", vb);
+        }
     }
-    for (int r = 0; r < 4; r++) {
-        int idx = uTop + r;
-        if (idx >= c->n) break;
-        int y = 62 + r * 12;
-        int sel = (idx == uSrc);
-        uidisp->draw_box(156, y - 1, 254, y + 11, 255, 0); // 值列底色（白——反显行整行已白）
-        double v = unConv(uCat, uSrc, idx, eAct ? atof(ebuf) : uVal);
-        char vb[24];
-        unFmt(v, vb);
-        uidisp->draw_printf(252 - (int)strlen(vb) * 6, y, 12, sel ? 255 : 0, sel ? 0 : 255, "%s", vb);
-    }
-    uidisp->flushRect(136, 18, 254, 35);
-    uidisp->flushRect(156, 61, 254, 111);
+}
+
+static void unRedrawValue(void) {
+    unDrawRows(0, 0); // 值行
+    unDrawRows(2, 5); // 结果 4 行
+    uidisp->flushRect(0, 18, 255, 35);
+    uidisp->flushRect(0, 61, 255, 111);
 }
 
 static void unEdit(char c) {
@@ -1497,10 +1530,25 @@ static int fcUnitKey(int key) {
         return 0;
     }
     const UnCat *c = &unCats[uCat];
-    if (key == KEY_LEFT) { uSrc = (uSrc + c->n - 1) % c->n; if (uSrc < uTop) uTop = uSrc; if (uSrc > uTop + 3) uTop = uSrc - 3; return 1; }
-    if (key == KEY_RIGHT) { uSrc = (uSrc + 1) % c->n; if (uSrc < uTop) uTop = uSrc; if (uSrc > uTop + 3) uTop = uSrc - 3; return 1; }
-    if (key == KEY_UP) { if (uTop > 0) uTop--; return 1; }
-    if (key == KEY_DOWN) { if (uTop + 4 < c->n) uTop++; return 1; }
+    int moved = 0;
+    if (key == KEY_LEFT) { uSrc = (uSrc + c->n - 1) % c->n; moved = 1; }
+    if (key == KEY_RIGHT) { uSrc = (uSrc + 1) % c->n; moved = 1; }
+    if (moved) {
+        if (uSrc < uTop) uTop = uSrc;
+        if (uSrc > uTop + 3) uTop = uSrc - 3;
+        char rb[16];
+        sprintf(rb, "%d/%d", uSrc + 1, c->n); // 标题右序号局部重绘
+        uidisp->draw_box(150, 0, 255, 17, 255, 255);
+        uidisp->draw_printf(254 - (int)strlen(rb) * 8, 2, 12, 0, 255, "%s", rb);
+        uidisp->flushRect(150, 0, 255, 17);
+        unDrawRows(1, 1); // 单位行
+        unDrawRows(2, 5); // 结果行
+        uidisp->flushRect(0, 39, 255, 56);
+        uidisp->flushRect(0, 61, 255, 111);
+        return 0;
+    }
+    if (key == KEY_UP) { if (uTop > 0) { uTop--; unDrawRows(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
+    if (key == KEY_DOWN) { if (uTop + 4 < c->n) { uTop++; unDrawRows(2, 5); uidisp->flushRect(0, 61, 255, 111); } return 0; }
     if (key == KEY_ENTER) { if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; return 1; } return 0; }
     if (key == KEY_F1) { eAct = 0; elen = 0; ebuf[0] = 0; uVal = 0; return 1; }
     if (key == KEY_ON || key == KEY_HOME || key == KEY_APPS) {

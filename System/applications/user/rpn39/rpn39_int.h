@@ -45,3 +45,5 @@ void rpn39StatAccum(int add);  // 主界面 F4/F5：Σ+/Σ− 收集
 void rpn39StatSessionReset(void); // RPN39 启动：统计新会话从空开始（旧数据经 Shift+7 页加载查看）
 
 #endif
+
+extern void rpn39EnsureDirs(void); // session 子目录确保（/rpn39/）
