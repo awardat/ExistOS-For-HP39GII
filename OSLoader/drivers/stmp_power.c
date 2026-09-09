@@ -219,7 +219,7 @@ void portPowerInit()
 
 
     HW_POWER_CHARGE.B.ENABLE_FAULT_DETECT = 0; // 手册：VDD5V 低于电池电压时自动断充（上游禁用，真机验证前保持）
-    HW_POWER_CHARGE.B.BATTCHRG_I  = 1 << 5;    // 400mA 档（2026-09-09 快充实验：4 并 AAA 镍氢 3600mAh = 0.11C；原 200mA 对 4 并仅 0.056C 需 18h+ 超 12h 定时。1 节场景请降回 bit4）
+    HW_POWER_CHARGE.B.BATTCHRG_I  = 1 << 4;    // 200mA 档（2026-09-09 实测最优：400mA 档内部折返仅 50-90mA，200mA 档 130-200mA；4 并 3600mAh=0.056C 慢充 12-16h 配 24h 兜底）
     HW_POWER_CHARGE.B.STOP_ILIMIT = 0;       // 镍氢无停充电流判据（2026-09-04 固定镍氢：3.8V 锂电直插实测失败——AAA 外围电路短路拉低电压；改用 12h 定时停充）
     HW_POWER_CHARGE.B.USE_EXTERN_R = 0;  // 2026-09-09 实验：外部精密偏置（手册默认）——内部电阻模式实测电流仅配置值 1/10（400mA 档→40mA）
 

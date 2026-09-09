@@ -677,7 +677,7 @@ void __attribute__((target("thumb"))) vMainThread_thumb_entry(void *pvParameters
 
     HW_POWER_CHARGE.B.CHRG_STS_OFF = 0;
 
-    HW_POWER_CHARGE.B.BATTCHRG_I = 1 << 5;  // 400mA（位权 400/200/100/50/20/10 = bit5..bit0；4 并 3600mAh=0.11C 手册标准，2026-09-09 快充实验）
+    HW_POWER_CHARGE.B.BATTCHRG_I = 1 << 4;  // 200mA 档（2026-09-09 实测最优：400 档反折返到 50-90mA、200 档 130-200mA；与 stmp_power 统一）
     HW_POWER_CHARGE.B.STOP_ILIMIT = 0;
 
     HW_POWER_CHARGE.B.PWD_BATTCHRG = 1;
@@ -945,11 +945,13 @@ void vBatteryMon(void *__n) {
                 // 已停充：保持断电状态，等待用户重开（防停后开路电压仍高重复触发）
             } else {
                 if (chargeStartTick == 0) { chargeStartTick = now; measTick = now; }
-                // 手册 §29.7：NiMH 0.1C 慢充 12 小时后必须停止（软件职责）
-                if (now - chargeStartTick >= 43200000UL) { // 12h（镍氢标准停充；CHRGSTS 轮询仅 Li-Ion，不适用于镍氢）
+                // 停充以"真实电压判据"为主（≥1.5V 满 / 1.4V 平台 2h）；本定时仅为电压判据失效时的最终保险
+                // 2026-09-09：12h→24h——实测 200mA 档稳态仅 130-160mA（线性充电热平衡），4 并 3600mAh 充满需 12-16h，
+                // 12h 会先于充满触发；0.056C 慢充过充 24h 上限 + 电压判据先行，安全可控
+                if (now - chargeStartTick >= 86400000UL) { // 24h（电压判据失效兜底）
                     HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
                     portChargeEnable(false);
-                    printf("Charge stop (12h)\n");
+                    printf("Charge stop (24h)\n");
                     chargeStartTick = 0; t1400 = 0; measState = false; chargeSessionDone = true;
                 } else if (measState) {
                     // 断充测量中：停充 2s 后电池端回落至真实电压（无 IR 抬升）
