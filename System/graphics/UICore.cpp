@@ -103,7 +103,7 @@ void drawPage(int page);
 
 void getTimeStr(char *s) {
     uint32_t rtc_time_sec = ll_rtc_get_sec();
-sprintf(s, "%02d:%02d:%02d", (int)((rtc_time_sec / (60 * 60)) % 24), (int)((rtc_time_sec / 60) % 60), (int)(rtc_time_sec % 60));
+sprintf(s, "%02d:%02d", (int)((rtc_time_sec / (60 * 60)) % 24), (int)((rtc_time_sec / 60) % 60));  // 2026-09-09：仅时:分（无秒后页面刷新可降频）
 }
 
 static void timeChange(int hh, int mm, int ss) {
@@ -1307,7 +1307,7 @@ void UI_keyScanner(void *_) {
                 console->blink();
             }
         }
-        if (cnt % 100 == 0) { // 900→3000ms：页面信息（时钟/设置页）刷新降频
+        if (cnt % 333 == 0) { // 3000→10000ms（2026-09-09）：时钟仅到分钟——3s 白刷；页面信息（时钟/设置页）刷新再降频
             pageUpdate();
 
             if (UIForceRefresh) {
