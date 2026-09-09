@@ -912,6 +912,7 @@ void vBatteryMon(void *__n) {
     static uint32_t measTick = 0;        // 上次断充测量时刻（2026-09-09：带载电压虚高——150mA×内阻抬升 250mV+，未满电池（静态 1256）带载可到 1500+ 被误判充满；
                                          // 改为周期性（10 分钟）断充 2s 测"真实电压"再判：≥1500 停 / ≥1400 持续 2h 停 / 12h 兜底）
     static bool measState = false;       // true=断充测量中
+    static uint8_t v5okCnt = 0;            // 5V 恢复稳定计数（连续 3s 才自动重开充电，2026-09-09）
     static bool chargeSessionDone = false; // 本次充电会话已停充（防停后电压仍高重复触发）
     static bool prevChargeEnable = false;  // g_chargeEnable 上升沿 = 新充电会话
     extern bool g_chargeEnable;
@@ -927,17 +928,30 @@ void vBatteryMon(void *__n) {
         // 外接电源消失检测（2026-09-05）：无 5V 输入时立即停充并清硬件位——
         // 否则软件位保持（DCDC=1/PWD=0），GET_CHARGE_STATUS 恒 1，拔 USB 后仍显示"充电中:是"
         if (g_chargeEnable && vdd5v_voltage < 3500) {
+            // 2026-09-09：5V 丢失只停硬件、保留充电意愿（g_chargeEnable）——
+            // 原 portChargeEnable(false) 清除意愿导致重插 USB 后不自动恢复（需重启/手动开关）
             HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
-            portChargeEnable(false);
+            HW_POWER_CHARGE.B.PWD_BATTCHRG = 1;
+            HW_POWER_VDDDCTRL.B.DISABLE_FET = 1;
             chargeStartTick = 0;
             t1400 = 0;
             measState = false;
-            chargeSessionDone = false; // 电源重插后重开开关（或重启）即新会话
-            prevChargeEnable = false;
-            printf("Charge stop (5V lost)\n");
+            chargeSessionDone = false; // 5V 恢复后自动开充 = 新会话
+            printf("Charge hw-stop (5V lost, armed)\n");
+        } else if (g_chargeEnable && vdd5v_voltage >= 3500 && HW_POWER_CHARGE.B.PWD_BATTCHRG) {
+            // 2026-09-09 自动恢复：5V 回到（充电器处于停止态）+ 连续 3s 稳定才重开（防阈值边沿抖动）
+            if (++v5okCnt >= 3) {
+                v5okCnt = 0;
+                portChargeEnable(true); // PWD=0/FET=0/DCDC=1（g_chargeEnable 本已 true，无副作用）
+                chargeStartTick = 0; t1400 = 0; measState = false; measTick = 0;
+                chargeSessionDone = false; prevChargeEnable = false;
+                printf("Charge auto-resume (5V back)\n");
+            }
+        } else {
+            v5okCnt = 0;
         }
 
-        if (g_chargeEnable) {
+        if (g_chargeEnable && vdd5v_voltage >= 3500) { // 2026-09-09：状态机 5V 前提（无 5V 时测量分支不得误置 DCDC——恢复由独立块负责）
             uint32_t now = xTaskGetTickCount();
             if (!prevChargeEnable) { chargeSessionDone = false; t1400 = 0; measState = false; measTick = 0; chargeStartTick = 0; } // 新充电会话（开关重新打开）
             prevChargeEnable = true;
