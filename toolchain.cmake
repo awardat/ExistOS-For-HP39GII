@@ -8,3 +8,7 @@ set(CMAKE_CXX_COMPILER_WORKS 1)
 find_program(CMAKE_OBJCOPY arm-none-eabi-objcopy)
 find_program(CMAKE_NM arm-none-eabi-nm)
 find_program(CMAKE_SIZE arm-none-eabi-size)
+# 2026-09-09 审核整改：工具缺失时配置阶段即报错（原延迟到 objcopy 后处理才暴露）
+if(NOT CMAKE_OBJCOPY OR NOT CMAKE_SIZE)
+    message(FATAL_ERROR "arm-none-eabi 工具链不完整：objcopy/size 未找到。请确认已安装并加入 PATH。")
+endif()
