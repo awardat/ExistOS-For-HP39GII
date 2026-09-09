@@ -136,8 +136,11 @@ void volatile arm_do_swi(uint32_t SWINum, uint32_t *pRegFram) {
         case LL_FAST_SWI_GET_CHARGE_STATUS:
             // 2026-09-04：原返回软件开关 g_chargeEnable——电池满后 DCDC 已关（电流 0）仍显"充电中"误导；
             // 改为硬件实际状态：开关开 且 充电电源(DCDC)开 且 充电电路未关
+            // 2026-09-09 诊断扩展：bit0=充电状态；bit8-13=BATTCHRG_I 实际值；bit16=USE_EXTERN_R（诊断充电电流 20mA 问题）
             pRegFram[0 + 2] =
-                (g_chargeEnable && HW_POWER_5VCTRL.B.ENABLE_DCDC && !HW_POWER_CHARGE.B.PWD_BATTCHRG) ? 1 : 0;
+                ((g_chargeEnable && HW_POWER_5VCTRL.B.ENABLE_DCDC && !HW_POWER_CHARGE.B.PWD_BATTCHRG) ? 1 : 0)
+                | ((uint32_t)(HW_POWER_CHARGE.B.BATTCHRG_I & 0x3F) << 8)
+                | ((uint32_t)(HW_POWER_CHARGE.B.USE_EXTERN_R & 1) << 16);
             break;
 
         case LL_FAST_SWI_RTC_GET_SEC:

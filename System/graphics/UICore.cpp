@@ -223,11 +223,27 @@ void pageUpdate() {
         uidisp->draw_box(180, 0, 255, 11, -1, 0);
         uidisp->draw_printf(200, 0, 16, 255, -1, "%d/%d", page3Subpage + 1, CONF_SUBPAGES);
         if (page3Subpage == 0) {
-            uint32_t Charging = ll_get_charge_status();
+            uint32_t csChg = ll_get_charge_status();
+            uint32_t Charging = csChg & 1;
+            char chgTxt[32];
+            if (Charging) {
+                uint32_t chgI = (csChg >> 8) & 0x3F;
+                uint32_t exr = (csChg >> 16) & 1;
+                int ma = 0;
+                if (chgI & 1) ma += 10;
+                if (chgI & 2) ma += 20;
+                if (chgI & 4) ma += 50;
+                if (chgI & 8) ma += 100;
+                if (chgI & 16) ma += 200;
+                if (chgI & 32) ma += 400;
+                snprintf(chgTxt, sizeof(chgTxt), "%s: %s %dmA%s", UI_CHARGING, UI_Yes, ma, exr ? "" : " R?");
+            } else {
+                snprintf(chgTxt, sizeof(chgTxt), "%s: %s  ", UI_CHARGING, UI_No);
+            }
 
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "CPU:%3d/%d MHz, %s:%d `C", ll_get_cur_freq(), 480, UI_TEMPERRATURE, ll_get_core_temp());
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %d/%d KB", UI_MEMUSE, getHeapAllocateSize() / 1024, TotalAllocatableSize / 1024);
-            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %d mv, %s: %s  ", UI_BATTERY, ll_get_bat_voltage(), UI_CHARGING, Charging ? UI_Yes : UI_No);
+            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %d mv, %s", UI_BATTERY, ll_get_bat_voltage(), chgTxt);
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s", UI_TIME, timeStr);
 
             {
