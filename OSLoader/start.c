@@ -896,6 +896,7 @@ void get_cpu_info() {
 }
 */
 
+uint32_t g_vdd5vMv = 0;  // 2026-09-09 诊断：VDD5V 实测（SWI GET_CHARGE_STATUS bit19-31）
 void vBatteryMon(void *__n) {
 
     uint32_t vatt_adc = 0;
@@ -917,6 +918,7 @@ void vBatteryMon(void *__n) {
         vatt_adc = portLRADCConvCh(7, 5);
         batt_voltage = portGetBatterVoltage_mv();
         vdd5v_voltage = (int)(portLRADCConvCh(5, 5) * 0.45 * 4);
+        g_vdd5vMv = vdd5v_voltage;
         coreTemp = (int)((portLRADCConvCh(4, 5) - portLRADCConvCh(3, 5)) * 1.012 / 4 - 273.15);
 
         // 外接电源消失检测（2026-09-05）：无 5V 输入时立即停充并清硬件位——

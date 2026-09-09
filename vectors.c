@@ -1,4 +1,5 @@
 
+extern uint32_t g_vdd5vMv;
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
@@ -18,7 +19,6 @@
 #include "board_up.h"
 #include "regspower.h"
 #include "llapi.h"
-extern uint32_t g_vdd5vMv;  // 2026-09-09 诊断：VDD5V 实测
 #include "llapi_code.h"
 
 #include "rtc_up.h"

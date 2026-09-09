@@ -225,10 +225,11 @@ void pageUpdate() {
         if (page3Subpage == 0) {
             uint32_t csChg = ll_get_charge_status();
             uint32_t Charging = csChg & 1;
+            uint32_t chgI = (csChg >> 8) & 0x3F;
+            uint32_t exr = (csChg >> 16) & 1;
+            uint32_t v5 = (csChg >> 19) & 0x1FFF;
             char chgTxt[32];
             if (Charging) {
-                uint32_t chgI = (csChg >> 8) & 0x3F;
-                uint32_t exr = (csChg >> 16) & 1;
                 int ma = 0;
                 if (chgI & 1) ma += 10;
                 if (chgI & 2) ma += 20;
@@ -236,7 +237,7 @@ void pageUpdate() {
                 if (chgI & 8) ma += 100;
                 if (chgI & 16) ma += 200;
                 if (chgI & 32) ma += 400;
-                snprintf(chgTxt, sizeof(chgTxt), "%s: %s %dmA E%d", UI_CHARGING, UI_Yes, ma, (int)exr);
+                snprintf(chgTxt, sizeof(chgTxt), "%s: %s %dmA", UI_CHARGING, UI_Yes, ma);
             } else {
                 snprintf(chgTxt, sizeof(chgTxt), "%s: %s  ", UI_CHARGING, UI_No);
             }
@@ -244,7 +245,7 @@ void pageUpdate() {
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "CPU:%3d/%d MHz, %s:%d `C", ll_get_cur_freq(), 480, UI_TEMPERRATURE, ll_get_core_temp());
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %d/%d KB", UI_MEMUSE, getHeapAllocateSize() / 1024, TotalAllocatableSize / 1024);
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %d mv, %s", UI_BATTERY, ll_get_bat_voltage(), chgTxt);
-            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s", UI_TIME, timeStr);
+            uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s, VDD5V: %u mV, E%d", UI_TIME, timeStr, v5, (int)exr);
 
             {
                 // 充电中强制标准档（见 case 0 充电开关）：标签按实际运行档显示
