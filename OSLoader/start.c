@@ -677,7 +677,7 @@ void __attribute__((target("thumb"))) vMainThread_thumb_entry(void *pvParameters
 
     HW_POWER_CHARGE.B.CHRG_STS_OFF = 0;
 
-    HW_POWER_CHARGE.B.BATTCHRG_I = 1 << 5;
+    HW_POWER_CHARGE.B.BATTCHRG_I = 1 << 4;  // 200mA（位权 400/200/100/50/20/10 = bit5..bit0；与 stmp_power 统一）
     HW_POWER_CHARGE.B.STOP_ILIMIT = 0;
 
     HW_POWER_CHARGE.B.PWD_BATTCHRG = 1;

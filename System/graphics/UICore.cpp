@@ -236,7 +236,7 @@ void pageUpdate() {
                 if (chgI & 8) ma += 100;
                 if (chgI & 16) ma += 200;
                 if (chgI & 32) ma += 400;
-                snprintf(chgTxt, sizeof(chgTxt), "%s: %s %dmA%s", UI_CHARGING, UI_Yes, ma, exr ? "" : " R?");
+                snprintf(chgTxt, sizeof(chgTxt), "%s: %s %dmA E%d", UI_CHARGING, UI_Yes, ma, exr);
             } else {
                 snprintf(chgTxt, sizeof(chgTxt), "%s: %s  ", UI_CHARGING, UI_No);
             }
