@@ -897,6 +897,8 @@ void get_cpu_info() {
 */
 
 uint32_t g_vdd5vMv = 0;  // 2026-09-09 诊断：VDD5V 实测（SWI GET_CHARGE_STATUS bit19-31）
+bool g_measState = false;         // 2026-09-10：断充测量中（SWI bit17，日志诊断）
+bool g_chargeSessionDone = false; // 2026-09-10：本次会话已停充（SWI bit18）
 void vBatteryMon(void *__n) {
 
     uint32_t vatt_adc = 0;
@@ -911,10 +913,8 @@ void vBatteryMon(void *__n) {
     static uint32_t t1400 = 0;           // 真实电压（断充测量）达 1.4V 时刻（1.4V+2h 窗口兜底，2026-09-04/09 语义修正）
     static uint32_t measTick = 0;        // 上次断充测量时刻（2026-09-09：带载电压虚高——150mA×内阻抬升 250mV+，未满电池（静态 1256）带载可到 1500+ 被误判充满；
                                          // 改为周期性（10 分钟）断充 2s 测"真实电压"再判：≥1500 停 / ≥1400 持续 2h 停 / 12h 兜底）
-    static bool measState = false;       // true=断充测量中
     static uint8_t v5okCnt = 0;            // 5V 恢复稳定计数（连续 3s 才自动重开充电，2026-09-09）
     static uint8_t v15Cnt = 0;             // 1.5V 连续确认计数（防单次极化尖峰误停，2026-09-09）
-    static bool chargeSessionDone = false; // 本次充电会话已停充（防停后电压仍高重复触发）
     static bool prevChargeEnable = false;  // g_chargeEnable 上升沿 = 新充电会话
     extern bool g_chargeEnable;
 
@@ -936,16 +936,16 @@ void vBatteryMon(void *__n) {
             HW_POWER_VDDDCTRL.B.DISABLE_FET = 1;
             chargeStartTick = 0;
             t1400 = 0;
-            measState = false;
-            chargeSessionDone = false; // 5V 恢复后自动开充 = 新会话
+            g_measState = false;
+            g_chargeSessionDone = false; // 5V 恢复后自动开充 = 新会话
             printf("Charge hw-stop (5V lost, armed)\n");
         } else if (g_chargeEnable && vdd5v_voltage >= 3500 && HW_POWER_CHARGE.B.PWD_BATTCHRG) {
             // 2026-09-09 自动恢复：5V 回到（充电器处于停止态）+ 连续 3s 稳定才重开（防阈值边沿抖动）
             if (++v5okCnt >= 3) {
                 v5okCnt = 0;
                 portChargeEnable(true); // PWD=0/FET=0/DCDC=1（g_chargeEnable 本已 true，无副作用）
-                chargeStartTick = 0; t1400 = 0; measState = false; measTick = 0;
-                chargeSessionDone = false; prevChargeEnable = false;
+                chargeStartTick = 0; t1400 = 0; g_measState = false; measTick = 0;
+                g_chargeSessionDone = false; prevChargeEnable = false;
                 printf("Charge auto-resume (5V back)\n");
             }
         } else {
@@ -954,9 +954,9 @@ void vBatteryMon(void *__n) {
 
         if (g_chargeEnable && vdd5v_voltage >= 3500) { // 2026-09-09：状态机 5V 前提（无 5V 时测量分支不得误置 DCDC——恢复由独立块负责）
             uint32_t now = xTaskGetTickCount();
-            if (!prevChargeEnable) { chargeSessionDone = false; t1400 = 0; measState = false; measTick = 0; chargeStartTick = 0; v15Cnt = 0; } // 新充电会话（开关重新打开）
+            if (!prevChargeEnable) { g_chargeSessionDone = false; t1400 = 0; g_measState = false; measTick = 0; chargeStartTick = 0; v15Cnt = 0; } // 新充电会话（开关重新打开）
             prevChargeEnable = true;
-            if (chargeSessionDone) {
+            if (g_chargeSessionDone) {
                 // 已停充：保持断电状态，等待用户重开（防停后开路电压仍高重复触发）
             } else {
                 if (chargeStartTick == 0) { chargeStartTick = now; measTick = now; }
@@ -967,12 +967,12 @@ void vBatteryMon(void *__n) {
                     HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
                     portChargeEnable(false);
                     printf("Charge stop (24h)\n");
-                    chargeStartTick = 0; t1400 = 0; measState = false; chargeSessionDone = true;
-                } else if (measState) {
+                    chargeStartTick = 0; t1400 = 0; g_measState = false; g_chargeSessionDone = true;
+                } else if (g_measState) {
                     // 断充测量中：静置 60s 让镍氢极化消退（2026-09-09 修复：原 2s 静置残余 100-200mV，
                     // 真实 1.31V 电池被误读为 1.45+ → 连续测量误触发 1.4V+2h / 1.5V 提前停充）
                     if (now - measTick >= 60000UL) {
-                        measState = false;
+                        g_measState = false;
                         if (batt_voltage >= 1500) {
                             if (++v15Cnt >= 2) {
                                 // 连续两次测量（间隔 10 分钟）均 ≥1.5V：确认充满
@@ -980,7 +980,7 @@ void vBatteryMon(void *__n) {
                                 HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
                                 portChargeEnable(false);
                                 printf("Charge stop (real 1.5V x2)\n");
-                                chargeStartTick = 0; t1400 = 0; chargeSessionDone = true;
+                                chargeStartTick = 0; t1400 = 0; g_chargeSessionDone = true;
                             } else {
                                 HW_POWER_5VCTRL.B.ENABLE_DCDC = 1; // 首次存疑：恢复充电，下次复测确认
                             }
@@ -992,7 +992,7 @@ void vBatteryMon(void *__n) {
                                 HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
                                 portChargeEnable(false);
                                 printf("Charge stop (real 1.4V+2h)\n");
-                                chargeStartTick = 0; t1400 = 0; chargeSessionDone = true;
+                                chargeStartTick = 0; t1400 = 0; g_chargeSessionDone = true;
                             } else {
                                 HW_POWER_5VCTRL.B.ENABLE_DCDC = 1; // 未到窗口：恢复充电
                             }
@@ -1006,7 +1006,7 @@ void vBatteryMon(void *__n) {
                 } else if (now - measTick >= 600000UL) {
                     // 每 10 分钟断充测真实电压（充电中带载读数不可信：IR 抬升 250mV+ 会误判充满）
                     HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
-                    measState = true;
+                    g_measState = true;
                     measTick = now;
                 }
                 // 正常充电段：ENABLE_DCDC 由 portChargeEnable(true)/恢复路径维护
@@ -1020,8 +1020,8 @@ void vBatteryMon(void *__n) {
         {
             int st = 0;
             if (!g_chargeEnable) st = 3;
-            else if (chargeSessionDone || vdd5v_voltage < 3500) st = 2;
-            else if (measState) st = 1;
+            else if (g_chargeSessionDone || vdd5v_voltage < 3500) st = 2;
+            else if (g_measState) st = 1;
             printf("L,%lu,%ld,%ld,%d,%d,%lu\n",
                    (unsigned long)xTaskGetTickCount(), batt_voltage, vdd5v_voltage, coreTemp, st, (unsigned long)vatt_adc);
         }

@@ -18,6 +18,7 @@
 #include "UICore.h"
 #include "UI_Config.h"
 #include "UI_Language.h"
+#include "filesystem/fatfs/ff.h"
 #include "UI_build_stamp.h"
 #include "SystemConfig.h"
 
@@ -1180,6 +1181,49 @@ void getSuffix(TCHAR *ret, TCHAR *filename) {
     ret[len - dot - 1] = 0; // 强制 null 终止（strncpy 不保证）
 }
 
+// 2026-09-10 充电诊断日志：每秒采样一行 CSV 追加到 /charge_log.csv（超 4MB 滚动重建）
+// 格式：tick_ms,HH:MM,电池mV,VDD5V mV,核心温度C,状态（0=充电 1=断充测量 2=停充/无5V 3=未开充电）
+static char chargeLogBuf[1400];
+static int chargeLogLen = 0;
+
+static void chargeLogFlush(void) {
+    if (chargeLogLen <= 0) return;
+    FIL f;
+    FRESULT r = f_open(&f, "/charge_log.csv", FA_OPEN_APPEND | FA_WRITE);
+    if (r != FR_OK) { chargeLogLen = 0; return; }
+    if (f_size(&f) > 4 * 1024 * 1024) { // 滚动：超 4MB 重建（保留最近日志）
+        f_close(&f);
+        f_unlink("/charge_log.csv");
+        r = f_open(&f, "/charge_log.csv", FA_CREATE_ALWAYS | FA_WRITE);
+        if (r != FR_OK) { chargeLogLen = 0; return; }
+    }
+    UINT bw = 0;
+    f_write(&f, chargeLogBuf, (UINT)chargeLogLen, &bw);
+    f_close(&f);
+    chargeLogLen = 0;
+}
+
+static void chargeLogAppend(void) {
+    char ts[16];
+    getTimeStr(ts);
+    uint32_t cs = ll_get_charge_status();
+    int st;
+    if (cs & (1u << 18)) st = 2;                    // 会话已停充
+    else if (cs & (1u << 17)) st = 1;               // 断充测量中
+    else if (cs & 1u) st = 0;                       // 充电中
+    else st = config_get_enable_charge() ? 2 : 3;   // 无5V或未开
+    char line[96];
+    int n = snprintf(line, sizeof(line), "%lu,%s,%lu,%u,%lu,%d\n",
+                     (unsigned long)xTaskGetTickCount(), ts,
+                     ll_get_bat_voltage(), (unsigned)((cs >> 19) & 0x1FFF),
+                     ll_get_core_temp(), st);
+    if (n > 0 && chargeLogLen + n < (int)sizeof(chargeLogBuf)) {
+        memcpy(chargeLogBuf + chargeLogLen, line, (size_t)n);
+        chargeLogLen += n;
+    }
+    if (chargeLogLen >= 1200) chargeLogFlush();
+}
+
 void UI_Task(void *) {
 
     // ��ʼ������ϵͳ
@@ -1306,6 +1350,8 @@ void UI_keyScanner(void *_) {
             if (curPage == 1 && console) {
                 console->blink();
             }
+            chargeLogAppend();                    // 2026-09-10：充电诊断日志每秒采样
+            if (cnt % 990 == 0) chargeLogFlush(); // 约 30s 强制落盘（掉电保护粒度）
         }
         if (cnt % 333 == 0) { // 3000→10000ms（2026-09-09）：时钟仅到分钟——3s 白刷；页面信息（时钟/设置页）刷新再降频
             pageUpdate();

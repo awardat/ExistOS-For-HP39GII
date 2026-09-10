@@ -78,7 +78,7 @@ uint32_t vm_temp_storage[16];
 void waitIRQ(int r);
 extern uint32_t g_latest_key_status;
 extern uint32_t g_core_temp, g_batt_volt, g_core_cur_freq_mhz;
-extern bool vm_in_exception, g_chargeEnable;
+extern bool vm_in_exception, g_chargeEnable, g_measState, g_chargeSessionDone;
 
 bool is_pcm_buffer_idle();
 void pcm_buffer_load(void *pcmdat);
@@ -142,6 +142,8 @@ void volatile arm_do_swi(uint32_t SWINum, uint32_t *pRegFram) {
                 ((g_chargeEnable && HW_POWER_5VCTRL.B.ENABLE_DCDC && !HW_POWER_CHARGE.B.PWD_BATTCHRG) ? 1 : 0)
                 | ((uint32_t)(HW_POWER_CHARGE.B.BATTCHRG_I & 0x3F) << 8)
                 | ((uint32_t)(HW_POWER_CHARGE.B.USE_EXTERN_R & 1) << 16)
+                | ((uint32_t)(g_measState ? 1 : 0) << 17)         // 2026-09-10：断充测量中
+                | ((uint32_t)(g_chargeSessionDone ? 1 : 0) << 18) // 2026-09-10：会话已停充
                 | ((uint32_t)(g_vdd5vMv & 0x1FFF) << 19);
             break;
 
