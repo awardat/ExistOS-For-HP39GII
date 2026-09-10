@@ -913,6 +913,7 @@ void vBatteryMon(void *__n) {
                                          // 改为周期性（10 分钟）断充 2s 测"真实电压"再判：≥1500 停 / ≥1400 持续 2h 停 / 12h 兜底）
     static bool measState = false;       // true=断充测量中
     static uint8_t v5okCnt = 0;            // 5V 恢复稳定计数（连续 3s 才自动重开充电，2026-09-09）
+    static uint8_t v15Cnt = 0;             // 1.5V 连续确认计数（防单次极化尖峰误停，2026-09-09）
     static bool chargeSessionDone = false; // 本次充电会话已停充（防停后电压仍高重复触发）
     static bool prevChargeEnable = false;  // g_chargeEnable 上升沿 = 新充电会话
     extern bool g_chargeEnable;
@@ -953,7 +954,7 @@ void vBatteryMon(void *__n) {
 
         if (g_chargeEnable && vdd5v_voltage >= 3500) { // 2026-09-09：状态机 5V 前提（无 5V 时测量分支不得误置 DCDC——恢复由独立块负责）
             uint32_t now = xTaskGetTickCount();
-            if (!prevChargeEnable) { chargeSessionDone = false; t1400 = 0; measState = false; measTick = 0; chargeStartTick = 0; } // 新充电会话（开关重新打开）
+            if (!prevChargeEnable) { chargeSessionDone = false; t1400 = 0; measState = false; measTick = 0; chargeStartTick = 0; v15Cnt = 0; } // 新充电会话（开关重新打开）
             prevChargeEnable = true;
             if (chargeSessionDone) {
                 // 已停充：保持断电状态，等待用户重开（防停后开路电压仍高重复触发）
@@ -968,16 +969,23 @@ void vBatteryMon(void *__n) {
                     printf("Charge stop (24h)\n");
                     chargeStartTick = 0; t1400 = 0; measState = false; chargeSessionDone = true;
                 } else if (measState) {
-                    // 断充测量中：停充 2s 后电池端回落至真实电压（无 IR 抬升）
-                    if (now - measTick >= 2000UL) {
+                    // 断充测量中：静置 60s 让镍氢极化消退（2026-09-09 修复：原 2s 静置残余 100-200mV，
+                    // 真实 1.31V 电池被误读为 1.45+ → 连续测量误触发 1.4V+2h / 1.5V 提前停充）
+                    if (now - measTick >= 60000UL) {
                         measState = false;
                         if (batt_voltage >= 1500) {
-                            // 真实电压 1.5V = 镍氢充满（静态平台上限）
-                            HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
-                            portChargeEnable(false);
-                            printf("Charge stop (real 1.5V)\n");
-                            chargeStartTick = 0; t1400 = 0; chargeSessionDone = true;
+                            if (++v15Cnt >= 2) {
+                                // 连续两次测量（间隔 10 分钟）均 ≥1.5V：确认充满
+                                v15Cnt = 0;
+                                HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
+                                portChargeEnable(false);
+                                printf("Charge stop (real 1.5V x2)\n");
+                                chargeStartTick = 0; t1400 = 0; chargeSessionDone = true;
+                            } else {
+                                HW_POWER_5VCTRL.B.ENABLE_DCDC = 1; // 首次存疑：恢复充电，下次复测确认
+                            }
                         } else if (batt_voltage >= 1400) {
+                            v15Cnt = 0;
                             if (t1400 == 0) { t1400 = now; }
                             if (now - t1400 >= 7200000UL) {
                                 // 真实 1.4V 平台徘徊 2h（2026-09-04 用户确认 T=2h）：升不到 1.5V 不干等 12h
@@ -990,6 +998,7 @@ void vBatteryMon(void *__n) {
                             }
                         } else {
                             t1400 = 0; // 未达 1.4V：窗口未开始，恢复充电
+                            v15Cnt = 0;
                             HW_POWER_5VCTRL.B.ENABLE_DCDC = 1;
                         }
                         measTick = now; // 下一测量周期起点
