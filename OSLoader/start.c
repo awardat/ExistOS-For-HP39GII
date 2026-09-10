@@ -982,7 +982,8 @@ void vBatteryMon(void *__n) {
                                 printf("Charge stop (real 1.5V x2)\n");
                                 chargeStartTick = 0; t1400 = 0; g_chargeSessionDone = true;
                             } else {
-                                HW_POWER_5VCTRL.B.ENABLE_DCDC = 1; // 首次存疑：恢复充电，下次复测确认
+                                HW_POWER_5VCTRL.B.ENABLE_DCDC = 1;
+                                HW_POWER_CHARGE.B.PWD_BATTCHRG = 0; // 恢复充电器主开关（配合测量真正断充） // 首次存疑：恢复充电，下次复测确认
                             }
                         } else if (batt_voltage >= 1400) {
                             v15Cnt = 0;
@@ -994,18 +995,24 @@ void vBatteryMon(void *__n) {
                                 printf("Charge stop (real 1.4V+2h)\n");
                                 chargeStartTick = 0; t1400 = 0; g_chargeSessionDone = true;
                             } else {
-                                HW_POWER_5VCTRL.B.ENABLE_DCDC = 1; // 未到窗口：恢复充电
+                                HW_POWER_5VCTRL.B.ENABLE_DCDC = 1;
+                                HW_POWER_CHARGE.B.PWD_BATTCHRG = 0; // 恢复充电器主开关（配合测量真正断充） // 未到窗口：恢复充电
                             }
                         } else {
                             t1400 = 0; // 未达 1.4V：窗口未开始，恢复充电
                             v15Cnt = 0;
                             HW_POWER_5VCTRL.B.ENABLE_DCDC = 1;
+                            HW_POWER_CHARGE.B.PWD_BATTCHRG = 0; // 恢复充电器主开关（配合测量真正断充）
                         }
                         measTick = now; // 下一测量周期起点
                     }
                 } else if (now - measTick >= 600000UL) {
                     // 每 10 分钟断充测真实电压（充电中带载读数不可信：IR 抬升 250mV+ 会误判充满）
+                    // 2026-09-10 日志破案：原测量只关 ENABLE_DCDC、未关充电器主开关 PWD_BATTCHRG——
+                    // 充电实际未停（电池仍带充电偏置），静置 60s 读数虚高 150mV+（实测 1512 vs 真实 1352）
+                    // → 1.5V×2 误判提前停充。测量必须真正断充：PWD_BATTCHRG=1
                     HW_POWER_5VCTRL.B.ENABLE_DCDC = 0;
+                    HW_POWER_CHARGE.B.PWD_BATTCHRG = 1;
                     g_measState = true;
                     measTick = now;
                 }
