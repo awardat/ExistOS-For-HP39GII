@@ -53,9 +53,14 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (since build 126, see CHANGELOG.md)
 
-### build 135 (in development)
+### build 136 (in development)
 - [ ] FormCalc on-device feedback iteration; KhiCAS physical key mapping / demo features; limited giac 2.0.0 port
 - [ ] D4 FTL_Sync power-loss test
+
+### build 135 (2026-09-11 released)
+- [x] **Charging system fully fixed** (driven by per-second on-device logs): true charge cut-off during measurement (PWD), auto-resume no longer interrupts measurement or re-opens a completed charge, 5V re-plug auto-resume; triple stop criteria (1.5V x2 / 1.4V+2h / 24h) verified, final 1.416V
+- [x] **Power consumption updated** (1.5V supply): shutdown <0.01mA; standard idle 58mA / KhiCAS 118mA; boost 68mA / 260mA; charging 160-210mA (~180mA avg)
+- [x] FormCalc feedback iteration; Round 5 review fixes; clock shows HH:MM + page refresh lowered to 10s
 
 ### build 134 (2026-09-06 released)
 - [x] **FormCalc complete**: full 12C financial set (TVM/CashFlow/Amort/Bond/Deprec/Date/ICONV/Margin) + Electronic Engineering (9 forms) + Unit Converter (10 categories, no FX); form UI with row-level refresh / wrap menus / Shift+BKSP clear

@@ -52,9 +52,14 @@
 
 ## 目前工作进展（build 126 起，详见 CHANGELOG.md）
 
-### build 135（开发中）
+### build 136（开发中）
 - [ ] FormCalc 实测反馈迭代；KhiCAS 物理按键映射加强 / 示例功能；giac 2.0.0 有限移植
 - [ ] D4 FTL_Sync 真机掉电测试
+
+### build 135（2026-09-11 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-135)）
+- [x] **充电系统完整修复**（真机每秒日志驱动）：断充测量真断充（PWD）、恢复块不再打断测量/重开充满停充、重插 USB 自动恢复；三重停充判据（1.5V×2 / 1.4V+2h / 24h）验收通过，充满终压 1.416V
+- [x] **耗电实测更新**（1.5V 可调电源）：关机 <0.01mA；标准待机 58mA / KhiCAS 118mA；加速 68mA / 260mA；充电 160-210mA（平均约 180mA）
+- [x] FormCalc 实测反馈迭代；Round 5 审核整改收尾；时间显示时:分 + 页面刷新降频 10s
 
 ### build 134（2026-09-06 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-134)）
 - [x] **FormCalc 表单计算完整实现**：金融 12C 全集 8 项（TVM/现金流/摊销/债券/折旧/日期/利率换算/利润）+ 电子工程 9 项 + 单位换算 10 类（无汇率）；表单交互（行级局部刷新/循环菜单/Shift+BKSP 清空）

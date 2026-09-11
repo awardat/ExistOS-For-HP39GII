@@ -4,6 +4,15 @@
 
 ---
 
+## [build 136] - 2026-09-11 (开发中)
+
+### 规划
+- FormCalc 实测反馈迭代
+- KhiCAS：物理按键映射加强；示例功能补充；giac 2.0.0 有限移植
+- D4 FTL_Sync 真机掉电测试
+
+---
+
 ## [build 135] - 2026-09-11 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-135))
 
 ### 充电系统完整修复（真机日志驱动）
