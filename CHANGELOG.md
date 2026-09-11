@@ -4,7 +4,7 @@
 
 ---
 
-## [build 135] - 2026-09-06 (开发中)
+## [build 135] - 2026-09-11 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-135))
 
 ### 充电系统完整修复（真机日志驱动）
 - **三重根因**（`/charge_log.csv` 每秒诊断日志逐一定位）：
