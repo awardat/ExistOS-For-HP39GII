@@ -1025,27 +1025,13 @@ void vBatteryMon(void *__n) {
             prevChargeEnable = false;
         }
 
-        // 2026-09-10 充电诊断日志：自开机起每秒一行 CSV（tick_ms,电池mV,USB mV,核心温度C,状态）
-        // 抓取：cat /dev/ttyACM0 > charge_log.csv（按 "L," 前缀过滤）；状态 0=充电中 1=测量中 2=停充/无5V 3=未开充电
-        {
-            int st = 0;
-            if (!g_chargeEnable) st = 3;
-            else if (g_chargeSessionDone || vdd5v_voltage < 3500) st = 2;
-            else if (g_measState) st = 1;
-            printf("L,%lu,%ld,%ld,%d,%d,%lu\n",
-                   (unsigned long)xTaskGetTickCount(), batt_voltage, vdd5v_voltage, coreTemp, st, (unsigned long)vatt_adc);
-        }
         if (t % 3 == 0) {
 
             g_core_temp = coreTemp;
             g_batt_volt = batt_voltage;
-            // 2026-09-10：原 3s 多行电压打印已并入每秒 CSV 日志（见上方 "L," 行），此处仅保留汇总
-            printf("VDDIO: %d mV, Speed:%lu\n", (int)(portLRADCConvCh(6, 5) * 0.9), portGetPWRSpeed());
-        }
-        if (t % 3 == 0) { // 充电诊断，每 3s 与电压组同拍（2026-09-04：充电 29mA vs 200mA 排查；System 抢串口前先验证通道）
-            printf("CHRG reg:%08lx STS:%d DCDC:%d BATT:%ld VDD5V:%ld\n",
-                   (unsigned long)HW_POWER_CHARGE.U, (int)HW_POWER_STS.B.CHRGSTS,
-                   (int)HW_POWER_5VCTRL.B.ENABLE_DCDC, batt_voltage, vdd5v_voltage);
+            printf("Batt. voltage:%ld mv, adc:%ld\n", batt_voltage, vatt_adc);
+            printf("VDDIO: %d mV\n", (int)(portLRADCConvCh(6, 5) * 0.9));
+            printf("Power Speed:%lu\n", portGetPWRSpeed());
         }
         t++;
 
