@@ -939,8 +939,11 @@ void vBatteryMon(void *__n) {
             g_measState = false;
             g_chargeSessionDone = false; // 5V 恢复后自动开充 = 新会话
             printf("Charge hw-stop (5V lost, armed)\n");
-        } else if (g_chargeEnable && vdd5v_voltage >= 3500 && HW_POWER_CHARGE.B.PWD_BATTCHRG) {
+        } else if (g_chargeEnable && !g_measState && !g_chargeSessionDone && vdd5v_voltage >= 3500 && HW_POWER_CHARGE.B.PWD_BATTCHRG) {
             // 2026-09-09 自动恢复：5V 回到（充电器处于停止态）+ 连续 3s 稳定才重开（防阈值边沿抖动）
+            // 2026-09-10 日志破案：测量期间 PWD=1（真断充）被本块误判为"待恢复"→ 2 秒即打断测量，
+            // 且重置 v15Cnt/t1400 致停充判据永不成立（整晚不停）。加 !g_measState；另 !g_chargeSessionDone
+            // 防"充满停充"被自动重开（只有 5V 丢失停充才自动恢复）
             if (++v5okCnt >= 3) {
                 v5okCnt = 0;
                 portChargeEnable(true); // PWD=0/FET=0/DCDC=1（g_chargeEnable 本已 true，无副作用）
