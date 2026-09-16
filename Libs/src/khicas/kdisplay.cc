@@ -16995,9 +16995,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  insert(text,buf,false);
 	  show_status(text,search,replace);
 	}
-	if (key==KEY_CTRL_AC){
-	  if (!editable) // 帮助/只读视图：ON = 返回（2026-09-04，与 EXIT 同语义——原走"清行"分支无法退出）
-	    return TEXTAREA_RETURN_EXIT;
+	if (key==KEY_CTRL_CLIP && editable){ // 2026-09-16 Shift+(：剪切行到剪贴板（原 ON/C 行为迁移）
 	  if (clipline>=0){
 	    clipline=-1;
 	    show_status(text,search,replace);
@@ -17019,6 +17017,33 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      DefineStatusMessage((char*)"Line cut and copied to clipboard", 1, 0, 0);
 	      DisplayStatusArea();
 	    }
+	  }
+	}
+	if (key==KEY_CTRL_PASTE && editable){ // 2026-09-16 Shift+)：粘贴剪贴板到当前行（换行转空格）
+	  const char * clip=paste_clipboard();
+	  if (clip && *clip){
+	    string clp(clip);
+	    for (size_t ii=0; ii<clp.size(); ++ii)
+	      if (clp[ii]=='\n' || clp[ii]=='\r')
+		clp[ii]=' ';
+	    v[textline].s += clp;
+	    show_status(text,search,replace);
+	  }
+	}
+	if (key==KEY_CTRL_AC){
+	  if (!editable) // 帮助/只读视图：ON = 返回（2026-09-04，与 EXIT 同语义——原走"清行"分支无法退出）
+	    return TEXTAREA_RETURN_EXIT;
+	  if (clipline>=0){
+	    clipline=-1;
+	    show_status(text,search,replace);
+	  }
+	  else {
+	    if (search.size()){
+	      search="";
+	      show_status(text,search,replace);
+	    }
+	    else
+	      return TEXTAREA_RETURN_EXIT; // 2026-09-16 ON/C=退出（原剪切行迁至 Shift+( 的 CLIP）
 	  }
 	}
       }
