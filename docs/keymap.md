@@ -57,93 +57,72 @@ row 10 │ ON/C  │       │       │       │       │
 | | | 50 | 8 | 80 | ON/C |
 | | | 51 | 9 | | |
 
-## 三、KhiCAS 键位映射（khicas_stub.cpp INPUT_TRANSLATE）
+## 三、KhiCAS 键位映射（khicas_stub.cpp，2026-09-16 核）
 
-格式：物理键 → `普通 / SHIFT / ALPHA-小 / ALPHA-大`。未列出修饰键的表示各档相同。
+格式：`物理键 → 普通 / SHIFT / SHIFT×2 / ALPHA¹ / ALPHA²`。SHIFT×2 = 连按两次 SHIFT；ALPHA¹/ALPHA² = 第 1/2 次 ALPHA 态（第三次 ALPHA 退出循环）。按代码，ALPHA¹ 输出小写字母、ALPHA² 输出大写字母（宏第 4/5 参）；**Shift+ALPHA = 小写锁定**（2026-09-16 新增，再按 ALPHA 或 Shift+ALPHA 解除）。
 
-### 功能键
+### 功能/特殊键
 
-| 物理键 | 普通 | SHIFT |
-|--------|------|-------|
-| F1-F6 | KEY_CTRL_F1-F6 | 同普通（KhiCAS 软件菜单键） |
+| 物理键 | 行为 |
+|--------|------|
+| F1-F6 | KhiCAS 软键（KEY_CTRL_F1-F6，各档相同） |
+| SHIFT | 修饰（第一次=左 shift；连按两次=rshift 右 shift） |
+| ALPHA | 三态循环：ALPHA¹ → ALPHA² → 退出 |
+| **Shift+ALPHA** | **小写锁定/解除**（2026-09-16） |
+| ON/C | 短按 = AC（取消/清除/返回）；**Shift+ON/C = 退出 KhiCAS**（存档后） |
+| HOME | **任意位置回 KhiCAS 初始界面**（2026-09-16，EXIT 注入穿透） |
+| VIEWS | EXIT（输入行→脚本编辑器；历史区→回输入行）；**Shift+VIEWS = 命令目录/帮助** |
+| SYMB / NUM / APPS / PLOT | **未映射**（2026-09-03 释放，KhiCAS 中无反应） |
 
-### 导航/模式键
+### 主映射表
 
-| 物理键 | 普通 | SHIFT |
-|--------|------|-------|
-| UP / DOWN | 光标上/下 | 上/下一页（PAGEUP/PAGEDOWN） |
-| LEFT / RIGHT | 光标左/右 | 选择左/右（SHIFT_LEFT/RIGHT） |
-| VIEWS | **KEY_CTRL_EXIT**（输入行→打开脚本编辑器；历史区→跳回输入行） | **KEY_CTRL_QUIT**（命令目录/帮助） |
-| HOME | **KhiCAS 任意位置回到初始界面**（2026-09-16：EXIT 注入穿透至 Console 根） | — |
+| 物理键 | 普通 | SHIFT | SHIFT×2 | ALPHA¹ | ALPHA² |
+|--------|------|-------|---------|--------|--------|
+| ENTER | 求值 | ANS | ANS | 换行 | 换行 |
+| ←BS | 删除 | AC 清空 | AC 清空 | 删除 | 删除 |
+| ↑ / ↓ | 上/下 | 上/下页 | 上/下页 | 上/下 | 上/下 |
+| ← / → | 左/右 | 选择左/右 | 选择左/右 | 左/右 | 左/右 |
+| VARS | 变量菜单 | INS | INS | a | A |
+| MATH | 命令目录 | 命令目录 | 命令目录 | b | B |
+| A B/C | 分数转换 | " | — | c | C |
+| X,T,θ,N | XTT | ×10ⁿ | ×10ⁿ | d | D |
+| SIN | sin( | asin( | asin( | e | E |
+| COS | cos( | acos( | acos( | f | F |
+| TAN | tan( | atan( | atan( | g | G |
+| LN | ln( | eˣ | eˣ | h | H |
+| LOG | log( | 10ˣ | 10ˣ | i | I |
+| X² | x² | √ | √ | j | J |
+| X^Y | xʸ | ˣ√ | ˣ√ | k | K |
+| ( | ( | **剪切行**† | **剪切行**† | l | L |
+| ) | ) | **粘贴**† | **粘贴**† | m | M |
+| , | , | , | , | o | O |
+| 0 | 0 | 命令目录 | 命令目录 | " | " |
+| 1 | 1 | 程序 | 程序 | x | X |
+| 2 | 2 | i | i | y | Y |
+| 3 | 3 | π | π | z | Z |
+| 4 | 4 | 矩阵 | 矩阵 | t | T |
+| 5 | 5 | [ | [ | u | U |
+| 6 | 6 | ] | ] | v | V |
+| 7 | 7 | 列表 | 列表 | p | P |
+| 8 | 8 | { | { | q | Q |
+| 9 | 9 | } | } | r | R |
+| . | . | = | ` | : | : |
+| + | + | + | + | 空格 | 空格 |
+| − | − | ∠ | ∠ | w | W |
+| × | × | ! | ! | s | S |
+| ÷ | ÷ | 1/x | ⁻¹ | n | N |
+| (−) | 负号 | 竖线 | 竖线 | ; | ; |
 
-> **6 视图按键规划**：HOME 已分配（KhiCAS 任意位置回到初始界面，2026-09-16）；其余按键按当前映射使用；物理按键映射加强项暂停（用户决定只做 HOME）。
-| NUM | KEY_CTRL_OPTN | KEY_SHIFT_OPTN |
-| SYMB | KEY_CTRL_SETUP | 同普通 |
-| VARS | KEY_CTRL_VARS | KEY_CTRL_INS |
-| MATH | KEY_CTRL_MENU（会话菜单） | 命令目录（CATALOG，org:Cmds） |
-| A B/C | KEY_CTRL_FRACCNVRT | " 引号（DQUATE，org:'"） |
-| X,T,θ,N | KEY_CTRL_XTT | KEY_CHAR_EXPN10 |
-| ←BS | KEY_CTRL_DEL | 清空输入（AC，org:Clear） |
-| **PLOT** | **未映射**（KhiCAS 中无反应） | — |
-| **APPS** | **未映射**（KhiCAS 中无反应） | — |
-| ALPHA / SHIFT | 修饰键状态切换（case 245/263） | — |
-| ON/C | 特殊处理（shift+ON/C 退出 KhiCAS） | — |
+† 剪切/粘贴（Shift+( / Shift+)）在文本编辑/查看界面生效（结果查看页、脚本编辑器）——2026-09-16 键位重排。
 
-### 数学键
+### 文本界面（结果查看页/脚本编辑器）按键（2026-09-16 重排）
 
-| 物理键 | 普通 | SHIFT |
-|--------|------|-------|
-| SIN | sin( | asin( |
-| COS | cos( | acos( |
-| TAN | tan( | atan( |
-| LN | ln( | e^( |
-| LOG | log( | 10^( |
-| X² | ^2 | √( |
-| X^Y | ^ | 开方根( ^n√ ) |
-
-### 字符/括号键
-
-| 物理键 | 普通 | SHIFT |
-|--------|------|-------|
-| ( | ( | 复制（CLIP） |
-| ) | ) | 粘贴（PASTE） |
-| , | , | , |
-| . | . | = |
-
-### 数字键
-
-| 物理键 | 普通 | SHIFT |
-|--------|------|-------|
-| 0 | 0 | **命令目录**（CATALOG） |
-| 1 | 1 | 程序菜单（PRGM） |
-| 2 | 2 | 虚数 i |
-| 3 | 3 | π |
-| 4 | 4 | 矩阵（MAT） |
-| 5 | 5 | [ |
-| 6 | 6 | ] |
-| 7 | 7 | 列表（LIST） |
-| 8 | 8 | { |
-| 9 | 9 | } |
-
-### 运算符键
-
-| 物理键 | 普通 | SHIFT |
-|--------|------|-------|
-| + | + | + |
-| - | - | ∠ 角度（ANGLE，org:∠） |
-| × | × | ! |
-| ÷ | ÷ | 倒数（RECIP） |
-| (-) | 负号 | \| \|（绝对值） |
-
-### 执行键
-
-| 物理键 | 普通 | SHIFT | ALPHA |
-|--------|------|-------|-------|
-| ENTER | 执行（EXE） | ANS | 回车符 |
-
-### ALPHA 字符分配
-
-`VARS→a`、`MATH→b`、`A B/C→c`、`X,T,θ,N→d`、`SIN→e`、`COS→f`、`TAN→g`、`LN→h`、`LOG→i`、`X²→j`、`X^Y→k`、`(→l`、`)→m`、`÷→n`、`,→o`、`7→p`、`8→q`、`9→r`、`×→s`、`4→t`、`5→u`、`6→v`、`-→w`、`1→x`、`2→y`、`3→z`、`+→空格`、`0→"`、`.→:`、`(-)→;`
+| 键 | 行为 |
+|----|------|
+| Shift+( | 剪切当前行到剪贴板（提示 Line cut and copied to clipboard） |
+| Shift+) | 粘贴剪贴板到当前行（换行自动转空格） |
+| ON/C | **退出**（有选中/搜索时先取消；帮助/只读页同） |
+| File→Quit（菜单） | 返回主界面（等效 ON/C 退出） |
 
 ## 四、ExistOS 各页面按键功能（UICore.cpp）
 
