@@ -7,6 +7,7 @@
 ## [build 137] - 2026-09-16 (开发中)
 
 ### 已完成
+- **giac 2.0.0 有限移植试点 A**：`sym2poly.cc` 整体替换（4545→6771 行）——新增代数数算法簇（algnum_* 正规化/rref/gcd/evalf）、RUR 表示（rur_* 多项式系统求解）、多项式约化（mreduce）、项排序增强（sort1/sort2/cleanup_pow）；编译 0 警告、链接 0 undefined（ExistOS.sys +3.4KB）；回归测试用例 37 条见 docs/giac-sym2poly-test.md（本地）
 
 ### 规划
 - FormCalc 遗留 P3 四项（AMORT BGN+用户 PMT / DB200 交叉法 / days360 31 日 / bondPrice 死参）与 `config_set_charge_mode` 死代码清理
