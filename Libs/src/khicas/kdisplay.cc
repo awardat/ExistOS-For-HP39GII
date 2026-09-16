@@ -16505,10 +16505,17 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    copy_clipboard(get_selection(text,false),true);
 	    clipline=-1;
 	  }
-	  else {
-	    clipline=textline;
-	    clippos=textpos;
-	    show_status(text,search,replace);
+	  else { // 2026-09-16 键位重排：无选中时剪切当前行到剪贴板（原 ON/C 行为，ON/C 已改为退出）
+	    copy_clipboard(v[textline].s+'\n',true);
+	    if (v.size()==1)
+	      v[0].s="";
+	    else {
+	      v.erase(v.begin()+textline);
+	      if (textline>=v.size())
+		--textline;
+	    }
+	    DefineStatusMessage((char*)"Line cut and copied to clipboard", 1, 0, 0);
+	    DisplayStatusArea();
 	  }
 #else
 	  copy_clipboard(v[textline].s,false);
@@ -16995,30 +17002,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  insert(text,buf,false);
 	  show_status(text,search,replace);
 	}
-	if (key==KEY_CTRL_CLIP && editable){ // 2026-09-16 Shift+(：剪切行到剪贴板（原 ON/C 行为迁移）
-	  if (clipline>=0){
-	    clipline=-1;
-	    show_status(text,search,replace);
-	  }
-	  else {
-	    if (search.size()){
-	      search="";
-	      show_status(text,search,replace);
-	    }
-	    else {
-	      copy_clipboard(v[textline].s+'\n',true);
-	      if (v.size()==1)
-		v[0].s="";
-	      else {
-		v.erase(v.begin()+textline);
-		if (textline>=v.size())
-		  --textline;
-	      }
-	      DefineStatusMessage((char*)"Line cut and copied to clipboard", 1, 0, 0);
-	      DisplayStatusArea();
-	    }
-	  }
-	}
+	// 2026-09-16 剪切行已并入上方 KEY_CTRL_CLIP 分支（16504 区，含 continue）；此处 PASTE 仅选中模式下可达
 	if (key==KEY_CTRL_PASTE && editable){ // 2026-09-16 Shift+)：粘贴剪贴板到当前行（换行转空格）
 	  const char * clip=paste_clipboard();
 	  if (clip && *clip){
