@@ -6,9 +6,15 @@
 
 ## [build 136] - 2026-09-11 (开发中)
 
+### 已完成
+- **KhiCAS HOME 键**：任意位置按 HOME 回到初始界面（Console 根）——EXIT 注入穿透方案（GetKey 持续返回 EXIT 利用"返回上级"契约逐级退出，Console 根消费标志停止，80 次上限安全网）
+- **micropython 清理**：移除未使用的 MicroPython 1.18 源码树（36MB）与 libmpy 预编译库（CMake 从未链接、无调用点）；独立 Python app（最新稳定版）列入待办
+- **FreeRTOS 调研**：上游 V11.3.1 vs 当前 V10.4.3 LTS Patch 2——官方 ARM7/9 port 已移除、V11 安全修复与本项目实际用法零命中 → 维持 V10.4.3
+
 ### 规划
 - FormCalc 实测反馈迭代
-- KhiCAS：物理按键映射加强；示例功能补充；giac 2.0.0 有限移植
+- KhiCAS：giac 2.0.0 有限移植
+- 独立 Python app（micropython 最新稳定版、独立入口）
 - D4 FTL_Sync 真机掉电测试
 
 ---

@@ -117,6 +117,7 @@ bool global_show_axes=true;
 int esc_flag=0;
 int xcas_python_eval=0;
 char * python_heap=0;
+int g_home_req=0;      // 2026-09-16 HOME 键：置位后 GetKey 持续注入 EXIT，逐层返回直到 Console 根消费清零
 
 #ifdef QUICKJS
 #include "qjsgiac.h"
@@ -19641,6 +19642,11 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	continue;
       }
       if (key == KEY_CTRL_EXIT){
+	if (g_home_req){ // 2026-09-16 HOME 注入已到达 Console 根：消费标志并停在主界面（不进入脚本编辑器）
+	  g_home_req=0;
+	  Console_Disp(1,contextptr);
+	  continue;
+	}
 	if (Last_Line==Current_Line){
 	  if (!edptr)
 	    edit_script((char *)(giac::remove_extension(session_filename)+".py").c_str(),contextptr);

@@ -241,6 +241,14 @@ bool IsKeyDown(int test_key)
 }
 
 int GetKey(int *key) {
+    // 2026-09-16 HOME 回根注入：标志置位期间每次取键直接返回 EXIT（各层按"EXIT=返回上级"契约逐级穿透），
+    // 由 Console_GetKey 根部消费清零；80 次上限防止某层不消耗 EXIT 时死循环
+    extern int g_home_req;
+    static int g_home_cnt = 0;
+    if (g_home_req) {
+        if (++g_home_cnt > 80) { g_home_req = 0; g_home_cnt = 0; }
+        else { *key = KEY_CTRL_EXIT; return KEYREP_KEYEVENT; }
+    }
     int pkey;
     bool press = vGL_getkey(&pkey);
 
@@ -305,7 +313,12 @@ int GetKey(int *key) {
         INPUT_TRANSLATE(KEY_RIGHT, KEY_CTRL_RIGHT, KEY_SHIFT_RIGHT, KEY_SHIFT_RIGHT, KEY_CTRL_RIGHT, KEY_CTRL_RIGHT);
 
         INPUT_TRANSLATE(KEY_VIEWS, KEY_CTRL_EXIT, KEY_CTRL_QUIT, KEY_CTRL_EXIT, KEY_CTRL_EXIT, KEY_CTRL_EXIT);
-        // KEY_HOME 释放（2026-09-03：去除原 Home→file-quit 路径；6 视图按键规划见 docs/keymap.md）
+        case KEY_HOME:
+            // 2026-09-16 HOME：任意位置回到 KhiCAS 初始界面（Console 根）——置注入标志并立即送入首个 EXIT
+            g_home_req = 1;
+            g_home_cnt = 0;
+            *key = KEY_CTRL_EXIT;
+            break;
 
 // //         INPUT_TRANSLATE(KEY_NUM, KEY_CTRL_OPTN, KEY_SHIFT_OPTN, KEY_SHIFT_OPTN, KEY_CTRL_OPTN, KEY_CTRL_OPTN); // 2026-09-03 置空（SYMB/PLOT/NUM/APPS 释放） // 2026-09-03 置空（SYMB/PLOT/NUM/APPS 释放）
 //         INPUT_TRANSLATE(KEY_APPS, KEY_CTRL_SD, KEY_BOOK, KEY_BOOK, KEY_BOOK, KEY_BOOK); // 2026-09-03 置空（SYMB/PLOT/NUM/APPS 释放）
