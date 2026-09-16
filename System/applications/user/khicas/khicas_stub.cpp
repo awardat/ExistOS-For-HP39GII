@@ -280,7 +280,14 @@ int GetKey(int *key) {
             *key = -1;
             // *key = KEY_CTRL_ALPHA;
 
-            if (keyStatus & 4) {
+            if (keyStatus & 0x80) {
+                // 2026-09-16 小写锁定解除（再按 ALPHA 或 Shift+ALPHA）：清除全部 alpha 状态
+                keyStatus &= ~(4 | 8 | 0x80);
+            } else if ((keyStatus & 1) || rshift) {
+                // 2026-09-16 Shift+ALPHA：锁定小写输入（bit8=小写模式，0x80=锁定标志，按键后保留），直到再按 ALPHA 解除
+                keyStatus = 8 | 0x80;
+                rshift = 0;
+            } else if (keyStatus & 4) {
                 keyStatus &= ~4;
                 keyStatus |= 8;
             } else {
