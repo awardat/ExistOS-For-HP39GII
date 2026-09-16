@@ -392,12 +392,15 @@ unsigned char blockChksum(char *block, unsigned int blockSize) {
 
 #define CDC_BINMODE_BUFSIZE 32768
 bool transBinMode = false;
+static int saved_slowdown_mode = 1; // 2026-09-16：PING 前 System 的省电档位（断开时恢复；审核 §四.8）
+extern int g_slowdown_enable;       // stmp_clkctrl.c 的省电档位（System 经 SWI 设置）
 char *binBuf = NULL;
 uint32_t cdcBlockCnt;
 void MscSetCmd(char *cmd);
 void mkSTMPNandStructure(uint32_t OLStartBlock, uint32_t OLPages);
 void parseCDCCommand(char *cmd) {
     if (strcmp(cmd, "PING") == 0) {
+        if (g_slowdown_enable) saved_slowdown_mode = g_slowdown_enable; // 2026-09-16：记住 System 档位供断开恢复（审核 §四.8）
         slowDownEnable(false);
 
         vTaskSuspend(pMainThread);
@@ -563,6 +566,11 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts) {
         vTaskResume(pDispTask);
         vTaskResume(pMainThread);
         vTaskResume(pUSBLOGTask);
+        // 2026-09-16：补 VMResume（审核 §四.8）——PING 里 VMSuspend() 额外挂起 pSysTask/pLLAPITask/pLLIRQTask，
+        // 原实现从不恢复：edb 非 REBOOT 退出/仅 PING 后 System 永久挂起需重启
+        if (g_vm_status == VM_STATUS_SUSPEND)
+            VMResume();
+        slowDownEnable(saved_slowdown_mode); // 恢复 PING 前的省电档位（PING 时被 slowDownEnable(false) 关闭）
         printf("CDC session closed, tasks resumed\n");
     }
     tud_cdc_get_line_coding(&c);
@@ -1002,7 +1010,7 @@ void vBatteryMon(void *__n) {
                                 HW_POWER_CHARGE.B.PWD_BATTCHRG = 0; // 恢复充电器主开关（配合测量真正断充） // 未到窗口：恢复充电
                             }
                         } else {
-                            t1400 = 0; // 未达 1.4V：窗口未开始，恢复充电
+                            if (batt_voltage < 1380) t1400 = 0; // 2026-09-16 迟滞（审核 §四.10）：1400 平台 ±10mV 抖动不重置 2h 窗口，<1380mV 才复位
                             v15Cnt = 0;
                             HW_POWER_5VCTRL.B.ENABLE_DCDC = 1;
                             HW_POWER_CHARGE.B.PWD_BATTCHRG = 0; // 恢复充电器主开关（配合测量真正断充）

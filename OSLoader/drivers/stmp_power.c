@@ -180,7 +180,7 @@ void portPowerInit()
 
 
 	//BF_SET(POWER_LOOPCTRL, RCSCALE_THRESH);
-    //HW_POWER_LOOPCTRL.B.EN_RCSCALE = 3; 
+	// 2026-09-16：EN_RCSCALE=3 注释行清理（审核 §四.9 关联）
 
    // BF_SET(POWER_MINPWR, HALF_FETS);
     //BF_SET(POWER_MINPWR, DOUBLE_FETS);
@@ -198,7 +198,7 @@ void portPowerInit()
 
     HW_POWER_5VCTRL.B.DCDC_XFER = 1;
     HW_POWER_5VCTRL.B.ENABLE_ILIMIT = 0; 
-    HW_POWER_LOOPCTRL.B.EN_RCSCALE = 2; 
+    // 2026-09-16：EN_RCSCALE=2 删除（审核 §四.9）——原覆盖上方手册推荐值 1，致该优化空转
     HW_POWER_LOOPCTRL.B.DC_C = 0; 
 
 

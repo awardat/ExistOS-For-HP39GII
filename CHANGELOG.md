@@ -10,6 +10,7 @@
 - **KhiCAS HOME 键**：任意位置按 HOME 回到初始界面（Console 根）——EXIT 注入穿透方案（GetKey 持续返回 EXIT 利用"返回上级"契约逐级退出，Console 根消费标志停止，80 次上限安全网）
 - **micropython 清理**：移除未使用的 MicroPython 1.18 源码树（36MB）与 libmpy 预编译库（CMake 从未链接、无调用点）；独立 Python app（最新稳定版）列入待办
 - **FreeRTOS 调研**：上游 V11.3.1 vs 当前 V10.4.3 LTS Patch 2——官方 ARM7/9 port 已移除、V11 安全修复与本项目实际用法零命中 → 维持 V10.4.3
+- **Round 4 C 组三项整改**（充电复测后处理）：① CDC 断开补 `VMResume()` + 恢复省电档——edb 非 REBOOT 退出/仅 PING 后不再永久挂起 System；② EN_RCSCALE 两处覆盖统一为手册推荐值 1（原优化空转）；③ 1.4V+2h 窗口加迟滞（<1380mV 才复位，平台 ±10mV 抖动不再重置窗口）
 
 ### 规划
 - FormCalc 实测反馈迭代
