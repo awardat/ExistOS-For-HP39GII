@@ -7,6 +7,7 @@
 ## [build 137] - 2026-09-16 (开发中)
 
 ### 已完成
+- **KhiCAS 计算沙漏指示**：求值（`run`）前后驱动系统图标行 `INDICATE_BUSY` 位（顶部 x=82 竖条）——耗时 >50ms 的计算可见，短计算由显示任务 50ms 轮询自然过滤不闪；系统图标链路与 shift/alpha/电池一致
 - **KhiCAS 小写锁定**：Shift+ALPHA 锁定小写输入（复用现有 0x80 锁定机制，按键后状态保留），再按 ALPHA 或 Shift+ALPHA 解除；原三态循环（大写→小写→退出）不变
 - **giac 2.0.0 有限移植试点 A**：`sym2poly.cc` 整体替换（4545→6771 行）——新增代数数算法簇（algnum_* 正规化/rref/gcd/evalf）、RUR 表示（rur_* 多项式系统求解）、多项式约化（mreduce）、项排序增强（sort1/sort2/cleanup_pow）；编译 0 警告、链接 0 undefined（ExistOS.sys +3.4KB）；回归测试用例 37 条见 docs/giac-sym2poly-test.md（本地）
 

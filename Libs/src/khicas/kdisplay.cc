@@ -3756,6 +3756,7 @@ const char * completeCatZhName[] = { // 2026-09-16 命令目录中文名（显�
   }
   
 extern "C" void kcas_clear_key_status(void); // stub 提供：清 keyStatus（模态输入结束防残留）
+extern "C" void kcas_set_busy(int busy); // stub 提供：2026-09-16 求值前后驱动系统图标行沙漏
   int inputline(const char * msg1,const char * msg2,string & s,bool numeric,int ypos,GIAC_CONTEXT){
     //s=msg2;
     int pos=s.size(),beg=0;
@@ -23317,7 +23318,11 @@ int kcas_main(int isAppli, unsigned short OptionNum)
       xcas::Console_Output("Session saved");
     }
     else
+    {
+      kcas_set_busy(1); // 2026-09-16 计算中：点亮系统图标行沙漏位（<50ms 的短计算由显示任务自然过滤不闪）
       xcas::run((char *)expr,7,contextptr);
+      kcas_set_busy(0); // 计算结束熄灭
+    }
     // print_mem_info();
     xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT, 1);
     // ck_getkey((int *)&key);

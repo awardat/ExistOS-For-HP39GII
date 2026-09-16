@@ -50,6 +50,7 @@ bool khicasRunning = false;
 char keyStatus = 0;
 int intBit = 0;
 int rshift = 0;
+int khicas_busy = 0; // 2026-09-16 计算指示：>0 时点亮系统图标行沙漏位（INDICATE_BUSY）
 void flush_indBit(); // 前置声明（kcas_clear_key_status 调用）
 
 void (*XcasExitCb)(void) = NULL;
@@ -58,6 +59,12 @@ void (*XcasExitCb)(void) = NULL;
 extern "C" void kcas_clear_key_status(void) {
     keyStatus = 0;
     rshift = 0;
+    flush_indBit();
+}
+
+// 2026-09-16 供 kdisplay（lib）在求值（run）前后驱动沙漏指示
+extern "C" void kcas_set_busy(int busy) {
+    khicas_busy = busy;
     flush_indBit();
 }
 
@@ -118,6 +125,7 @@ void flush_indBit()
         intBit |= (keyStatus & 4) ? INDICATE_A__Z : 0;
         intBit |= (keyStatus & 8) ? INDICATE_a__z : 0;
         intBit |= rshift ? INDICATE_RIGHT : 0;
+        intBit |= khicas_busy ? INDICATE_BUSY : 0; // 2026-09-16 计算中沙漏
         ll_disp_set_indicator(intBit, -1);
 }
 
