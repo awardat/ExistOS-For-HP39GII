@@ -52,9 +52,14 @@
 
 ## 目前工作进展（build 126 起，详见 CHANGELOG.md）
 
-### build 136（开发中）
-- [ ] FormCalc 实测反馈迭代；KhiCAS 物理按键映射加强 / 示例功能；giac 2.0.0 有限移植
-- [ ] D4 FTL_Sync 真机掉电测试
+### build 137（开发中）
+- [ ] giac 2.0.0 有限移植；独立 Python app（micropython 最新稳定版）；D4 FTL_Sync 真机掉电测试
+- [ ] FormCalc 遗留 P3 四项与 `config_set_charge_mode` 死代码清理
+
+### build 136（2026-09-16 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-136)）
+- [x] **KhiCAS**：HOME 键任意位置回初始界面；命令目录中文名（260 条中英对照，函数名保持英文输入）；修复中文模式目录/帮助计数错配（越界读取）
+- [x] **系统**：micropython 1.18 死代码清理（约 47MB）；Round 4 C 组整改（CDC 断开 VMResume / EN_RCSCALE 统一 / 1.4V+2h 迟滞）；CDC 档位恢复加 PING 门槛；时间显示仅时:分
+- [x] **调研**：FreeRTOS 维持 V10.4.3 LTS Patch 2（上游 V11 已移除 ARM7/9 port，安全修复零命中）
 
 ### build 135（2026-09-11 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-135)）
 - [x] **充电系统完整修复**（真机每秒日志驱动）：断充测量真断充（PWD）、恢复块不再打断测量/重开充满停充、重插 USB 自动恢复；三重停充判据（1.5V×2 / 1.4V+2h / 24h）验收通过，充满终压 1.416V

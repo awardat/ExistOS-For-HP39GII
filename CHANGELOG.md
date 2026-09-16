@@ -4,6 +4,16 @@
 
 ---
 
+## [build 137] - 2026-09-16 (开发中)
+
+### 已完成
+
+### 规划
+- FormCalc 遗留 P3 四项（AMORT BGN+用户 PMT / DB200 交叉法 / days360 31 日 / bondPrice 死参）与 `config_set_charge_mode` 死代码清理
+- KhiCAS：giac 2.0.0 有限移植
+- 独立 Python app（micropython 最新稳定版、独立入口）
+- D4 FTL_Sync 真机掉电测试
+
 ## [build 136] - 2026-09-16 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-136))
 
 ### 已完成
@@ -13,12 +23,6 @@
 - **Round 4 C 组三项整改**（充电复测后处理）：① CDC 断开补 `VMResume()` + 恢复省电档——edb 非 REBOOT 退出/仅 PING 后不再永久挂起 System；② EN_RCSCALE 两处覆盖统一为手册推荐值 1（原优化空转）；③ 1.4V+2h 窗口加迟滞（<1380mV 才复位，平台 ±10mV 抖动不再重置窗口）
 - **KhiCAS 命令目录中文名**：新增 `completeCatZhName[]` 显示层数组（260 条显示条目 "name 中文" 形式，XCAS_ONLY 保留原名）——name/insert/排序/搜索仍用英文原名，规避 insert==NULL 的 159 条输入污染与 strcmp 排序问题；目录列表与帮助首行均显示中文名
 - **build 136 delta 审核整改**：① P1——中文模式目录/帮助计数错配（`CAT_COMPLETE_COUNT_FR`=758 对 355 条数组的越界读取）修复为 `ZH`；② 卫生四项——`System/KLib/mpy`（11MB 死头文件）清理、CDC 断开档位恢复加 PING 门槛（未 PING 不误降档）、`KEY_CTRL_HOME` 死宏删除、RPN39 手册版本号更新
-
-### 规划
-- FormCalc 实测反馈迭代
-- KhiCAS：giac 2.0.0 有限移植
-- 独立 Python app（micropython 最新稳定版、独立入口）
-- D4 FTL_Sync 真机掉电测试
 
 ---
 

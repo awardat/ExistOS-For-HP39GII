@@ -53,9 +53,14 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (since build 126, see CHANGELOG.md)
 
-### build 136 (in development)
-- [ ] FormCalc on-device feedback iteration; KhiCAS physical key mapping / demo features; limited giac 2.0.0 port
-- [ ] D4 FTL_Sync power-loss test
+### build 137 (in development)
+- [ ] Limited giac 2.0.0 port; standalone Python app (latest MicroPython); D4 FTL_Sync power-loss test
+- [ ] FormCalc remaining P3 items and `config_set_charge_mode` dead code cleanup
+
+### build 136 (2026-09-16 released)
+- [x] **KhiCAS**: HOME key returns to the initial screen from anywhere; command catalog shows Chinese names (260 bilingual entries, function names stay English for input); fixed Chinese-mode catalog/help counter mismatch (out-of-bounds read)
+- [x] **System**: MicroPython 1.18 dead-code removal (~47MB); Round 4 C group (CDC disconnect VMResume / EN_RCSCALE unified / 1.4V+2h hysteresis); CDC slowdown restore gated on PING; clock shows HH:MM only
+- [x] **Research**: FreeRTOS stays on V10.4.3 LTS Patch 2 (upstream V11 drops ARM7/9 ports; security fixes irrelevant to this project)
 
 ### build 135 (2026-09-11 released)
 - [x] **Charging system fully fixed** (driven by per-second on-device logs): true charge cut-off during measurement (PWD), auto-resume no longer interrupts measurement or re-opens a completed charge, 5V re-plug auto-resume; triple stop criteria (1.5V x2 / 1.4V+2h / 24h) verified, final 1.416V
