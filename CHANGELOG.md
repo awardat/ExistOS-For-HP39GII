@@ -4,7 +4,7 @@
 
 ---
 
-## [build 136] - 2026-09-11 (开发中)
+## [build 136] - 2026-09-16 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-136))
 
 ### 已完成
 - **KhiCAS HOME 键**：任意位置按 HOME 回到初始界面（Console 根）——EXIT 注入穿透方案（GetKey 持续返回 EXIT 利用"返回上级"契约逐级退出，Console 根消费标志停止，80 次上限安全网）
