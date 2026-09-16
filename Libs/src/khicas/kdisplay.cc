@@ -12927,7 +12927,7 @@ namespace xcas {
 
   void translate_fkey(int & input_key){
     if (input_key==KEY_CTRL_MIXEDFRAC) input_key=KEY_CTRL_F10;
-    if (input_key==KEY_CTRL_FRACCNVRT) input_key=KEY_CTRL_F7;
+    // if (input_key==KEY_CTRL_FRACCNVRT) input_key=KEY_CTRL_F7; // 2026-09-16 移除：a b/c 普通档应为分数转换（exact），不应打开 F7 函数菜单
     if (input_key==KEY_CHAR_LIST) input_key=KEY_CTRL_F9;
     if (input_key==KEY_CHAR_MAT) input_key=KEY_CTRL_F8;
     if (input_key==KEY_CTRL_PRGM) input_key=KEY_CTRL_F12;
