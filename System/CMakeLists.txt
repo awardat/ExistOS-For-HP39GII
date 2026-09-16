@@ -18,9 +18,6 @@ include_directories(./filesystem/fatfs)
 
 #include_directories(./KLib/lvgl)
 
-#include_directories(${CMAKE_SOURCE_DIR}/Libs/src/micropython-master/)
-#include_directories(${CMAKE_SOURCE_DIR}/Libs/src/micropython-master/ports/eoslib)
-#include_directories(${CMAKE_SOURCE_DIR}/Libs/src/micropython-master/ports/eoslib/build)
 include_directories(${CMAKE_SOURCE_DIR}/Libs/src/libtommath-0.39/)
 include_directories(${CMAKE_SOURCE_DIR}/Libs/src/khicas/)
 include_directories(./applications/user/khicas)
@@ -88,7 +85,6 @@ tjpgd
 #emu48  // removed
 #lvgl
 ${CMAKE_SOURCE_DIR}/Libs/libkcasgui.libcpp
-#${CMAKE_SOURCE_DIR}/Libs/libmpy.libc
 ${CMAKE_SOURCE_DIR}/Libs/libcas.libcpp
 #${CMAKE_SOURCE_DIR}/Libs/libgiac1.4.9.libcpp
 #${CMAKE_SOURCE_DIR}/Libs/libgiac1.2.0.libcpp
