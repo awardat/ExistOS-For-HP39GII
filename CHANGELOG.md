@@ -12,6 +12,7 @@
 - **FreeRTOS 调研**：上游 V11.3.1 vs 当前 V10.4.3 LTS Patch 2——官方 ARM7/9 port 已移除、V11 安全修复与本项目实际用法零命中 → 维持 V10.4.3
 - **Round 4 C 组三项整改**（充电复测后处理）：① CDC 断开补 `VMResume()` + 恢复省电档——edb 非 REBOOT 退出/仅 PING 后不再永久挂起 System；② EN_RCSCALE 两处覆盖统一为手册推荐值 1（原优化空转）；③ 1.4V+2h 窗口加迟滞（<1380mV 才复位，平台 ±10mV 抖动不再重置窗口）
 - **KhiCAS 命令目录中文名**：新增 `completeCatZhName[]` 显示层数组（260 条显示条目 "name 中文" 形式，XCAS_ONLY 保留原名）——name/insert/排序/搜索仍用英文原名，规避 insert==NULL 的 159 条输入污染与 strcmp 排序问题；目录列表与帮助首行均显示中文名
+- **build 136 delta 审核整改**：① P1——中文模式目录/帮助计数错配（`CAT_COMPLETE_COUNT_FR`=758 对 355 条数组的越界读取）修复为 `ZH`；② 卫生四项——`System/KLib/mpy`（11MB 死头文件）清理、CDC 断开档位恢复加 PING 门槛（未 PING 不误降档）、`KEY_CTRL_HOME` 死宏删除、RPN39 手册版本号更新
 
 ### 规划
 - FormCalc 实测反馈迭代

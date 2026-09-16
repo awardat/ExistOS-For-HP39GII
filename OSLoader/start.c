@@ -392,7 +392,8 @@ unsigned char blockChksum(char *block, unsigned int blockSize) {
 
 #define CDC_BINMODE_BUFSIZE 32768
 bool transBinMode = false;
-static int saved_slowdown_mode = 1; // 2026-09-16：PING 前 System 的省电档位（断开时恢复；审核 §四.8）
+static int saved_slowdown_mode = 1; // 2026-09-16：PING 前 System 的省电档位（断开时恢复）
+static bool cdc_ping_saved = false; // 2026-09-16：本会话是否真正 PING 过（审核 P3-2：未 PING 的断开不恢复档位）
 extern int g_slowdown_enable;       // stmp_clkctrl.c 的省电档位（System 经 SWI 设置）
 char *binBuf = NULL;
 uint32_t cdcBlockCnt;
@@ -400,7 +401,8 @@ void MscSetCmd(char *cmd);
 void mkSTMPNandStructure(uint32_t OLStartBlock, uint32_t OLPages);
 void parseCDCCommand(char *cmd) {
     if (strcmp(cmd, "PING") == 0) {
-        if (g_slowdown_enable) saved_slowdown_mode = g_slowdown_enable; // 2026-09-16：记住 System 档位供断开恢复（审核 §四.8）
+        saved_slowdown_mode = g_slowdown_enable; // 2026-09-16：记住 System 档位（含 0）供断开恢复（审核 P3-2 规整）
+        cdc_ping_saved = true;                   // 仅真正 PING 过的会话才在断开时恢复档位
         slowDownEnable(false);
 
         vTaskSuspend(pMainThread);
@@ -570,7 +572,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts) {
         // 原实现从不恢复：edb 非 REBOOT 退出/仅 PING 后 System 永久挂起需重启
         if (g_vm_status == VM_STATUS_SUSPEND)
             VMResume();
-        slowDownEnable(saved_slowdown_mode); // 恢复 PING 前的省电档位（PING 时被 slowDownEnable(false) 关闭）
+        if (cdc_ping_saved) { slowDownEnable(saved_slowdown_mode); cdc_ping_saved = false; } // 2026-09-16 审核 P3-2：仅 PING 过的会话恢复档位（未 PING 的断开不误降档）
         printf("CDC session closed, tasks resumed\n");
     }
     tud_cdc_get_line_coding(&c);

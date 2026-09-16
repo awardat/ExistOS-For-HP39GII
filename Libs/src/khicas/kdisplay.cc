@@ -2856,7 +2856,7 @@ const char * completeCatZhName[] = { // 2026-09-16 命令目录中文名（显�
     l=strlen(cmdname);
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
-    int nfunc=(lang)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
+    int nfunc=(lang)?CAT_COMPLETE_COUNT_ZH:CAT_COMPLETE_COUNT_EN; // 2026-09-16 审核 P1：lang=1 须用中文目录计数（曾用 FR=758 致越界）
 #if defined NSPIRE_NEWLIB || defined NUMWORKS // should match static_help[] in help.cc
     int iii=nfunc; // no search in completeCat, directly in static_help.h
     //if (xcas_python_eval) iii=0;
@@ -3072,7 +3072,7 @@ const char * completeCatZhName[] = { // 2026-09-16 命令目录中文名（显�
       int allopts=lexer_tab_int_values_end-lexer_tab_int_values_begin;
       bool isall=category==CAT_CATEGORY_ALL;
       bool isopt=category==CAT_CATEGORY_OPTIONS;
-      const int CAT_COMPLETE_COUNT=((lang)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN);
+      const int CAT_COMPLETE_COUNT=((lang)?CAT_COMPLETE_COUNT_ZH:CAT_COMPLETE_COUNT_EN); // 2026-09-16 审核 P1：中文目录计数修复
       int nitems = isall? allcmds:(isopt?allopts:CAT_COMPLETE_COUNT);
 #ifdef MENUITEM_MALLOC
       int memsize=sizeof(MenuItem)*nitems;

@@ -28,7 +28,6 @@
 #include "VROMLoader.h"
 
 #include "filesystem/fatfs/ff.h"
-//#include "mpy_port.h"
 void check_emulator_status();
 
 uint32_t OnChipMemorySize = BASIC_RAM_SIZE;
