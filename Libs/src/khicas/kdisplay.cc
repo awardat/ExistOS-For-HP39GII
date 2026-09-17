@@ -16410,7 +16410,18 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       GetKey(&key);
 #ifdef HP39
       show_status(text,"","");
-      if (key==KEY_CTRL_F5){ // App 菜单已移除（2026-09-03：内含不完整示例，整体拿掉）——F5 留空
+      if (key==KEY_CTRL_F5){ // 2026-09-17 F5 = 保存并运行当前脚本（原留空）
+        int run_script(const char* filename,GIAC_CONTEXT);
+        if (text->filename.empty()){
+          char rfn[MAX_FILENAME_SIZE+1];
+          if (get_filename(rfn,".py"))
+            text->filename=rfn;
+        }
+        if (!text->filename.empty()){
+          save_script(text->filename.c_str(),merge_area(text->elements));
+          text->changed=false;
+          run_script(text->filename.c_str(),contextptr);
+        }
         continue;
       }
       if (key==KEY_CTRL_F6)
