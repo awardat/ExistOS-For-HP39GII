@@ -1110,7 +1110,9 @@ void refreshDir() {
     free(dirItemNames);
     free(dirItemInfos);
 
-    if (f_opendir(&fileManagerDir, pathNow) == FR_OK) {
+    FRESULT frOpen = f_opendir(&fileManagerDir, pathNow); // 2026-09-17 单次调用
+    if (frOpen != FR_OK) printf("refreshDir opendir FAIL[%d]: [%s]\n", frOpen, pathNow); // 诊断：第 2 层目录进入失败定位
+    if (frOpen == FR_OK) {
         if (f_readdir(&fileManagerDir, &fileInfo) == FR_OK) {
             f_closedir(&fileManagerDir);
 
