@@ -11945,6 +11945,7 @@ namespace xcas {
       }
       int key=-1;
       GetKey(&key);
+      printf("[INK] %d\n", key); // 2026-09-17 诊断：Graph2d::in_ui 收到的按键码
       bool alph=alphawasactive(&key);
       if (key==KEY_SHUTDOWN || key==KEY_CTRL_SYMB)
         return key;
