@@ -15283,10 +15283,10 @@ void draw_editor_menu(bool textgr,bool textpython){
     // 2026-09-17 6 段等宽（LCD_WIDTH_PX/6=53px）分配
     if (textgr){
       const char *it6[6]={"pnts","lines","undo","cmds","","File"};
-      for (int i=0;i<6;++i) if (it6[i][0]) PrintMini(i*53+2,114,it6[i],4);
+      for (int i=0;i<6;++i) if (it6[i][0]) PrintMini(i*40+2,114,it6[i],4);
     } else {
       const char *it6[6]={"tests","struct","undo","cmds","run","File"};
-      for (int i=0;i<6;++i) if (it6[i][0]) PrintMiniMini(i*53+2,114,it6[i],4);
+      for (int i=0;i<6;++i) if (it6[i][0]) PrintMiniMini(i*40+2,114,it6[i],4);
     }
 #else
     waitforvblank();
@@ -15412,7 +15412,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       //!!!!!
       // sprint_int(line_s,cur+1);
       sprintf(line_s, "%d", cur + 1);
-      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 24) //!!!! 13
+      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 40) //!!!! 2026-09-17 24→40：显示减少一行（6行）
         PrintMini(textX, textY, line_s, 0);
     }
     textX = text->x + deltax;
