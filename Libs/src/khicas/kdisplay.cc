@@ -19456,8 +19456,39 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     // execution_in_progress = 1;
     int save_py=python_compat(contextptr); // 2026-09-17 强制以 Python 语法执行 .py 脚本
     python_compat(1,contextptr);
-    printf("[RUN2] save_py=%d now_py=%d\n", save_py, python_compat(contextptr)); // 诊断
-    run(s.c_str(),7,contextptr);
+    // 2026-09-17 逐行执行 + 缩进块聚合（整段 gen() 解析多行 Python 不完整，冒号行需与其缩进块一起送）
+    {
+      bool in_block=false, ok=true;
+      string blk; size_t bp=0;
+      while (bp <= s.size()){
+        size_t e=s.find('\n', bp);
+        if (e==string::npos) e=s.size();
+        string line=s.substr(bp, e-bp);
+        bp = e+1;
+        if (!line.empty() && line[line.size()-1]=='\r') line.erase(line.size()-1);
+        if (!in_block){
+          size_t q=0; while (q<line.size() && (line[q]==' '||line[q]=='\t')) ++q;
+          if (q>=line.size() || line[q]=='#') continue; // 空行/注释
+          if (line[line.size()-1]==':'){ in_block=true; blk=line; continue; }
+          printf("[RUNL]%s\n", line.c_str());
+          run(line.c_str(),7,contextptr);
+        } else {
+          if (!line.empty() && line[0]!=' ' && line[0]!='\t'){
+            run(blk.c_str(),7,contextptr); // 块结束，先执行块
+            blk.clear(); in_block=false;
+            size_t q=0; while (q<line.size() && (line[q]==' '||line[q]=='\t')) ++q;
+            if (q<line.size() && line[q]!='#'){
+              if (line[line.size()-1]==':'){ in_block=true; blk=line; }
+              else run(line.c_str(),7,contextptr);
+            }
+          } else {
+            blk += "\n"; blk += line;
+          }
+        }
+        if (bp > s.size()) break;
+      }
+      if (in_block && !blk.empty()) run(blk.c_str(),7,contextptr);
+    }
     python_compat(save_py,contextptr);
     printf("[RUN] done rc\n"); // 2026-09-17 诊断
     dConsoleRedraw(); // 2026-09-17 运行后强制重绘 Console（print 的 log 直写 Console 缓冲，需刷新才可见）
