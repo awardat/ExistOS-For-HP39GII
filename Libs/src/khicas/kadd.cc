@@ -769,7 +769,9 @@ int khicas_addins_menu(GIAC_CONTEXT){
       if (smallmenu.selection==6){
 	int c=chartab();
 	if (c>=0){
-	  char buf[2]={c,0};
+	  char buf[3]={0};
+	  if (c<0x100) buf[0]=(char)c;
+	  else { buf[0]=(char)((c>>8)&0xff); buf[1]=(char)(c&0xff); } // 2026-09-16 GBK 双字节
 	  copy_clipboard(buf,true);
 	}
 	break;

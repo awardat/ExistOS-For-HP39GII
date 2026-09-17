@@ -241,22 +241,81 @@ namespace giac {
   }
   
   int chartab(){
-    static int row=0,col=0;
+    static int row=0,col=0,page=0;
+    // 2026-09-16 扩充：页 0=ASCII、页 1=希腊字母、页 2=数学/常用符号；后两页返回 GBK 双字节 (b1<<8)|b2
+    static const unsigned short gbk_greek[]={
+      0xa6c1,0xa6c2,0xa6c3,0xa6c4,0xa6c5,0xa6c6,0xa6c7,0xa6c8,0xa6c9,0xa6ca,0xa6cb,0xa6cc,0xa6cd,0xa6ce,0xa6cf,0xa6d0,
+      0xa6d1,0xa6d2,0xa6d3,0xa6d4,0xa6d5,0xa6d6,0xa6d7,0xa6d8,
+      0xa6a3,0xa6a4,0xa6a8,0xa6ab,0xa6ae,0xa6b0,0xa6b2,0xa6b5,0xa6b7,0xa6b8};
+    static const unsigned short gbk_math[]={
+      0xa1c6,0xa1c7,0xa1d2,0xa1d3,0xa1cc,0xa1d9,0xa1d4,0xa1d6,0xa1dc,0xa1dd,0xa1c0,0xa1de,0xa1ca,0xa1c8,0xa1c9,0xa1fa,
+      0xa1fb,0xa1e3,0xa1e4,0xa1e5,0xa1eb};
     for (;;){
-      int cur=32+16*row+col;
-      col &= 0xf;
-      if (row<0) row=5; else if (row>5) row=0;
-      // display table
       drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
       os_draw_string_medium(0,0,_BLACK,_WHITE,lang?"\xd1\xa1\xd4\xf1\xd7\xd6\xb7\xfb":"Select char");
+      {
+        char pbuf[8];
+        sprintf(pbuf," %d/3",page+1);
+        os_draw_string_medium(150,0,_BLACK,_WHITE,(const unsigned char *)pbuf);
+      }
 #ifdef HP39
-      int dy=12;
-      for (int r=0;r<6;++r){
-        for (int c=0;c<16;++c){
-          int currc=32+16*r+c;
-          unsigned char buf[2]={currc==127?(unsigned char)'X':(unsigned char)currc,0};
-          os_draw_string(12*c,dy+16*r,cur==currc?_WHITE:_BLACK,cur==currc?_BLACK:_WHITE,buf);
+      if (page==0){
+        col &= 0xf;
+        if (row<0){ page=2; row=2; }
+        else if (row>5){ page=1; row=0; }
+        int cur=32+16*row+col;
+        for (int r=0;r<6;++r){
+          for (int c=0;c<16;++c){
+            int currc=32+16*r+c;
+            unsigned char buf[2]={currc==127?(unsigned char)'X':(unsigned char)currc,0};
+            os_draw_string(12*c,12+16*r,cur==currc?_WHITE:_BLACK,cur==currc?_BLACK:_WHITE,buf);
+          }
         }
+        string s("Current ");
+        s += char(cur);
+        s += " ";
+        s += print_INT_(cur);
+        s += " ";
+        s += hexa_print_INT_(cur);
+        os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)s.c_str());
+      }
+      else if (page==1){
+        col &= 0xf;
+        if (row<0){ page=0; row=5; }
+        else if (row>3){ page=2; row=0; }
+        int n=(int)(sizeof(gbk_greek)/sizeof(unsigned short));
+        int curidx=row*16+col;
+        if (curidx<0) curidx=0;
+        if (curidx>=n) curidx=n-1;
+        row=curidx>>4; col=curidx&0xf;
+        for (int i=0;i<n;++i){
+          unsigned short u=gbk_greek[i];
+          unsigned char buf[3]={(unsigned char)(u>>8),(unsigned char)(u&0xff),0};
+          int r=i>>4,c=i&0xf;
+          os_draw_string(20*c,12+16*r,(i==curidx)?_WHITE:_BLACK,(i==curidx)?_BLACK:_WHITE,buf);
+        }
+        char sbuf[16];
+        sprintf(sbuf,"%04x",(unsigned)(gbk_greek[curidx]));
+        os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)sbuf);
+      }
+      else {
+        col &= 0xf;
+        if (row<0){ page=1; row=3; }
+        else if (row>2){ page=0; row=0; }
+        int n=(int)(sizeof(gbk_math)/sizeof(unsigned short));
+        int curidx=row*16+col;
+        if (curidx<0) curidx=0;
+        if (curidx>=n) curidx=n-1;
+        row=curidx>>4; col=curidx&0xf;
+        for (int i=0;i<n;++i){
+          unsigned short u=gbk_math[i];
+          unsigned char buf[3]={(unsigned char)(u>>8),(unsigned char)(u&0xff),0};
+          int r=i>>4,c=i&0xf;
+          os_draw_string(20*c,12+16*r,(i==curidx)?_WHITE:_BLACK,(i==curidx)?_BLACK:_WHITE,buf);
+        }
+        char sbuf[16];
+        sprintf(sbuf,"%04x",(unsigned)(gbk_math[curidx]));
+        os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)sbuf);
       }
 #else
       for (int r=0;r<6;++r){
@@ -265,16 +324,12 @@ namespace giac {
           os_draw_string(20*c,20+20*r,_BLACK,(r==row && c==col?color_gris:_WHITE),buf);
         }
       }
-#endif
       string s("Current ");
-      s += char(cur);
+      s += char(32+16*row+col);
       s += " ";
-      s += print_INT_(cur);
+      s += print_INT_(32+16*row+col);
       s += " ";
-      s += hexa_print_INT_(cur);
-#ifdef HP39
-      os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)s.c_str());
-#else      
+      s += hexa_print_INT_(32+16*row+col);
       os_draw_string(0,160,_BLACK,_WHITE,s.c_str());
       os_draw_string(0,180,_BLACK,_WHITE,lang?"\x45\x58\x45\x3a\x20\xb8\xb4\xd6\xc6\xd7\xd6\xb7\xfb":"EXE: copy char");
 #endif
@@ -283,8 +338,16 @@ namespace giac {
       //dbgprintf("key %i %i\n",key,cur);
       if (key==KEY_CTRL_EXIT || key==KEY_CTRL_AC)
         return -1; // ON/C 同返回（2026-09-04 统一 ON 返回）
-      if (key==KEY_CTRL_OK || key==KEY_CTRL_EXE)
-        return cur;
+      if (key==KEY_CTRL_OK || key==KEY_CTRL_EXE){
+        if (page==0)
+          return 32+16*row+col;
+        const unsigned short * tab=(page==1)?gbk_greek:gbk_math;
+        int n=(page==1)?(int)(sizeof(gbk_greek)/sizeof(unsigned short)):(int)(sizeof(gbk_math)/sizeof(unsigned short));
+        int curidx=row*16+col;
+        if (curidx<0) curidx=0;
+        if (curidx>=n) curidx=n-1;
+        return (int)tab[curidx];
+      }
       if (key==KEY_CTRL_LEFT)
         --col;
       if (key==KEY_CTRL_RIGHT)
@@ -3615,6 +3678,8 @@ const char * completeCatZhName[] = { // 2026-09-16 命令目录中文名（显�
       return py?"**(1/":"^(1/";
     case KEY_CHAR_RECIP:
       return py?"**-1":"^-1";
+    case KEY_CHAR_SUM: // 2026-09-16 sh+'+'：输入 ∑（GBK A1C6）
+      return "\xa1\xc6";
     case KEY_CHAR_THETA:
       return "arg(";
     case KEY_CHAR_VALR:
@@ -12926,14 +12991,9 @@ namespace xcas {
   }
 
   void translate_fkey(int & input_key){
-    if (input_key==KEY_CTRL_MIXEDFRAC) input_key=KEY_CTRL_F10;
-    // if (input_key==KEY_CTRL_FRACCNVRT) input_key=KEY_CTRL_F7; // 2026-09-16 移除：a b/c 普通档应为分数转换（exact），不应打开 F7 函数菜单
+    // 2026-09-16 键位调整：sh+4→矩阵菜单（F7）、sh+7→列表菜单（F9）；删除 F10-F14 全部映射
+    if (input_key==KEY_CHAR_MAT) input_key=KEY_CTRL_F7;
     if (input_key==KEY_CHAR_LIST) input_key=KEY_CTRL_F9;
-    if (input_key==KEY_CHAR_MAT) input_key=KEY_CTRL_F8;
-    if (input_key==KEY_CTRL_PRGM) input_key=KEY_CTRL_F12;
-    if (input_key==KEY_CTRL_FD) input_key=KEY_CTRL_F11;
-    if (input_key==KEY_CHAR_ANGLE) input_key=KEY_CTRL_F13;
-    if (input_key==KEY_CHAR_FRAC) input_key=KEY_CTRL_F14;
   }
 
   giac::gen eqw(const giac::gen & ge,bool editable,GIAC_CONTEXT){
@@ -14091,9 +14151,9 @@ namespace xcas {
     duration=h+m/100.0;
     return ch;
   }
-  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF< poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF: misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n and \n or \nperiodic_table\nF? geo\npoint(\nline(\ncircle(\nplane(\nF@ color\ncolor=\nred\ncyan\ngreen\nblue\nmagenta\nyellow\n";
+  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF< poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF: misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n and \n or \nperiodic_table\nF? geo\npoint(\nline(\ncircle(\nplane(\nF@ color\ncolor=\nred\ncyan\ngreen\nblue\nmagenta\nyellow\n";
 
-  const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return \ntime()\nfrom time import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nabs(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *;i=1j\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *;i=1j\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *;i=1j\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF: plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF= list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF> prog\n|\n&\n#\nhex(\nbin(\ndebug(\nfrom cas import *\ncaseval(\"\")\n";
+  const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return \ntime()\nfrom time import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nabs(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *;i=1j\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *;i=1j\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *;i=1j\nF9 list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF: plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF= list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF> prog\n|\n&\n#\nhex(\nbin(\ndebug(\nfrom cas import *\ncaseval(\"\")\n";
   
   int eqws(char * s,bool eval,GIAC_CONTEXT){ // s buffer must be at least 512 char
     gen g,ge;
@@ -16505,16 +16565,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    copy_clipboard(get_selection(text,false),true);
 	    clipline=-1;
 	  }
-	  else { // 2026-09-16 键位重排：无选中时剪切当前行到剪贴板（原 ON/C 行为，ON/C 已改为退出）
-	    copy_clipboard(v[textline].s+'\n',true);
-	    if (v.size()==1)
-	      v[0].s="";
-	    else {
-	      v.erase(v.begin()+textline);
-	      if (textline>=v.size())
-		--textline;
-	    }
-	    DefineStatusMessage((char*)"Line cut and copied to clipboard", 1, 0, 0);
+	  else { // 2026-09-16 复制当前行到剪贴板（不删除，原厂 Copy 语义）
+	    copy_clipboard(v[textline].s,false);
+	    DefineStatusMessage((char*)"Line copied to clipboard", 1, 0, 0);
 	    DisplayStatusArea();
 	  }
 #else
@@ -16545,9 +16598,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      le_menu="F1 points\npoint(\nmidpoint(\ncenter(\nelement(\nsingle_inter(\ninter(\nlegende(\ntrace(\nF2 lines\nsegment(\nline(\nhalf_line(\nvector(\nparallel(\nperpendicular(\ntangent(\nplane(\ncircle(\nF4 disp\ndisplay=\nfilled\nred\nblue\ngreen\ncyan\nmagenta\nyellow\nF6 curves\ncircle(\nellipse(\nhyperbola(\nparabola(\nplot(\nplotparam(\nplotpolar(\nplotode(\nF7 triangle\ntriangle(\nequilateral_triangle(\nmedian(\nperpen_bisector(\nbisector(\nisobarycenter(\nF8 polygon\nsquare(\nrectangle(\nquadrilateral(\nhexagon(\npolygon(\nisopolygon(\nvertices(\nF9 3d\nplane(\ncube(\ntetrahedron(\nsphere(\ncone(\nhalf_cone(\ncylinder(\nplot3d(\nF: transf\nprojection(\nreflection(\ntranslation(\nrotation(\nhomothety(\nsimilarity(\nF; geodiff\ntangent(\nosculating_circle(\nevolute(\ncurvature(\nfrenet(\noctahedron(\ndodecahedron(\nicosahedron(\nF< mesures\ndistance(\ndistance2(\nradius(\naire(\nperimetre(\npente(\nangle(\nF= test\nis_collinear(\nis_concyclic(\nis_coplanar(\nis_cospherical(\nis_element(\nis_parallel(\nis_perpendicular(\nF> analyt\ncoordonnees(\nequation(\nparameq(\nabscisse(\nordonnee(\naffixe(\narg(\n";
 	    } else {
 	      if (xcas_python_eval==1)//text->python?
-		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n";
+		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\n";
 	      if (xcas_python_eval<=0)
-		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
+		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
 	      if (xcas_python_eval>=0)
 		le_menu += "F= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF? geo\npoint(\nline(\nsegment(\ncircle(\ntriangle(\nplane(\nsphere(\nsingle_inter(\nF@ color\ncolor=\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nlegend(";
 	    } // else not geometry
@@ -20063,8 +20116,9 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
         }
         else {
           int c=giac::chartab();
-          char s[2]={0};
+          char s[3]={0};
           if (c>32 && c<127) s[0]=char(c);
+          else if (c>0xff){ s[0]=(char)((c>>8)&0xff); s[1]=(char)(c&0xff); } // 2026-09-16 GBK 双字节（希腊/数学页）
           Console_Input(s);
         }
         //Console_Input((const char*)":=");

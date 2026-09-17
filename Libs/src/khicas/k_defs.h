@@ -20,6 +20,7 @@
 #define KEY_CHAR_MULT       42
 #define KEY_CHAR_DIV        47
 #define KEY_CHAR_FRAC       0xbb
+#define KEY_CHAR_SUM        0xbf   /* 2026-09-16：∑ 求和符号（sh+'+'） */
 #define KEY_CHAR_LPAR       0x28
 #define KEY_CHAR_RPAR       0x29
 #define KEY_CHAR_COMMA      0x2c
