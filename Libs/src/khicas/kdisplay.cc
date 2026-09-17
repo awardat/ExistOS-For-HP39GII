@@ -11948,6 +11948,7 @@ namespace xcas {
       bool alph=alphawasactive(&key);
       if (key==KEY_SHUTDOWN || key==KEY_CTRL_SYMB)
         return key;
+      printf("[INK] %d\n", key); // 2026-09-17 诊断：Graph2d::in_ui 收到的按键码
       // 2026-09-17 用户映射（HP39 原生键码）：ON=退出、Plot=曲线分析、Home=回 console 注入
       if (key==30070) return KEY_CTRL_EXIT;
       if (key==30009){ curve_infos(); continue; }
