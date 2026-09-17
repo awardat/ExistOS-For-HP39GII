@@ -19440,6 +19440,19 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     string s;
     load_script(filename,s);
     printf("[RUN] script=%s size=%d\n", filename, (int)s.size()); // 2026-09-17 诊断
+    { // 2026-09-17 跳过首部空行/注释行：run() 对 '#' 开头的整串直接 return 0，导致带编码声明的脚本完全不执行
+      size_t pos=0, cur=0;
+      while (cur < s.size()){
+        size_t e=s.find('\n',cur);
+        if (e==string::npos) e=s.size();
+        size_t q=cur;
+        while (q<e && (s[q]==' '||s[q]=='\t'||s[q]=='\r')) ++q;
+        if (q<e && s[q]!='#'){ pos=cur; break; }
+        cur=e+1;
+        pos=cur;
+      }
+      if (pos && pos<=s.size()) s=s.substr(pos);
+    }
     // execution_in_progress = 1;
     run(s.c_str(),7,contextptr);
     printf("[RUN] done rc\n"); // 2026-09-17 诊断
