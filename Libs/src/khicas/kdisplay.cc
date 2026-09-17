@@ -10018,7 +10018,7 @@ namespace xcas {
 #ifdef NSPIRE_NEWLIB
       DefineStatusMessage((char*)"menu: menu, esc: quit", 1, 0, 0);
 #else
-      DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"shift-1: help, ON: back", 1, 0, 0); // 2026-09-17 更新过时提示（home 已非 menu；返回键为 ON）
 #endif
       DisplayStatusArea();
       if (hp || tracemode)
@@ -11918,7 +11918,7 @@ namespace xcas {
 #ifdef NSPIRE_NEWLIB
       DefineStatusMessage((char*)"shift-1: help, menu: menu, esc: quit", 1, 0, 0);
 #else
-      DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"shift-1: help, ON: back", 1, 0, 0); // 2026-09-17 更新过时提示（home 已非 menu；返回键为 ON）
 #endif
       DisplayStatusArea();
       int saveprec=gr.precision;
