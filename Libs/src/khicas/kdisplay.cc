@@ -19456,6 +19456,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     // execution_in_progress = 1;
     int save_py=python_compat(contextptr); // 2026-09-17 强制以 Python 语法执行 .py 脚本
     python_compat(1,contextptr);
+    printf("[RUN2] save_py=%d now_py=%d\n", save_py, python_compat(contextptr)); // 诊断
     run(s.c_str(),7,contextptr);
     python_compat(save_py,contextptr);
     printf("[RUN] done rc\n"); // 2026-09-17 诊断
