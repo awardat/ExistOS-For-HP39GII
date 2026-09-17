@@ -18782,9 +18782,13 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
       }
   }
 
+  std::string khicas_log_buffer; // 2026-09-17 log 查看缓冲（累积 dConsolePut 内容）
   void dConsolePut(const char * S){
     if (!dconsole_mode)
       return;
+    khicas_log_buffer += S; // 2026-09-17 收集 log（供 F5 查看/落盘）
+    if (khicas_log_buffer.size() > 8000)
+      khicas_log_buffer.erase(0, khicas_log_buffer.size()-8000);
     int l=strlen(S);
     char s[l+1];
     strcpy(s,S);
@@ -19634,7 +19638,13 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
           key=KEY_BOOK;	
       }
 #ifdef HP39
-      if (key==KEY_CTRL_F5){ // 2026-09-17 主界面 F5 = log 查看（强制重绘 Console，显示 log 输出）
+      if (key==KEY_CTRL_F5){ // 2026-09-17 主界面 F5 = log 查看（有缓冲则落盘 /khi_log.txt 并提示，否则仅重绘）
+        void save_script(const char * filename,const string & s);
+        if (!khicas_log_buffer.empty()){
+          save_script("/khi_log.txt", khicas_log_buffer);
+          Console_Output("Log saved: /khi_log.txt");
+          Console_NewLine(LINE_TYPE_OUTPUT, 1);
+        }
         dConsoleRedraw();
         continue;
       }
