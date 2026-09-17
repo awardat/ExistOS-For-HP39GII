@@ -26,7 +26,7 @@ char *virtual_screen=0;
 
 char *scale_vir_screen=0;
 
-char * screen_1bpp =(char *)0x02000000;
+char * screen_1bpp =0; // 2026-09-16 改 heap 分配（原固定 0x02000000 位于系统运行区，与 OSLoader/VM 数据冲突致偶发全黑）
 
 #define X_OFFSET    (0)
 #define Y_OFFSET    (-10)
@@ -447,7 +447,7 @@ int vGL_Initialize() {
   if (!virtual_screen)
     virtual_screen = pvPortMalloc(VIR_LCD_PIX_H * VIR_LCD_PIX_W);
   if (!virtual_screen) {
-    vPortFree(screen_1bpp);
+    // 2026-09-16 不再 free screen_1bpp（保留跨会话复用；原代码释放固定地址指针会损坏堆）
     printf("Failed to alloca virtual screen memory!\n");
     return -1;
   }
@@ -458,9 +458,8 @@ int vGL_Initialize() {
   scale_vir_screen = pvPortMalloc(VIR_LCD_PIX_W * VIR_LCD_PIX_W);
   if (!scale_vir_screen) {
     printf("Failed to alloca virtual scale screen memory!\n");
-    vPortFree(virtual_screen);
-    vPortFree(screen_1bpp);
-    virtual_screen=0;
+    vPortFree(virtual_screen); // heap 指针，释放并置 NULL（合法回滚）
+    virtual_screen=0;          // 2026-09-16：screen_1bpp 保留复用，不再释放
     return -1;
   }
   memset(scale_vir_screen, COLOR_WHITE, VIR_LCD_PIX_H * VIR_LCD_PIX_W);
