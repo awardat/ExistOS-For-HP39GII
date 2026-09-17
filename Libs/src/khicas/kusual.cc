@@ -6586,6 +6586,7 @@ namespace giac {
     return hasnl;
   }
   gen _print(const gen & args,GIAC_CONTEXT){
+    printf("[PRINT] called\n"); // 2026-09-17 诊断：giac print 是否被调用
 #if 0
     gen tmp=args.eval(eval_level(contextptr),contextptr);
     *logptr(contextptr) << tmp << endl;

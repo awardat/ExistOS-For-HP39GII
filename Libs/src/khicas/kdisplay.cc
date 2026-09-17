@@ -18784,6 +18784,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 
   std::string khicas_log_buffer; // 2026-09-17 log 查看缓冲（累积 dConsolePut 内容）
   void dConsolePut(const char * S){
+    printf("[DCP]%s\n", S); // 2026-09-17 诊断：log 通道是否被调用
     if (!dconsole_mode)
       return;
     khicas_log_buffer += S; // 2026-09-17 收集 log（供 F5 查看/落盘）
@@ -19438,8 +19439,10 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 #else
     string s;
     load_script(filename,s);
+    printf("[RUN] script=%s size=%d\n", filename, (int)s.size()); // 2026-09-17 诊断
     // execution_in_progress = 1;
     run(s.c_str(),7,contextptr);
+    printf("[RUN] done rc\n"); // 2026-09-17 诊断
     dConsoleRedraw(); // 2026-09-17 运行后强制重绘 Console（print 的 log 直写 Console 缓冲，需刷新才可见）
     // execution_in_progress = 0;
     if (s.size()>=4){
