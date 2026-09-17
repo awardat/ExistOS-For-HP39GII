@@ -15280,10 +15280,14 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 void draw_editor_menu(bool textgr,bool textpython){
 #ifdef HP39
     drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_BLACK);
-    if (textgr)
-      PrintMini(0,114,"pnts | lines| undo| cmds|      | File",4);
-    else
-      PrintMiniMini(0,114,"tests|struct| undo| cmds| run  | File",4);
+    // 2026-09-17 6 段等宽（LCD_WIDTH_PX/6=53px）分配
+    if (textgr){
+      const char *it6[6]={"pnts","lines","undo","cmds","","File"};
+      for (int i=0;i<6;++i) if (it6[i][0]) PrintMini(i*53+2,114,it6[i],4);
+    } else {
+      const char *it6[6]={"tests","struct","undo","cmds","run","File"};
+      for (int i=0;i<6;++i) if (it6[i][0]) PrintMiniMini(i*53+2,114,it6[i],4);
+    }
 #else
     waitforvblank();
     drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
@@ -15298,7 +15302,7 @@ void draw_editor_menu(bool textgr,bool textpython){
 
 #ifdef HP39
 #define C19 16 // 17?
-#define C154 96
+#define C154 80 // 2026-09-17 96→80：显示减少一行（避免第7行压到底栏菜单）
 #define F_KEY_BAR_Y_START 114
 static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scroll, int &textY, GIAC_CONTEXT)
 {
@@ -17003,18 +17007,13 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      if (giac_filebrowser(filename, "py", "Scripts",2) && load_script(filename,ins))
 		insert(text,ins.c_str(),false);//add_nl(text,ins);
 	    }
-	    int run_script(const char* filename,GIAC_CONTEXT); // 2026-09-17 F5 run 前置声明（定义在本函数之后）
-	    if (sres==5){ // 2026-09-17 F5：保存并运行当前脚本（原"全选剪切"行为移除）
-	      if (text->filename.empty()){
-	        char filename[MAX_FILENAME_SIZE+1];
-	        if (get_filename(filename,".py"))
-	          text->filename=filename;
-	      }
-	      if (!text->filename.empty()){
-	        save_script(text->filename.c_str(),merge_area(v));
-	        text->changed=false;
-	        run_script(text->filename.c_str(),contextptr);
-	      }
+	    if (sres==5){ // 2026-09-17 恢复原"清除"功能（此前误改为运行脚本，导致"清除"菜单项执行绘图）
+	      std::string s(merge_area(v));
+	      copy_clipboard(s,false);
+	      set_undo(text);
+	      v.resize(1);
+	      v[0].s="";
+	      textline=0;
 	    }
 	    if (sres==6){
 	      display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
