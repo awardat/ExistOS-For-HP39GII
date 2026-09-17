@@ -12953,7 +12953,7 @@ namespace xcas {
       GetKey(&key);
       if (key==KEY_SHUTDOWN)
 	return key;
-      if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK || key==KEY_PRGM_ACON || key==KEY_CTRL_MENU || key==KEY_CTRL_EXE || key==KEY_CTRL_VARS || key==KEY_CHAR_ANS)
+      if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK || key==KEY_PRGM_ACON || key==KEY_CTRL_AC || key==KEY_CTRL_MENU || key==KEY_CTRL_EXE || key==KEY_CTRL_VARS || key==KEY_CHAR_ANS)
 	break;
       if (key==KEY_CTRL_UP){ t.turtley += 10; redraw=true; }
       if (key==KEY_CTRL_PAGEUP) { t.turtley += 100; redraw=true;}
@@ -19439,6 +19439,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 #else
     string s;
     load_script(filename,s);
+    kcas_set_busy(1);
     printf("[RUN] script=%s size=%d\n", filename, (int)s.size()); // 2026-09-17 诊断
     { // 2026-09-17 跳过首部空行/注释行：run() 对 '#' 开头的整串直接 return 0，导致带编码声明的脚本完全不执行
       size_t pos=0, cur=0;
@@ -19490,6 +19491,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
       if (in_block && !blk.empty()) run(blk.c_str(),7,contextptr);
     }
     python_compat(save_py,contextptr);
+    kcas_set_busy(0); // 2026-09-17 熄灭沙漏
     printf("[RUN] done rc\n"); // 2026-09-17 诊断
     dConsoleRedraw(); // 2026-09-17 运行后强制重绘 Console（print 的 log 直写 Console 缓冲，需刷新才可见）
     // execution_in_progress = 0;
