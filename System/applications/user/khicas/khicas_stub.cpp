@@ -879,7 +879,7 @@ int Bfile_FindFirst(const unsigned short *pathname, int *FindHandle, const unsig
     }
      
 
-    fr = f_findfirst(&fh->dp, &fh->finfo, (const char *)pathname, "*.*");
+    fr = f_findfirst(&fh->dp, &fh->finfo, (const char *)pathname, "*"); // 2026-09-17 用 "*" 枚举全部（原 "*.*" 会漏掉无扩展名目录如 samples）
     if(fr)
     {
         printf("FF failed to open dir[%d]:%s\n", fr, (const char *)pathname);
