@@ -93,8 +93,9 @@ int GetFiles(File* files, MenuItem* menuitems, char* basepath, int* count, char*
   //Bfile_StrToName_ncpy(path, (const unsigned char *)filter, MAX_FILENAME_SIZE+1);
   while(!ret) {
     Bfile_NameToStr_ncpy((unsigned char *)buffer, found, MAX_FILENAME_SIZE+1);
+    int isdir = ((fileinfo.property & 0x10) != 0); // 2026-09-17 用 FAT 属性识别目录（原用 fsize==0：空文件被误判为目录，子目录可能漏列）
     if(!(strcmp((char*)buffer, "..") == 0 || strcmp((char*)buffer, ".") == 0 || strcmp((char*)buffer, "@MainMem") == 0)
-      && (fileinfo.fsize == 0 ||
+      && (isdir ||
 	  //end_with(buffer,filter)
 	  //Bfile_Name_MatchMask((const short int*)found, (const short int*)path)
 	  matchmask(filter, buffer)
@@ -105,7 +106,7 @@ int GetFiles(File* files, MenuItem* menuitems, char* basepath, int* count, char*
         strcpy(files[*count].filename, basepath); 
         strcat(files[*count].filename, (char*)buffer);
         files[*count].size = fileinfo.fsize;
-        files[*count].isfolder = menuitems[*count].isfolder = !fileinfo.fsize;
+        files[*count].isfolder = menuitems[*count].isfolder = isdir;
 #if FILEICON
         if(fileinfo.fsize == 0) menuitems[*count].icon = FILE_ICON_FOLDER; // it would be a folder icon anyway, because isfolder is true
         else menuitems[*count].icon = fileIconFromName((char*)buffer);

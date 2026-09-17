@@ -890,6 +890,7 @@ int Bfile_FindFirst(const unsigned short *pathname, int *FindHandle, const unsig
 
     *FindHandle = (int)fh;
     foundfi->fsize = fh->finfo.fsize;
+    foundfi->property = fh->finfo.fattrib; // 2026-09-17 传递 FAT 属性（AM_DIR=0x10），供 GetFiles 识别目录
     strcpy((char *)foundfile, fh->finfo.fname);
 
     return 0;
@@ -924,6 +925,7 @@ int Bfile_FindNext(int FindHandle, const unsigned short *foundfile, void *filein
     }
 
     foundfi->fsize = fh->finfo.fsize;
+    foundfi->property = fh->finfo.fattrib; // 2026-09-17 传递 FAT 属性（AM_DIR=0x10），供 GetFiles 识别目录
     strcpy((char *)foundfile, fh->finfo.fname);
     return 0;
  #else
