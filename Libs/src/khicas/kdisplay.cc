@@ -11912,9 +11912,9 @@ namespace xcas {
     gr.must_redraw=true;
     for (;;){
 #ifdef NSPIRE_NEWLIB
-      DefineStatusMessage((char*)"shift-1: help, menu: menu, esc: quit", 1, 0, 0);
+      // 2026-09-17 用户要求删除（图形界面状态栏提示干扰）
 #else
-      DefineStatusMessage((char*)"shift-1: help, ON: back", 1, 0, 0); // 2026-09-17 更新过时提示（home 已非 menu；返回键为 ON）
+      // 2026-09-17 用户要求删除
 #endif
       DisplayStatusArea();
       int saveprec=gr.precision;
