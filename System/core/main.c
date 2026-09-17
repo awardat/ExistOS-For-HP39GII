@@ -81,7 +81,7 @@ void printTaskList() {
 
 void vTask1(void *par1) {
     while (1) {
-        printTaskList();
+        // printTaskList(); // 2026-09-17 用户要求去掉 SYSTEM STATUS 输出
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }

@@ -11945,10 +11945,13 @@ namespace xcas {
       }
       int key=-1;
       GetKey(&key);
-      printf("[INK] %d\n", key); // 2026-09-17 诊断：Graph2d::in_ui 收到的按键码
       bool alph=alphawasactive(&key);
       if (key==KEY_SHUTDOWN || key==KEY_CTRL_SYMB)
         return key;
+      // 2026-09-17 用户映射（HP39 原生键码）：ON=退出、Plot=曲线分析、Home=回 console 注入
+      if (key==30070) return KEY_CTRL_EXIT;
+      if (key==30009){ curve_infos(); continue; }
+      if (key==5){ if (g_home_req){ return KEY_CTRL_EXIT; } continue; }
       if (key==KEY_CTRL_F1){
         geohelp(contextptr);
         continue;
@@ -11983,12 +11986,8 @@ namespace xcas {
 	tracemode_set();
 	continue;
       }
-      if (key==KEY_CTRL_EXIT){ // 2026-09-17 用户要求：View 键 = 切换视图（曲线信息）
-	curve_infos();
-	continue;
-      }
       if (key==KEY_CTRL_XTT || key=='\t'){
-	return KEY_CTRL_EXIT; // 2026-09-17 用户要求：ON 键（HP39 映射为 tab）= 直接退出（原为 curve_infos）
+	return KEY_CTRL_EXIT; // 2026-09-17 ON 键备用路径 = 退出
       }
       if (!hp && key==KEY_CTRL_F7)
 	invert_tracemode();
