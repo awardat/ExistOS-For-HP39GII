@@ -11902,6 +11902,21 @@ namespace xcas {
     return in_ui();
   }
 
+  // 2026-09-17 从 plot_instructions 递归提取数值点（复数点→[x,y]，数值→本身）
+  static void kcas_extract_nums(const gen & g,string & out){
+    if (g.type==_VECT){
+      for (const_iterateur it=g._VECTptr->begin(); it!=g._VECTptr->end(); ++it)
+	kcas_extract_nums(*it,out);
+      return;
+    }
+    if (g.type==_CPLX && g._CPLXptr){
+      out += "["+gen2string(*(g._CPLXptr))+","+gen2string(*(g._CPLXptr+1))+"] ";
+      return;
+    }
+    if (g.type==_DOUBLE_ || g.type==_INT_ || g.type==_ZINT)
+      out += gen2string(g)+" ";
+  }
+
   int Graph2d::in_ui(){
     Graph2d & gr=*this;
     // UI
@@ -11958,9 +11973,10 @@ namespace xcas {
 	// 2026-09-17 View（单击 5）= 视图循环：图形→数据→表达式→图形
 	static int kcas_view_mode=0;
 	kcas_view_mode=(kcas_view_mode+1)%3;
-	if (kcas_view_mode==1){ // 数据视图：数值化（evalf 后去掉图形包裹）
-	  gen gd=evalf(gen(plot_instructions),1,contextptr);
-	  string vs=gen2string(gd);
+	if (kcas_view_mode==1){ // 数据视图：图上实际绘制的数值点
+	  string vs;
+	  for (const_iterateur it=plot_instructions.begin(); it!=plot_instructions.end(); ++it)
+	    kcas_extract_nums(*it,vs);
 	  char *buf=new char[vs.size()+64]; strcpy(buf,vs.c_str());
 	  textedit(buf,(int)vs.size()+64,contextptr); delete[] buf;
 	} else if (kcas_view_mode==2){ // 表达式视图
