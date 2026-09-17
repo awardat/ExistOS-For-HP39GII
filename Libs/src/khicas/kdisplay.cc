@@ -820,7 +820,7 @@ namespace giac {
 	if(menu->type != MENUTYPE_MULTISELECT) return KEY_BOOK; // break;
 	// else fallthrough
       case KEY_CTRL_EXE: case KEY_CTRL_OK: case KEY_CHAR_CR: case 76: // 76 = HP39GII ENTER key
-	if(menu->numitems>0) return key==KEY_CTRL_OK?MENU_RETURN_SELECTION:key;
+	if(menu->numitems>0) return (key==KEY_CTRL_OK || key==76) ? MENU_RETURN_SELECTION : key; // 2026-09-17 HP39 ENTER 也返回 SELECTION（修复"菜单选中无效/打开脚本卡住"：调用者普遍只认 SELECTION/EXE）
 	break;
       case KEY_CTRL_LEFT:
 	if(menu->type != MENUTYPE_MULTISELECT) break;
