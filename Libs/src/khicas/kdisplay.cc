@@ -11909,6 +11909,11 @@ namespace xcas {
 	kcas_extract_nums(*it,out);
       return;
     }
+    if (g.type==_SYMB){ // pnt[...] 等：递归参数
+      if (g._SYMBptr)
+	kcas_extract_nums(g._SYMBptr->feuille,out);
+      return;
+    }
     if (g.type==_CPLX && g._CPLXptr){
       out += "["+gen2string(*(g._CPLXptr))+","+gen2string(*(g._CPLXptr+1))+"] ";
       return;
