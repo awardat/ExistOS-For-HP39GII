@@ -19454,7 +19454,10 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
       if (pos && pos<=s.size()) s=s.substr(pos);
     }
     // execution_in_progress = 1;
+    int save_py=python_compat(contextptr); // 2026-09-17 强制以 Python 语法执行 .py 脚本
+    python_compat(1,contextptr);
     run(s.c_str(),7,contextptr);
+    python_compat(save_py,contextptr);
     printf("[RUN] done rc\n"); // 2026-09-17 诊断
     dConsoleRedraw(); // 2026-09-17 运行后强制重绘 Console（print 的 log 直写 Console 缓冲，需刷新才可见）
     // execution_in_progress = 0;
