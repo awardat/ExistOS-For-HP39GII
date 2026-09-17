@@ -19436,6 +19436,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     load_script(filename,s);
     // execution_in_progress = 1;
     run(s.c_str(),7,contextptr);
+    dConsoleRedraw(); // 2026-09-17 运行后强制重绘 Console（print 的 log 直写 Console 缓冲，需刷新才可见）
     // execution_in_progress = 0;
     if (s.size()>=4){
       if (s[0]=='#' || (s[0]=='d' && s[1]=='e' && s[2]=='f' && s[3]==' '))
@@ -19633,7 +19634,8 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
           key=KEY_BOOK;	
       }
 #ifdef HP39
-      if (key==KEY_CTRL_F5){ // App 菜单已移除（2026-09-03：内含不完整示例，整体拿掉）——F5 留空
+      if (key==KEY_CTRL_F5){ // 2026-09-17 主界面 F5 = log 查看（强制重绘 Console，显示 log 输出）
+        dConsoleRedraw();
         continue;
       }
       if (key==KEY_CTRL_F6)
