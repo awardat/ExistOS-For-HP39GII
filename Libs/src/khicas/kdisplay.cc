@@ -15419,7 +15419,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       //!!!!!
       // sprint_int(line_s,cur+1);
       sprintf(line_s, "%d", cur + 1);
-      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 40) //!!!! 2026-09-17 24→40：显示减少一行（6行）
+      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 32) // 2026-09-17 32：6 行
         PrintMini(textX, textY, line_s, 0);
     }
     textX = text->x + deltax;
@@ -15589,7 +15589,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
           textY -= 1;
         ++nlines;
       } // else still fits, print new word normally (or just increment textX, if we are not "on stage" yet)
-      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 40){ // 2026-09-17 14→40：内容同样 6 行（与行号一致）
+      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 32){ // 2026-09-17 32：内容 6 行（与行号一致）
         temptextX = textX;
         if (editable){
           couleur = linecomment ? giac::_GREEN : find_color(singleword,contextptr);
