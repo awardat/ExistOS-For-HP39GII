@@ -242,26 +242,25 @@ namespace giac {
   
   int chartab(){
     static int row=0,col=0,page=0;
-    // 2026-09-16 扩充：页 0=ASCII、页 1=希腊字母、页 2=数学/常用符号；后两页返回 GBK 双字节 (b1<<8)|b2
-    static const unsigned short gbk_greek[]={
+    // 2026-09-16 扩充：页 0=ASCII、页 1=希腊字母+数学符号（合并 57 个）；后者返回 GBK 双字节 (b1<<8)|b2
+    static const unsigned short gbk_sym[]={
       0xa6c1,0xa6c2,0xa6c3,0xa6c4,0xa6c5,0xa6c6,0xa6c7,0xa6c8,0xa6c9,0xa6ca,0xa6cb,0xa6cc,0xa6cd,0xa6ce,0xa6cf,0xa6d0,
       0xa6d1,0xa6d2,0xa6d3,0xa6d4,0xa6d5,0xa6d6,0xa6d7,0xa6d8,
-      0xa6a3,0xa6a4,0xa6a8,0xa6ab,0xa6ae,0xa6b0,0xa6b2,0xa6b5,0xa6b7,0xa6b8};
-    static const unsigned short gbk_math[]={
+      0xa6a3,0xa6a4,0xa6a8,0xa6ab,0xa6ae,0xa6b0,0xa6b2,0xa6b5,0xa6b7,0xa6b8,
       0xa1c6,0xa1c7,0xa1d2,0xa1d3,0xa1cc,0xa1d9,0xa1d4,0xa1d6,0xa1dc,0xa1dd,0xa1c0,0xa1de,0xa1ca,0xa1c8,0xa1c9,0xa1fa,
-      0xa1fb,0xa1e3,0xa1e4,0xa1e5,0xa1eb};
+      0xa1fb,0xa1e3,0xa1e4,0xa1e5,0xa1eb}; // 24 希腊小写 + 10 希腊大写 + 23 数学/符号 = 57
     for (;;){
       drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
       os_draw_string_medium(0,0,_BLACK,_WHITE,lang?"\xd1\xa1\xd4\xf1\xd7\xd6\xb7\xfb":"Select char");
       {
         char pbuf[8];
-        sprintf(pbuf," %d/3",page+1);
+        sprintf(pbuf," %d/2",page+1);
         os_draw_string_medium(150,0,_BLACK,_WHITE,(const unsigned char *)pbuf);
       }
 #ifdef HP39
       if (page==0){
         col &= 0xf;
-        if (row<0){ page=2; row=2; }
+        if (row<0){ page=1; row=3; }
         else if (row>5){ page=1; row=0; }
         int cur=32+16*row+col;
         for (int r=0;r<6;++r){
@@ -279,43 +278,36 @@ namespace giac {
         s += hexa_print_INT_(cur);
         os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)s.c_str());
       }
-      else if (page==1){
+      else {
+        int n=(int)(sizeof(gbk_sym)/sizeof(unsigned short));
         col &= 0xf;
         if (row<0){ page=0; row=5; }
-        else if (row>3){ page=2; row=0; }
-        int n=(int)(sizeof(gbk_greek)/sizeof(unsigned short));
-        int curidx=row*16+col;
-        if (curidx<0) curidx=0;
-        if (curidx>=n) curidx=n-1;
-        row=curidx>>4; col=curidx&0xf;
-        for (int i=0;i<n;++i){
-          unsigned short u=gbk_greek[i];
-          unsigned char buf[3]={(unsigned char)(u>>8),(unsigned char)(u&0xff),0};
-          int r=i>>4,c=i&0xf;
-          os_draw_string(20*c,12+16*r,(i==curidx)?_WHITE:_BLACK,(i==curidx)?_BLACK:_WHITE,buf);
+        else {
+          int curidx=row*16+col;
+          if (curidx>=n){
+            if (row>3){ page=0; row=0; }
+            else {
+              int lastcol=(n-1)-16*row;
+              if (lastcol>15) lastcol=15;
+              col=lastcol;
+            }
+          }
         }
-        char sbuf[16];
-        sprintf(sbuf,"%04x",(unsigned)(gbk_greek[curidx]));
-        os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)sbuf);
-      }
-      else {
-        col &= 0xf;
-        if (row<0){ page=1; row=3; }
-        else if (row>2){ page=0; row=0; }
-        int n=(int)(sizeof(gbk_math)/sizeof(unsigned short));
-        int curidx=row*16+col;
-        if (curidx<0) curidx=0;
-        if (curidx>=n) curidx=n-1;
-        row=curidx>>4; col=curidx&0xf;
-        for (int i=0;i<n;++i){
-          unsigned short u=gbk_math[i];
-          unsigned char buf[3]={(unsigned char)(u>>8),(unsigned char)(u&0xff),0};
-          int r=i>>4,c=i&0xf;
-          os_draw_string(20*c,12+16*r,(i==curidx)?_WHITE:_BLACK,(i==curidx)?_BLACK:_WHITE,buf);
+        if (page==1){
+          int curidx=row*16+col;
+          if (curidx<0) curidx=0;
+          if (curidx>=n) curidx=n-1;
+          row=curidx>>4; col=curidx&0xf;
+          for (int i=0;i<n;++i){
+            unsigned short u=gbk_sym[i];
+            unsigned char buf[3]={(unsigned char)(u>>8),(unsigned char)(u&0xff),0};
+            int r=i>>4,c=i&0xf;
+            os_draw_string(20*c,12+16*r,(i==curidx)?_WHITE:_BLACK,(i==curidx)?_BLACK:_WHITE,buf);
+          }
+          char sbuf[16];
+          sprintf(sbuf,"%04x",(unsigned)(gbk_sym[curidx]));
+          os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)sbuf);
         }
-        char sbuf[16];
-        sprintf(sbuf,"%04x",(unsigned)(gbk_math[curidx]));
-        os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)sbuf);
       }
 #else
       for (int r=0;r<6;++r){
@@ -341,12 +333,11 @@ namespace giac {
       if (key==KEY_CTRL_OK || key==KEY_CTRL_EXE){
         if (page==0)
           return 32+16*row+col;
-        const unsigned short * tab=(page==1)?gbk_greek:gbk_math;
-        int n=(page==1)?(int)(sizeof(gbk_greek)/sizeof(unsigned short)):(int)(sizeof(gbk_math)/sizeof(unsigned short));
+        int n=(int)(sizeof(gbk_sym)/sizeof(unsigned short));
         int curidx=row*16+col;
         if (curidx<0) curidx=0;
         if (curidx>=n) curidx=n-1;
-        return (int)tab[curidx];
+        return (int)gbk_sym[curidx];
       }
       if (key==KEY_CTRL_LEFT)
         --col;
@@ -20109,6 +20100,13 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	  return CONSOLE_SUCCEEDED;
 	}
 
+      if (key == KEY_CTRL_APPS){ // 2026-09-16 APPS：打开脚本列表（选择后进入编辑器）
+        char apfile[MAX_FILENAME_SIZE+1];
+        if (fileBrowser(apfile, (char*)"*.py", (char*)"Scripts"))
+          edit_script(apfile,contextptr);
+        Console_Disp(1,contextptr);
+        continue;
+      }
       if (key == KEY_CTRL_INS) {
         if (Current_Line<Last_Line){
           Console_Insert_Line();
