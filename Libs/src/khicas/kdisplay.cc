@@ -15589,7 +15589,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
           textY -= 1;
         ++nlines;
       } // else still fits, print new word normally (or just increment textX, if we are not "on stage" yet)
-      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 14){
+      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 40){ // 2026-09-17 14→40：内容同样 6 行（与行号一致）
         temptextX = textX;
         if (editable){
           couleur = linecomment ? giac::_GREEN : find_color(singleword,contextptr);
