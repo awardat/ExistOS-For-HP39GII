@@ -23,7 +23,7 @@ typedef struct DISPBOX
 #define SPE_BAR                     "      |      |      |      |      |       "
 #define EDITABLE_BAR                " tst  |loop  |misc  |cmds  |A<>a  |File   "
 
-#define CONSOLE_BAR2                           "  |view  |cmds  |A<>a  |File   "
+#define CONSOLE_BAR2                           "  |view  |cmds  |A<>a  |log    |File   "
 #define F1_CHARS_LEN    6
 #define F2_CHARS_LEN    6
 
