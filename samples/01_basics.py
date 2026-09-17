@@ -12,13 +12,13 @@ print(a*a + b*b)
 
 # 循环：1 到 10 求和
 s = 0
-for i in range(1, 11):
-    s = s + i
+for k in range(1, 11):
+    s = s + k
 print("1+2+...+10 =")
 print(s)
 
 # 条件与函数
-def sign(x):
+def my_sign(x):
     if x > 0:
         return 1
     elif x < 0:
@@ -26,7 +26,7 @@ def sign(x):
     else:
         return 0
 
-print("sign(-5) =")
-print(sign(-5))
-print("sign(7) =")
-print(sign(7))
+print("my_sign(-5) =")
+print(my_sign(-5))
+print("my_sign(7) =")
+print(my_sign(7))

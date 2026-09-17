@@ -1,14 +1,14 @@
 # -*- coding: gbk -*-
 # 列表与数列：斐波那契、平方数
 fib = [1, 1]
-for i in range(2, 12):
-    fib.append(fib[i-1] + fib[i-2])
+for k in range(2, 12):
+    fib.append(fib[k-1] + fib[k-2])
 print("fibonacci:")
 print(fib)
 
 sq = []
-for i in range(1, 11):
-    sq.append(i*i)
+for k in range(1, 11):
+    sq.append(k*k)
 print("squares:")
 print(sq)
 

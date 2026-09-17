@@ -4,7 +4,7 @@ from random import *
 
 n = 200
 hit = 0
-for i in range(n):
+for k in range(n):
     x = random()
     y = random()
     if x*x + y*y <= 1:
