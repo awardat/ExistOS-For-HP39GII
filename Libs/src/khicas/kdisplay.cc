@@ -11952,7 +11952,23 @@ namespace xcas {
       // 2026-09-17 用户映射（HP39 原生键码）：ON=退出、Plot=曲线分析、Home=回 console 注入
       if (key==30070) return KEY_CTRL_EXIT;      // ON = 退出
       if (key==30011){ curve_infos(); continue; } // Plot = 曲线分析
-      if (key==5){ if (g_home_req){ return KEY_CTRL_EXIT; } continue; } // Home = 回 console（注入退出）
+      if (key==5){
+	if (g_home_req){ return KEY_CTRL_EXIT; } // Home 连发（注入退出）= 回 console
+	// 2026-09-17 View（单击 5）= 视图循环：图形→数据→表达式→图形
+	static int kcas_view_mode=0;
+	kcas_view_mode=(kcas_view_mode+1)%3;
+	if (kcas_view_mode==1){ // 数据视图
+	  string vs=gen2string(gen(plot_instructions));
+	  char *buf=new char[vs.size()+64]; strcpy(buf,vs.c_str());
+	  textedit(buf,(int)vs.size()+64,contextptr); delete[] buf;
+	} else if (kcas_view_mode==2){ // 表达式视图
+	  string vs="Expr: "+gen2string(gen(plot_instructions));
+	  char *buf=new char[vs.size()+64]; strcpy(buf,vs.c_str());
+	  textedit(buf,(int)vs.size()+64,contextptr); delete[] buf;
+	}
+	gr.draw();
+	continue;
+      } // View = 切换视图
       if (key==KEY_CTRL_F1){
         geohelp(contextptr);
         continue;
