@@ -10015,11 +10015,7 @@ namespace xcas {
 	  }
 	}
       }      
-#ifdef NSPIRE_NEWLIB
-      DefineStatusMessage((char*)"menu: menu, esc: quit", 1, 0, 0);
-#else
-      DefineStatusMessage((char*)"shift-1: help, ON: back", 1, 0, 0); // 2026-09-17 更新过时提示（home 已非 menu；返回键为 ON）
-#endif
+      // 2026-09-17 用户要求删除状态栏提示（"shift-1: help..." 在图形界面闪烁干扰）
       DisplayStatusArea();
       if (hp || tracemode)
 	draw_decorations(title_tmp);
@@ -20107,11 +20103,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	  // FIREBIRDEMU
 	  || key==KEY_BOOK
 	  ){
-	if (Current_Line==Last_Line && !Line[Current_Line].readonly && Current_Col>0){
-	  console_help_insert(0,contextptr);
-	  Console_Disp(1,contextptr);	  
-	  continue;
-	}
+	// 2026-09-17 移除"DOWN=查询光标处帮助"（giac 原设计，用户不需要；曾导致输入行按↓弹出"无帮助信息"），改为正常光标下移
 	return Console_MoveCursor(alph?CURSOR_ALPHA_DOWN:CURSOR_DOWN);
       }
       //if (key == KEY_CTRL_PAGEUP)  return Console_MoveCursor(CURSOR_ALPHA_UP);
