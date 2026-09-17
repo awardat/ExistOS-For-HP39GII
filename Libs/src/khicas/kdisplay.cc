@@ -11982,9 +11982,12 @@ namespace xcas {
 	tracemode_set();
 	continue;
       }
-      if (key==KEY_CTRL_XTT || key=='\t'){
+      if (key==KEY_CTRL_EXIT){ // 2026-09-17 用户要求：View 键 = 切换视图（曲线信息）
 	curve_infos();
 	continue;
+      }
+      if (key==KEY_CTRL_XTT || key=='\t'){
+	return KEY_CTRL_EXIT; // 2026-09-17 用户要求：ON 键（HP39 映射为 tab）= 直接退出（原为 curve_infos）
       }
       if (!hp && key==KEY_CTRL_F7)
 	invert_tracemode();
