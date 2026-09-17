@@ -14430,6 +14430,13 @@ namespace xcas {
 #endif
     std::string s=merge_area(v); 
     giac::python_compat(python,contextptr);
+    if (python>0){ // 2026-09-17 用户要求：Python 模式"检查语法"不执行脚本
+      // 原因：giac::gen 构造会触发 Python 语句求值（gen 构造 = 解析+执行副作用），freeze 挡不住
+      sprintf(status,"%s",(lang)?"\xd3\xef\xb7\xa8\xd5\xfd\xc8\xb7":"Parse OK");
+      DefineStatusMessage(status,1,0,0);
+      DisplayStatusArea();
+      return 0;
+    }
     if (python>0) s="@@"+s; // force Python translation
     freeze=true;
     giac::gen g(s,contextptr);
