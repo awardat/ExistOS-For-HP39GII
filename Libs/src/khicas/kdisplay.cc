@@ -16993,7 +16993,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      if (err) // move cursor to the error line
 		textline=err-1;
 	    } 
+	    string as_content; // 2026-09-18 另存为内容快照：get_filename 弹出输入会清空 elements，导致保存 0 字节
 	    if (sres==3 && exam_mode==0 && nspire_exam_mode!=2){
+	      as_content=merge_area(v);
 	      char filename[MAX_FILENAME_SIZE+1];
 	      if (get_filename(filename,".py")){
 		text->filename=filename;
@@ -17001,7 +17003,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      }
 	    }
 	    if(sres == 2 && nspire_exam_mode!=2) {
-	      save_script(text->filename.c_str(),merge_area(v));
+	      save_script(text->filename.c_str(),as_content.empty()?merge_area(v):as_content);
 	      text->changed=false;
 	      char status[256];
 	      sprintf(status,(lang)?"%s sauvegarde":"%s saved",text->filename.c_str());
