@@ -19946,8 +19946,11 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 		save_script("/khi_log.txt", khicas_log_buffer);
 		confirm(lang?"\xc8\xd5\xd6\xbe\xd2\xd1\xb1\xa3\xb4\xe6\xb5\xbd\x20/khi_log.txt":"Log saved: /khi_log.txt","OK?");
 	      }
-	      else
-		confirm(lang?"\xc8\xd5\xd6\xbe\xce\xaa\xbf\xd5":"Log is empty","OK?");
+	      else {
+		char tmp[64]; // 2026-09-18 诊断：显示缓冲大小（区分"收集未发生"与"读取问题"）
+		sprintf(tmp,lang?"\xc8\xd5\xd6\xbe\xce\xaa\xbf\xd5 (buf=%d)":"Log empty (buf=%d)",(int)khicas_log_buffer.size());
+		confirm(tmp,"OK?");
+	      }
 	      break;
 	    }
 #if defined NUMWORKS && defined DEVICE
