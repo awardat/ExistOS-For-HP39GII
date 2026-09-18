@@ -19920,9 +19920,11 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	  smallmenuitems[14].text = (char*) ((lang)?"\xb4\xb4\xbd\xa8\xb2\xce\xca\xfd\x20\x28\x2c\x29":"Create slider (,)");
 	  smallmenuitems[15].text = (char*) ((lang)?"\xb9\xd8\xd3\xda\x20\x28\x78\x5e\x79\x29":"About");
 #ifdef NSPIRE_NEWLIB
-	  smallmenuitems[16].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6\x20\x28\xb2\xcb\xb5\xa5\x29":"Quit");
+	  smallmenuitems[16].text = (char*)((lang)?"\xb1\xa3\xb4\xe6\xc8\xd5\xd6\xbe":"Save log"); // 2026-09-18 保存日志
+	  smallmenuitems[17].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6\x20\x28\xb2\xcb\xb5\xa5\x29":"Quit");
 #else
-	  smallmenuitems[16].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6\x20\x28\x48\x4f\x4d\x45\x29":"Quit");
+	  smallmenuitems[16].text = (char*)((lang)?"\xb1\xa3\xb4\xe6\xc8\xd5\xd6\xbe":"Save log"); // 2026-09-18 保存日志
+	  smallmenuitems[17].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6\x20\x28\x48\x4f\x4d\x45\x29":"Quit");
 #endif
 #if defined NUMWORKS && defined DEVICE
 	  smallmenuitems[16].text = (char*) ((lang)?"\xd6\xd8\xc6\xf4\xc6\xe4\xcb\xfb\xb9\xcc\xbc\xfe":"Reboot alt. firmware");
@@ -19931,13 +19933,23 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	  smallmenuitems[19].text = (char*) ((lang)?"\xcd\xcb\xb3\xf6\x20\x28\x48\x4f\x4d\x45\x29":"Quit");
 #endif
 	  if (exam_mode)
-	    smallmenuitems[16].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Quit exam mode");
+	    smallmenuitems[17].text = (char*)((lang)?"\xcd\xcb\xb3\xf6\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Quit exam mode"); // 2026-09-18 [16]->[17]
 	  if (nspire_exam_mode==2)
-	    smallmenuitems[16].text = (char*)((lang)?"\xd6\xd8\xc6\xf4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Restart exam mode");
+	    smallmenuitems[17].text = (char*)((lang)?"\xd6\xd8\xc6\xf4\xbf\xbc\xca\xd4\xc4\xa3\xca\xbd":"Restart exam mode"); // 2026-09-18 [16]->[17]
 	  if (shutdown_state)
 	    return KEY_SHUTDOWN;
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
+	    if (smallmenu.selection==17){ // 2026-09-18 保存日志（F5 不可靠，移入 File 菜单）
+	      if (!khicas_log_buffer.empty()){
+		void save_script(const char * filename,const string & s);
+		save_script("/khi_log.txt", khicas_log_buffer);
+		confirm(lang?"\xc8\xd5\xd6\xbe\xd2\xd1\xb1\xa3\xb4\xe6\xb5\xbd\x20/khi_log.txt":"Log saved: /khi_log.txt","OK?");
+	      }
+	      else
+		confirm(lang?"\xc8\xd5\xd6\xbe\xce\xaa\xbf\xd5":"Log is empty","OK?");
+	      break;
+	    }
 #if defined NUMWORKS && defined DEVICE
 	    if (smallmenu.selection==17){
 	      int b1=is_valid(0),b2=is_valid(1),b3=is_valid(2);
