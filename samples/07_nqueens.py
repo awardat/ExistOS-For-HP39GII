@@ -21,17 +21,18 @@ while done == 0:
     guard = guard + 1
     if guard > 20000: done = 1
     if st == 0 and x == r: done = 1
-    if st == 0 and x != r: x = x + 1
-    if st == 0 and x != r: a[x] = r
-    if st == 0 and x != r: st = 1
-    if st == 1: s = s + 1
-    if st == 1: y = x
-    if st == 1: st = 2
+    if st == 0 and x != r:
+        x = x + 1
+        a[x] = r
+        st = 1
+    if st == 1:
+        s = s + 1
+        y = x
+        st = 2
     if st == 2: y = y - 1
     if st == 2 and y == 0: st = 0
     if st == 2 and y != 0: t = a[x] - a[y]
-    if st == 2 and y != 0 and t == 0: st = 3
-    if st == 2 and y != 0 and t != 0 and (x - y) == abs(t): st = 3
+    if st == 2 and y != 0 and (t == 0 or (x - y) == abs(t)): st = 3
     if st == 3: a[x] = a[x] - 1
     if st == 3 and a[x] != 0: st = 1
     if st == 3 and a[x] == 0: x = x - 1
