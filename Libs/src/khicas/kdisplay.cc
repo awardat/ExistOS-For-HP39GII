@@ -18034,6 +18034,10 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 #endif
     char* edit_line = (char*)Console_GetEditLine();
     Console_Output((const char*)s_.c_str());
+    if (s_.size()>500){ // 2026-09-18 临时诊断：大结果自动落盘（取 giac 报错内容用，拿到后回滚）
+      void save_script(const char * filename,const string & s);
+      save_script("/khi_last_result.txt", s_);
+    }
     return 0; 
   }
 
