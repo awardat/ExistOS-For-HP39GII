@@ -4,13 +4,13 @@
 #   www.hpmuseum.org/cgi-bin/articles.cgi?read=700
 # 算法与原基准程序一致：单次 qbench = 876 步，100 次 = 87600 步
 # 计时：time(1,2,3) 返回毫秒时间戳（KhiCAS 移植扩展，等价 C 的 rtc_get_tick_ms）
+# 结构：全扁平（无 else/elif/break/嵌套）——适配 giac Python 兼容层
 # 注意：reps 默认 10（原文基准为 100）；须在干净会话运行（先 restart）
-# 诊断：每个 rep 打印一次 s；while 内置保护计数（超限自动停止）
 
 # ---- 计时开始 ----
 caseval("bench_t0:=time(1,2,3)")
 
-# ---- 基准：8 皇后回溯迭代（Xerxes 算法，状态机等价移植）----
+# ---- 基准：8 皇后回溯迭代（状态机等价移植，扁平结构）----
 reps = 10
 r = 8
 s = 0
@@ -18,43 +18,45 @@ a = [0,0,0,0,0,0,0,0,0]
 for rep in range(reps):
     x = 0
     st = 0
+    done = 0
     guard = 0
-    while 1:
+    while done == 0:
         guard = guard + 1
         if guard > 20000:
-            print("guard stop, st =")
-            print(st)
-            break
+            done = 1
+            print("guard stop")
         if st == 0:
             if x == r:
-                break
-            x = x + 1
-            a[x] = r
-            st = 1
-        elif st == 1:
+                done = 1
+            if x != r:
+                x = x + 1
+                a[x] = r
+                st = 1
+        if st == 1:
             s = s + 1
             y = x
             st = 2
-        elif st == 2:
+        if st == 2:
             y = y - 1
             if y == 0:
                 st = 0
-            else:
+            if y != 0:
                 t = a[x] - a[y]
                 if t == 0:
                     st = 3
-                elif (x - y) != abs(t):
-                    st = 2
-                else:
-                    st = 3
-        elif st == 3:
+                if t != 0:
+                    if (x - y) == abs(t):
+                        st = 3
+        if st == 3:
             a[x] = a[x] - 1
             if a[x] != 0:
                 st = 1
-            else:
+            if a[x] == 0:
                 x = x - 1
+                if x != 0:
+                    st = 3
                 if x == 0:
-                    break
+                    done = 1
     print("rep done, s =")
     print(s)
 
