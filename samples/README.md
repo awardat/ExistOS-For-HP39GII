@@ -38,6 +38,22 @@ KhiCAS 的 Python 兼容层由 giac 解析器实现，脚本里的标识符会�
 | `04_matrix.py` | linalg 矩阵（行列式/求逆/乘法/转置） |
 | `05_plot.py` | matplotl 函数曲线与散点 |
 | `06_montecarlo.py` | random 蒙特卡洛估算 π |
+| `07_nqueens.py` | N-Queens 计算器基准测试（HP Museum Benchmark）+ **脚本内毫秒计时** |
+
+### 脚本计时（07 号样本用法）
+
+`time(1,2,3)` 返回**毫秒时间戳**（KhiCAS 移植扩展，内部 `rtc_get_tick_ms()`），可在任意脚本中自行计时：
+
+```python
+caseval("bench_t0:=time(1,2,3)")
+# ... 被测代码 ...
+caseval("bench_t1:=time(1,2,3)")
+caseval("bench_ms:=bench_t1-bench_t0")
+print(caseval("bench_ms"))
+```
+
+- 必须用 **3 个参数**调用（`time(1,2,3)`）；`time(a,b)` 两参数用于设置 RTC 时间，不要使用
+- 另可用 `time(表达式)` 对单个表达式计时（返回秒，如 `time(integrate(sin(x)/x,x))`）
 
 ## 备注
 

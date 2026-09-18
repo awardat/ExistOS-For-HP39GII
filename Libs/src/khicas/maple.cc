@@ -483,7 +483,7 @@ namespace giac {
         set_time(h,m); // does not work.
         return 1;
       }
-      return RTC_GetTicks();
+      { extern unsigned int rtc_get_tick_ms(); return rtc_get_tick_ms(); } // 2026-09-18 用户需求：time([]) 返回毫秒时间戳（脚本自行计时用）
     }
     double delta;
     int ntimes=1,i=0;
