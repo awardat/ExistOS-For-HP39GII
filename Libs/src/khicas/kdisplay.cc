@@ -18803,7 +18803,11 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     The following functions are used to output the string to the current line.
   */
 
+  extern std::string khicas_log_buffer; // 2026-09-18 前置声明（收集点在此后定义）
   int Console_Output(const char *str)  {
+    khicas_log_buffer += str; // 2026-09-18 无条件收集 Console 输出（原仅 dConsolePut 且需 dconsole_mode!=0，导致 F5 落盘空白）
+    if (khicas_log_buffer.size() > 8000)
+      khicas_log_buffer.erase(0, khicas_log_buffer.size()-8000);
     if (!Line) return 0;
     console_changed=1;
     int return_val, old_len, i;
