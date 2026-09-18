@@ -3650,7 +3650,7 @@ const char * completeCatZhName[] = { // 2026-09-16 命令目录中文名（显�
     case KEY_CHAR_MINUS:
       return "-";
     case KEY_CHAR_PMINUS:
-      return "_";
+      return "-"; // 2026-09-18 用户要求：(-) 键输入负号（原为 "_" 单位前缀；与编辑器插入逻辑 13345 一致）
     case KEY_CHAR_MULT:
       return "*";
     case KEY_CHAR_FRAC:
