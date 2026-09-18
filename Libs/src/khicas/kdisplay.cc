@@ -19940,23 +19940,19 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	    return KEY_SHUTDOWN;
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
-	    if (smallmenu.selection==17){ // 2026-09-18 保存日志：直接导出 Console 历史（不依赖 log 缓冲，该缓冲收集始终为空）
-	      string log;
+	    if (smallmenu.selection==17){ // 2026-09-18 日志输出到串口（文件写入在 FatFs 层失败：f_open 模式 0 + write 0 字节）
+	      printf("==== KhiCAS console log begin ====\n");
 	      if (Line){
 		for (int i=0;i<=Last_Line;++i){
 		  if (Line[i].str){
 		    const char *p=Line[i].str;
 		    if (p[0] && (unsigned char)p[0]<32) ++p; // 跳过可能的类型标记首字节
-		    log += p;
-		    log += "\n";
+		    printf("%s\n", p);
 		  }
 		}
 	      }
-	      void save_script(const char * filename,const string & s);
-	      save_script("khi_log.txt", log);
-	      char tmp[96];
-	      sprintf(tmp,lang?"\xc8\xd5\xd6\xbe\xd2\xd1\xb1\xa3\xb4\xe6 %d \xd7\xd6\xbd\xda":"Saved %d bytes",(int)log.size());
-	      confirm(tmp,"OK?");
+	      printf("==== KhiCAS console log end ====\n");
+	      confirm(lang?"\xd2\xd1\xca\xe4\xb3\xf6\xb5\xbd\xb4\xae\xbf\xda":"Sent to serial port","OK?");
 	      break;
 	    }
 #if defined NUMWORKS && defined DEVICE
