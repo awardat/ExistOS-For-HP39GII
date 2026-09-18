@@ -23372,7 +23372,7 @@ int giac2aspen(int lang){
   case 0: case 2:
     return 1;
   case 1:
-    return 3;
+    return 2; // 2026-09-18 KhiCAS lang=1 = 中文（本函数按 giac 编码写的，1 原映射到法语 3，导致中文模式 gettext 全部输出法语）
   case 3:
     return 5;
   case 6:
