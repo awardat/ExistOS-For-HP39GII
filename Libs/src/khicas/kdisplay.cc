@@ -19516,16 +19516,17 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
           size_t q=0; while (q<line.size() && (line[q]==' '||line[q]=='\t')) ++q;
           if (q>=line.size() || line[q]=='#') continue; // 空行/注释
           if (line[line.size()-1]==':'){ in_block=true; blk=line; continue; }
+          // 2026-09-18 do_logo_graph_eqw: 7→6（保留图形 bit2/bit4，关闭 eqw 自动弹窗 bit1——脚本中间结果不再弹全屏）
           printf("[RUNL]%s\n", line.c_str());
-          run(line.c_str(),7,contextptr);
+          run(line.c_str(),6,contextptr);
         } else {
           if (!line.empty() && line[0]!=' ' && line[0]!='\t'){
-            run(blk.c_str(),7,contextptr); // 块结束，先执行块
+            run(blk.c_str(),6,contextptr); // 块结束，先执行块
             blk.clear(); in_block=false;
             size_t q=0; while (q<line.size() && (line[q]==' '||line[q]=='\t')) ++q;
             if (q<line.size() && line[q]!='#'){
               if (line[line.size()-1]==':'){ in_block=true; blk=line; }
-              else run(line.c_str(),7,contextptr);
+              else run(line.c_str(),6,contextptr);
             }
           } else {
             blk += "\n"; blk += line;
@@ -19533,7 +19534,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
         }
         if (bp > s.size()) break;
       }
-      if (in_block && !blk.empty()) run(blk.c_str(),7,contextptr);
+      if (in_block && !blk.empty()) run(blk.c_str(),6,contextptr);
     }
     python_compat(save_py,contextptr);
     kcas_set_busy(0); // 2026-09-17 熄灭沙漏
