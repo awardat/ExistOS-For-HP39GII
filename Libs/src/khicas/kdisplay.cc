@@ -19746,7 +19746,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
       if (key==KEY_CTRL_F5){ // 2026-09-17 主界面 F5 = log 查看（有缓冲则落盘 /khi_log.txt 并提示，否则仅重绘）
         void save_script(const char * filename,const string & s);
         if (!khicas_log_buffer.empty()){
-          save_script("/khi_log.txt", khicas_log_buffer);
+          save_script("khi_log.txt", khicas_log_buffer);
           Console_Output("Log saved: /khi_log.txt");
           Console_NewLine(LINE_TYPE_OUTPUT, 1);
         }
@@ -19953,7 +19953,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 		}
 	      }
 	      void save_script(const char * filename,const string & s);
-	      save_script("/khi_log.txt", log);
+	      save_script("khi_log.txt", log);
 	      char tmp[96];
 	      sprintf(tmp,lang?"\xc8\xd5\xd6\xbe\xd2\xd1\xb1\xa3\xb4\xe6 %d \xd7\xd6\xbd\xda":"Saved %d bytes",(int)log.size());
 	      confirm(tmp,"OK?");
