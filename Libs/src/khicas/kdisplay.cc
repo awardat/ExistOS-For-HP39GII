@@ -19940,17 +19940,23 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	    return KEY_SHUTDOWN;
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
-	    if (smallmenu.selection==17){ // 2026-09-18 保存日志（F5 不可靠，移入 File 菜单）
-	      if (!khicas_log_buffer.empty()){
-		void save_script(const char * filename,const string & s);
-		save_script("/khi_log.txt", khicas_log_buffer);
-		confirm(lang?"\xc8\xd5\xd6\xbe\xd2\xd1\xb1\xa3\xb4\xe6\xb5\xbd\x20/khi_log.txt":"Log saved: /khi_log.txt","OK?");
+	    if (smallmenu.selection==17){ // 2026-09-18 保存日志：直接导出 Console 历史（不依赖 log 缓冲，该缓冲收集始终为空）
+	      string log;
+	      if (Line){
+		for (int i=0;i<=Last_Line;++i){
+		  if (Line[i].str){
+		    const char *p=Line[i].str;
+		    if (p[0] && (unsigned char)p[0]<32) ++p; // 跳过可能的类型标记首字节
+		    log += p;
+		    log += "\n";
+		  }
+		}
 	      }
-	      else {
-		char tmp[64]; // 2026-09-18 诊断：显示缓冲大小（区分"收集未发生"与"读取问题"）
-		sprintf(tmp,lang?"\xc8\xd5\xd6\xbe\xce\xaa\xbf\xd5 (buf=%d)":"Log empty (buf=%d)",(int)khicas_log_buffer.size());
-		confirm(tmp,"OK?");
-	      }
+	      void save_script(const char * filename,const string & s);
+	      save_script("/khi_log.txt", log);
+	      char tmp[96];
+	      sprintf(tmp,lang?"\xc8\xd5\xd6\xbe\xd2\xd1\xb1\xa3\xb4\xe6 %d \xd7\xd6\xbd\xda":"Saved %d bytes",(int)log.size());
+	      confirm(tmp,"OK?");
 	      break;
 	    }
 #if defined NUMWORKS && defined DEVICE
