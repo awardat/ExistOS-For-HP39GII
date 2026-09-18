@@ -18836,11 +18836,11 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
   std::string khicas_log_buffer; // 2026-09-17 log 查看缓冲（累积 dConsolePut 内容）
   void dConsolePut(const char * S){
     printf("[DCP]%s\n", S); // 2026-09-17 诊断：log 通道是否被调用
-    if (!dconsole_mode)
-      return;
-    khicas_log_buffer += S; // 2026-09-17 收集 log（供 F5 查看/落盘）
+    khicas_log_buffer += S; // 2026-09-18 收集提前至 dconsole_mode 判断之前（脚本执行期间 mode 可能为 0，导致日志为空）
     if (khicas_log_buffer.size() > 8000)
       khicas_log_buffer.erase(0, khicas_log_buffer.size()-8000);
+    if (!dconsole_mode)
+      return;
     int l=strlen(S);
     char s[l+1];
     strcpy(s,S);
