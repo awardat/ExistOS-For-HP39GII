@@ -3,9 +3,9 @@
 # 参考：HP Museum "Calculator Benchmark"（Xerxes, 2007）
 #   www.hpmuseum.org/cgi-bin/articles.cgi?read=700
 # 算法与原基准程序一致：单次 qbench = 876 步，100 次 = 87600 步
-# 计时：time(1,2,3) 返回毫秒时间戳（KhiCAS 移植扩展，等价于原 C 的 rtc_get_tick_ms）
-# 注意：reps 默认 10（原文基准为 100）；本脚本应在干净会话运行（先 restart）
-# 计时：time(1,2,3) 毫秒时间戳；若脚本运行中界面无响应属正常（计算占用），等待完成
+# 计时：time(1,2,3) 返回毫秒时间戳（KhiCAS 移植扩展，等价 C 的 rtc_get_tick_ms）
+# 注意：reps 默认 10（原文基准为 100）；须在干净会话运行（先 restart）
+# 诊断：每个 rep 打印一次 s；while 内置保护计数（超限自动停止）
 
 # ---- 计时开始 ----
 caseval("bench_t0:=time(1,2,3)")
@@ -18,7 +18,13 @@ a = [0,0,0,0,0,0,0,0,0]
 for rep in range(reps):
     x = 0
     st = 0
+    guard = 0
     while 1:
+        guard = guard + 1
+        if guard > 20000:
+            print("guard stop, st =")
+            print(st)
+            break
         if st == 0:
             if x == r:
                 break
@@ -49,13 +55,15 @@ for rep in range(reps):
                 x = x - 1
                 if x == 0:
                     break
+    print("rep done, s =")
+    print(s)
 
 # ---- 计时结束 ----
 caseval("bench_t1:=time(1,2,3)")
 caseval("bench_ms:=bench_t1-bench_t0")
 
 # ---- 结果输出 ----
-print("N-Queens 8x8 x100")
+print("N-Queens 8x8")
 print("steps s =")
 print(s)
 print("elapsed ms =")
