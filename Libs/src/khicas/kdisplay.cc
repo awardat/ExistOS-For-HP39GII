@@ -5092,7 +5092,7 @@ namespace xcas {
     if (ss==2 && (strcmp(s,"pi")==0
 		  || ((unsigned char)s[0]==0xA6 && (unsigned char)s[1]==0xD0)   // GBK π
 		  || ((unsigned char)s[0]==0xCF && (unsigned char)s[1]==0x80))){ // UTF-8 π
-      if (fontsize>=18) y -= 16; else y -= 12; // 2026-09-19 与普通文本一致的状态区偏移（原缺失致 π 画到视野外/错位）
+      // 2026-09-19 不加 y 偏移（实测加偏移后 π 跑到上一行/根号上方，原坐标即正确）
       if (mode==4){
 	drawRectangle(x,y+2-fontsize,fontsize,fontsize,c);
 	c=bg;
@@ -18808,6 +18808,14 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 
   extern std::string khicas_log_buffer; // 2026-09-18 前置声明（收集点在此后定义）
   int Console_Output(const char *str)  {
+    string pi_buf; // 2026-09-19 UTF-8 π(0xCF 0x80) 转 GBK π(0xA6 0xD0)：Console 渲染只认 GBK/HZK16S（A6D0 有字形）
+    if (str && strstr(str,"\xcf\x80")){
+      pi_buf=str;
+      size_t p;
+      while ((p=pi_buf.find("\xcf\x80"))!=string::npos)
+	pi_buf.replace(p,2,"\xa6\xd0");
+      str=pi_buf.c_str();
+    }
     khicas_log_buffer += str; // 2026-09-18 无条件收集 Console 输出（原仅 dConsolePut 且需 dconsole_mode!=0，导致 F5 落盘空白）
     if (khicas_log_buffer.size() > 8000)
       khicas_log_buffer.erase(0, khicas_log_buffer.size()-8000);
