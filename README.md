@@ -52,9 +52,15 @@
 
 ## 目前工作进展（build 126 起，详见 CHANGELOG.md）
 
-### build 137（开发中）
-- [ ] giac 2.0.0 有限移植；独立 Python app（micropython 最新稳定版）；D4 FTL_Sync 真机掉电测试
-- [ ] FormCalc 遗留 P3 四项与 `config_set_charge_mode` 死代码清理
+### build 138（开发中）
+- [ ] Console F1 换用编辑器 F1 的快速插入菜单（便于输入符号/运算符）
+- [ ] 独立 Python app（micropython 最新稳定版）；D4 FTL_Sync 真机掉电测试；FormCalc 遗留 P3 四项与 `config_set_charge_mode` 死代码清理
+
+### build 137（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137)）
+- [x] **giac 2.0.0 有限移植**：一档 sym2poly + risch（40 用例通过）；二档 csturm 实根隔离重写（17 用例全通过，solve 多项式/不等式受益）
+- [x] **KhiCAS**：键位批次调整（Symb/Plot/Num/Apps、矩阵/列表菜单、字符表两页）；图形界面键位（ON/View/Plot/Home）；脚本执行链路（逐行执行/注释跳过/编辑器 F5 运行/samples 6 例）；π 数学排版与 Console 渲染修复；中文告警映射修正；`(-)` 键修复；Console 日志导出
+- [x] **文件浏览器修复**：ENTER 菜单选中（build 119 遗留）、目录识别、枚举模式；`screen_1bpp` 堆化修复偶发全黑
+- [x] **审核整改**：File 菜单数组越界/退出项恢复、图形软键遮蔽修复、诊断输出清理、空任务删除
 
 ### build 136（2026-09-16 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-136)）
 - [x] **KhiCAS**：HOME 键任意位置回初始界面；命令目录中文名（260 条中英对照，函数名保持英文输入）；修复中文模式目录/帮助计数错配（越界读取）

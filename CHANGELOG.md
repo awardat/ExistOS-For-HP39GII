@@ -4,7 +4,7 @@
 
 ---
 
-## [build 137] - 2026-09-16 (开发中)
+## [build 137] - 2026-09-19 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
 
 ### 已完成
 - **KhiCAS 文本界面键位重排**：Shift+( = 剪切行到剪贴板（原 ON/C 行为迁移）、Shift+) = 粘贴剪贴板到当前行（换行转空格）、ON/C = 退出（有选中/搜索时先取消）；覆盖结果查看页/脚本编辑器，帮助页保持 ON=返回
@@ -19,10 +19,17 @@
 - **`(-)` 键修复**：输入 `-`（原为 `_`）
 - **File 菜单"保存日志"**：Console 历史导出到串口（带 begin/end 标记）
 - **Python 兼容层循环限制调研**：5 轮自检定位多分支循环体解析卡死；限制归档 docs/khicas-python-limits.md（本地）；N-Queens 样本归档 ref/nqueens/
+- **KhiCAS 键位批次调整**：Symb→程序命令菜单、Plot→绘图菜单、Num→代数菜单、Apps→打开脚本列表；Shift+4=矩阵菜单、Shift+7=列表菜单；Shift+空格=∑；删除 Shift+a b/c 双引号、Shift+0 与 F10-F14 模拟映射；字符表扩为两页（ASCII / 希腊字母+数学符号，Shift+VARS 打开、上下翻页）；"剪切行"改为"复制行"（Shift+( 复制、Shift+) 粘贴）
+- **KhiCAS 图形界面键位**：ON=退出、View=三态视图循环（图形→数据→表达式）、Plot=曲线分析、Home=回 Console、Num=无操作；删除闪烁状态栏提示；物理 Num/Plot 与软键 F1/F3 用专用键码解耦（F1 帮助、F3 轨迹切换恢复可用）
+- **KhiCAS 脚本执行链路**：run_script 改为逐行+缩进块聚合执行（绕过多行 Python 块解析限制）；跳过首部注释/空白行（修复带 `# -*- coding` 声明脚本完全不执行）；自动 python_compat 模式；运行沙漏；编辑器 F5=保存并运行；主界面 F5=日志查看；samples/ 新增 6 个示例脚本与 README（命名约束/已知限制）
+- **文件浏览器修复**：菜单 ENTER(76) 选中修复（所有菜单生效，解决 build 119 起"文件浏览器无法加载脚本"问题）；目录识别改用 FAT 属性（非空目录不再误判为文件）；枚举模式 `*.*`→`*`（无扩展名目录可见）；`screen_1bpp` 从固定地址改为堆分配（修复偶发全屏花点/全黑）
+- **Console 结果双视图**：历史结果行左键=数学排版、右键=文本表达式；新增"保存日志"（File 菜单，Console 历史导出到串口）
+- **build 137 delta 审核整改**：File 菜单项数 17→18（修正数组越界写、恢复"退出"项）；图形界面软键遮蔽修复；Console 日志缓冲单点收集去重；清理 5 处诊断 printf；删除空 PrintTask；file.cc 目录图标改用目录属性
 
 ### 规划
+- **下一版**：Console F1 换用编辑器 F1 的快速插入菜单（便于输入符号/运算符）
 - FormCalc 遗留 P3 四项（AMORT BGN+用户 PMT / DB200 交叉法 / days360 31 日 / bondPrice 死参）与 `config_set_charge_mode` 死代码清理
-- KhiCAS：giac 2.0.0 有限移植
+- KhiCAS：giac 2.0.0 有限移植（三档 solve.cc 待评估）
 - 独立 Python app（micropython 最新稳定版、独立入口）
 - D4 FTL_Sync 真机掉电测试
 

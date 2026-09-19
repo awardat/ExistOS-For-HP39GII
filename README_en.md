@@ -53,9 +53,15 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (since build 126, see CHANGELOG.md)
 
-### build 137 (in development)
-- [ ] Limited giac 2.0.0 port; standalone Python app (latest MicroPython); D4 FTL_Sync power-loss test
-- [ ] FormCalc remaining P3 items and `config_set_charge_mode` dead code cleanup
+### build 138 (in development)
+- [ ] Console F1 switched to the editor F1 quick-insert menu (easier symbol/operator entry)
+- [ ] Standalone Python app (latest MicroPython); D4 FTL_Sync power-loss test; FormCalc remaining P3 items and `config_set_charge_mode` dead code cleanup
+
+### build 137 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
+- [x] **giac 2.0.0 limited port**: tier 1 sym2poly + risch (40 cases pass); tier 2 csturm real-root isolation rewrite (17 cases pass, benefits solve for polynomials/inequalities)
+- [x] **KhiCAS**: key remap batch (Symb/Plot/Num/Apps, matrix/list menus, 2-page char table); graph view keys (ON/View/Plot/Home); script execution pipeline (line-by-line, comment skip, editor F5 run, 6 samples); pi math-typeset and Console rendering fixes; Chinese warning mapping fix; `(-)` key fix; Console log export
+- [x] **File browser fixes**: ENTER menu selection (since build 119), directory detection, enumeration pattern; `screen_1bpp` heap allocation fixes occasional all-black screen
+- [x] **Review remediation**: File menu array overflow/Quit restored, graph softkey shadowing fix, diagnostic output cleanup, empty task removal
 
 ### build 136 (2026-09-16 released)
 - [x] **KhiCAS**: HOME key returns to the initial screen from anywhere; command catalog shows Chinese names (260 bilingual entries, function names stay English for input); fixed Chinese-mode catalog/help counter mismatch (out-of-bounds read)
