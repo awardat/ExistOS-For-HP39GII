@@ -19743,7 +19743,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     }
     string prefix=s.substr(start,col-start);
     if (prefix.empty()) return 0;
-    vector<string> names,texts;
+    vector<string> names,texts,cmds;
     for (int i=0;i<CAT_COMPLETE_COUNT_EN;++i){
       const catalogFunc &f=completeCaten[i];
       if (xcas_python_eval!=0 && (f.category & XCAS_ONLY)) continue;
@@ -19775,12 +19775,56 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	if (tolower((unsigned char)cmd[j])!=tolower((unsigned char)prefix[j])){ ok=false; break; }
       }
       if (!ok) continue;
+      cmds.push_back(cmd);
       names.push_back(lang? completeCatZhName[i] : f.name);
       texts.push_back(text);
     }
+    // 补充：内置函数表（static_lexer_numworks.h，1552 条；补齐目录未收录的常用函数如 sqrt/sin/ln/evalf）
+    for (charptr_gen *lit=builtin_lexer_functions_begin(),*litend=builtin_lexer_functions_end();lit!=litend;++lit){
+      const char *name=lit->first;
+      if (!name || !isalpha((unsigned char)name[0])) continue;
+      size_t nl=strlen(name);
+      if (nl<prefix.size()) continue;
+      bool ok=true;
+      for (size_t j=0;j<prefix.size();++j){
+	if (tolower((unsigned char)name[j])!=tolower((unsigned char)prefix[j])){ ok=false; break; }
+      }
+      if (!ok) continue;
+      bool hasup=false;
+      for (const char *pc=name;*pc;++pc){
+	if (isupper((unsigned char)*pc)){ hasup=true; break; }
+      }
+      if (hasup){ // 跳过大小写别名（SIN/sin）；保留 BesselJ 等真混合大小写名
+	string lname(name);
+	for (size_t j=0;j<lname.size();++j) lname[j]=tolower((unsigned char)lname[j]);
+	bool twin=false;
+	for (charptr_gen *t2=builtin_lexer_functions_begin();t2!=builtin_lexer_functions_end();++t2){
+	  if (t2->first && lname==t2->first){ twin=true; break; }
+	}
+	if (twin) continue;
+      }
+      bool dup=false;
+      for (size_t j=0;j<cmds.size();++j){
+	if (cmds[j]==name){ dup=true; break; }
+      }
+      if (dup) continue;
+      cmds.push_back(name);
+      names.push_back(name);
+      texts.push_back(string(name)+"(");
+    }
     if (names.empty()) return 0;
-    int sel=0;
-    if (names.size()>1){
+    int sel=-1;
+    for (size_t i=0;i<cmds.size();++i){ // 输入完整命令名时优先精确匹配（如 sin/ln/cos）
+      if (cmds[i].size()!=prefix.size()) continue;
+      bool eq=true;
+      for (size_t j=0;j<prefix.size();++j){
+	if (tolower((unsigned char)cmds[i][j])!=tolower((unsigned char)prefix[j])){ eq=false; break; }
+      }
+      if (eq){ sel=int(i); break; }
+    }
+    if (sel<0 && names.size()==1)
+      sel=0;
+    if (sel<0){
       Menu menu;
       menu.numitems=int(names.size());
       vector<MenuItem> items(names.size());
