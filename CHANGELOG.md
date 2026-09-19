@@ -4,6 +4,15 @@
 
 ---
 
+## [build 138] - 2026-09-19 (开发中)
+
+### 规划
+- **Console F1 换用编辑器 F1 的快速插入菜单**（便于输入符号/运算符）
+- 独立 Python app（micropython 最新稳定版、独立入口）
+- D4 FTL_Sync 真机掉电测试
+- FormCalc 遗留 P3 四项（AMORT BGN+用户 PMT / DB200 交叉法 / days360 31 日 / bondPrice 死参）与 `config_set_charge_mode` 死代码清理
+- KhiCAS：giac 2.0.0 有限移植（三档 solve.cc 待评估）
+
 ## [build 137] - 2026-09-19 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
 
 ### 已完成
@@ -26,12 +35,6 @@
 - **Console 结果双视图**：历史结果行左键=数学排版、右键=文本表达式；新增"保存日志"（File 菜单，Console 历史导出到串口）
 - **build 137 delta 审核整改**：File 菜单项数 17→18（修正数组越界写、恢复"退出"项）；图形界面软键遮蔽修复；Console 日志缓冲单点收集去重；清理 5 处诊断 printf；删除空 PrintTask；file.cc 目录图标改用目录属性
 
-### 规划
-- **下一版**：Console F1 换用编辑器 F1 的快速插入菜单（便于输入符号/运算符）
-- FormCalc 遗留 P3 四项（AMORT BGN+用户 PMT / DB200 交叉法 / days360 31 日 / bondPrice 死参）与 `config_set_charge_mode` 死代码清理
-- KhiCAS：giac 2.0.0 有限移植（三档 solve.cc 待评估）
-- 独立 Python app（micropython 最新稳定版、独立入口）
-- D4 FTL_Sync 真机掉电测试
 
 ## [build 136] - 2026-09-16 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-136))
 
