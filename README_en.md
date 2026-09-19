@@ -59,9 +59,13 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 - [x] **Console F1 quick-insert menu** (editor test segment) + **syntax switch restored and persisted** (Shift+Symb -> config menu; stored in `khi_lang.dat`)
 - [x] **pi rendering fix** (math typeset + Console); Shift+(-) enters `abs(`; README speed note added
 
-### build 139 (in development)
-- [ ] KhiCAS operation manual (keys + Python compat constraints); editor scroll flicker optimization
-- [ ] Standalone Python app (latest MicroPython); D4 FTL_Sync power-loss test; FormCalc remaining P3 items and `config_set_charge_mode` dead code cleanup; `save_script` FatFs write investigation
+### build 139 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139))
+- [x] **KhiCAS user manual** (`docs/KhiCAS-manual.md`: keys/menus/scripts/Python compat constraints/FAQ) + 14 device photos; linked from READMEs and samples/README
+- [x] **KhiCAS `save_script` 0-byte write fix** (root cause: length not passed -> `Bfile_WriteFile_OS(len=0)` returned early); length fallback + post-write truncate; empty files can be created
+- [x] **FormCalc review P3 items**: AMORT Begin/End (INT=0 in BGN first period) + user PMT (from TVM register); DB200 straight-line crossover; 30/360 day rules (31st + Feb-end); bondPrice dead parameter and `config_set_charge_mode` dead code removed
+
+### build 140 (in development)
+- [ ] Standalone Python app (latest MicroPython, dedicated entry; N-Queens verification)
 
 ### build 137 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
 - [x] **giac 2.0.0 limited port**: tier 1 sym2poly + risch (40 cases pass); tier 2 csturm real-root isolation rewrite (17 cases pass, benefits solve for polynomials/inequalities)

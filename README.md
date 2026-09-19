@@ -58,9 +58,13 @@
 - [x] **Console F1 快速插入菜单**（编辑器 test 段）+ **语法切换恢复与持久化**（Shift+Symb → 配置菜单；写入 `khi_lang.dat`，重启保持）
 - [x] **π 渲染修复**（数学排版 + Console 双通道）；Shift+(-) 输入 `abs(`；README 新增运算速度说明
 
-### build 139（开发中）
-- [ ] KhiCAS 操作说明文档（按键 + Python 兼容层约束）；编辑器滚动白闪优化
-- [ ] 独立 Python app（micropython 最新稳定版）；D4 FTL_Sync 真机掉电测试；FormCalc 遗留 P3 四项与 `config_set_charge_mode` 死代码清理；`save_script` FatFs 写入待查
+### build 139（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139)）
+- [x] **KhiCAS 用户手册**（`docs/KhiCAS-manual.md`：按键/菜单/脚本/Python 兼容约束/FAQ）+ **14 张实机配图**；README 中英双版、samples/README 已加链接
+- [x] **KhiCAS `save_script` 写入 0 字节修复**（"另存为 0 字节"根因：未传长度 → `Bfile_WriteFile_OS(len=0)` 直接返回）；`write_file` 长度兜底 + 写后截断；空文件可建
+- [x] **FormCalc 审核 P3 四项**：AMORT 期初/期末（BGN 首期 INT=0）+ 用户 PMT（取 TVM 寄存器）；DB200 直线法交叉；30/360 日规则（31 日+2 月末）；bondPrice 死参与 `config_set_charge_mode` 死代码清理
+
+### build 140（开发中）
+- [ ] 独立 Python app（micropython 最新稳定版、独立入口；N-Queens 验证）
 
 ### build 137（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137)）
 - [x] **giac 2.0.0 有限移植**：一档 sym2poly + risch（40 用例通过）；二档 csturm 实根隔离重写（17 用例全通过，solve 多项式/不等式受益）
