@@ -298,5 +298,6 @@ Python 兼容层由 giac 解析器实现，脚本标识符会与 **giac 内置�
 ## 附：参考
 
 - [docs/keymap.md](keymap.md) — 完整键位表（代码实际映射）
+- [docs/KhiCAS-functions.md](KhiCAS-functions.md) — 内置函数参考（355 条，按分类列出用途/参数/示例）
 - [samples/README.md](../samples/README.md) — Python 示例与约束清单
 - [CHANGELOG.md](../CHANGELOG.md) — 版本变更记录

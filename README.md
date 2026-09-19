@@ -176,6 +176,8 @@
 
 KhiCAS 用户手册（启动/按键/菜单/脚本/Python 兼容模式/FAQ）：[docs/KhiCAS-manual.md](./docs/KhiCAS-manual.md)。
 
+KhiCAS 内置函数参考（355 条命令，按 22 个分类列出用途/参数/示例）：[docs/KhiCAS-functions.md](./docs/KhiCAS-functions.md)。
+
 ## KhiCAS 运算速度说明
 
 部分符号运算在 HP39GII 上需要数秒到数十秒，这是符号计算算法的**固有开销**（不是死机；计算中顶部沙漏图标点亮）：

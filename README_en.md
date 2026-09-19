@@ -335,6 +335,8 @@ Your calculator will reboot automatically.
 
 KhiCAS user manual (startup / keys / menus / scripts / Python compat mode / FAQ): [docs/KhiCAS-manual.md](./docs/KhiCAS-manual.md).
 
+KhiCAS built-in function reference (355 commands in 22 categories with purpose/parameters/examples, Chinese): [docs/KhiCAS-functions.md](./docs/KhiCAS-functions.md).
+
 ## Basic Usage of the Firmware
 
 ### Booting for the first time
