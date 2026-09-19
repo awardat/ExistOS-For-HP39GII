@@ -4554,6 +4554,151 @@ namespace giac {
     }
     return gen(makevecteur(v0,v_intervalle,v_excluded),_ASSUME__VECT);
   }
+  bool realset_glue(const vecteur & u,const vecteur & v,vecteur & w,GIAC_CONTEXT){
+    if (u.size()<2 || v.size()<2)
+      return false;
+    gen u1=u[u.size()-2],v1=v[v.size()-2],u2=u.back(),v2=v.back();
+    if (u1.type!=_VECT || u2.type!=_VECT || v1.type!=_VECT || v2.type!=_VECT)
+      return false;
+    // i intervals, e excluded
+    vecteur & i1 = *u1._VECTptr;
+    vecteur & i2 = *v1._VECTptr;
+    vecteur & e1 = *u2._VECTptr;
+    vecteur & e2 = *v2._VECTptr;
+    // FIXME: implement
+    vecteur i,e;
+#if 0
+    i=mergevecteur(i1,i2);
+    e=mergevecteur(e1,e2);
+#else
+    int j=0,k=0,J=0,K=0; // current position in e1 and e2
+    for (;j<e1.size() && k<e2.size();){
+      gen E1=e1[j],E2=e2[k];
+      if (E1==E2){
+        e.push_back(E1);
+        ++j; ++k; continue;
+      }
+      if (is_greater(E2,E1,contextptr)){
+        // detect if E1 is inside an interval of i2
+        for (;K<i2.size();++K){
+          gen I2=i2[K],m=I2[0],M=I2[1];
+          if (is_strictly_greater(m,E1,contextptr)){
+            e.push_back(E1);
+            break;
+          }
+          if (is_greater(M,E1,contextptr))
+            break;
+        }
+        if (K==i2.size())
+          e.push_back(E1);
+        ++j; continue;
+      }
+      // detect if E2 is inside an interval of i1
+      for (;J<i1.size();++J){
+        gen I1=i1[J],m=I1[0],M=I1[1];
+        if (is_strictly_greater(m,E2,contextptr)){
+          e.push_back(E2);
+          break;
+        }
+        if (is_greater(M,E2,contextptr))
+          break;
+      }
+      if (J==i1.size())
+        e.push_back(E2);
+      ++k; continue;
+    }
+    for (;j<e1.size();++j){
+      gen E1=e1[j];
+      // detect if E1 is inside an interval of i2
+      for (;K<i2.size();++K){
+        gen I2=i2[K],m=I2[0],M=I2[1];
+        if (is_strictly_greater(m,E1,contextptr)){
+          e.push_back(E1);
+          break;
+        }
+        if (is_greater(M,E1,contextptr))
+          break;
+      }
+      if (K==i2.size())
+        e.push_back(E1);
+    }
+    for (;k<e2.size();++k){
+      gen E2=e2[k];
+      for (;J<i1.size();++J){
+        gen I1=i1[J],m=I1[0],M=I1[1];
+        if (is_strictly_greater(m,E2,contextptr)){
+          e.push_back(E2);
+          break;
+        }
+        if (is_greater(M,E2,contextptr))
+          break;
+      }
+      if (J==i1.size())
+        e.push_back(E2);
+    }
+    j=0; k=0; // current position in i1 and i2
+    for (;j<i1.size() && k<i2.size();){
+      gen I1=i1[j],I2=i2[k];
+      gen m1=I1[0],M1=I1[1],m2=I2[0],M2=I2[1];
+      if (is_greater(m2,M1,contextptr)){
+        i.push_back(I1);
+        ++j;
+        continue;
+      }
+      if (is_greater(m1,M2,contextptr)){
+        i.push_back(I2);
+        ++k;
+        continue;
+      }
+      // here M1>m2 and M2>m1, intervals are intersecting
+      ++j; ++k;
+      gen m=m1,M=M1;
+      if (is_greater(m1,m2,contextptr))
+        m=m2;
+      if (is_greater(M2,M1,contextptr))
+        M=M2;
+      // we have at least [m,M], do we have more?
+      for (;;){
+        bool stop=true;
+        for (;j<i1.size();++j){
+          I1=i1[j];
+          m1=I1[0],M1=I1[1];
+          if (is_greater(M,M1,contextptr))
+            continue;
+          if (is_greater(M,m1,contextptr)){
+            stop=false;
+            M=M1;            
+          }
+          break;
+        }
+        for (;k<i2.size();++k){
+          I2=i2[k];
+          m1=I2[0],M1=I2[1];
+          if (is_greater(M,M1,contextptr))
+            continue;
+          if (is_greater(M,m1,contextptr)){
+            stop=false;
+            M=M1;            
+          }
+          break;
+        }
+        if (stop)
+          break;
+      }
+      i.push_back(gen(makevecteur(m,M),_LINE__VECT));
+    }
+    for (;j<i1.size();++j)
+      i.push_back(i1[j]);
+    for (;k<i2.size();++k)
+      i.push_back(i2[k]);
+#endif
+    w=makevecteur(i,e);
+    if (u.size()==3)
+      w.insert(w.begin(),u[0]);
+    return true;
+  }
+  
+  // returns the assumed idnt name
   // returns the assumed idnt name
   // used if assumptions are in OR conjonction
   gen assumesymbolic(const gen & a,gen idnt_must_be,GIAC_CONTEXT){

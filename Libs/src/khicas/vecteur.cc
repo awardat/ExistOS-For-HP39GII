@@ -2764,6 +2764,10 @@ namespace giac {
     return proot(v,eps,rprec);
   }
 
+  vecteur proot(const vecteur & v,double eps,GIAC_CONTEXT){ // 2026-09-19 solve.cc 2.0.0 port：兼容桌面签名（委托数值端口）
+    return proot(v,eps);
+  }
+
   vecteur real_proot(const vecteur & v,double eps,GIAC_CONTEXT){
 #if 1
     gen r(complexroot(makesequence(v,eps),false,contextptr));
@@ -7087,6 +7091,15 @@ namespace giac {
   // 3 for lu without pemutation
   int mrref(const matrice & a, matrice & res, vecteur & pivots, gen & det,int l, int lmax, int c,int cmax,
 	    int fullreduction_,int dont_swap_below,bool convert_internal,int algorithm_,int rref_or_det_or_lu,
+	    GIAC_CONTEXT){ // 2026-09-19 solve.cc 2.0.0 port：旧签名薄包装，内部生成恒等 permutation
+    vector<int> permutation(lmax);
+    for (int i=0;i<lmax;++i)
+      permutation[i]=i;
+    return mrref(a,res,permutation,pivots,det,l,lmax,c,cmax,fullreduction_,dont_swap_below,convert_internal,algorithm_,rref_or_det_or_lu,contextptr);
+  }
+
+  int mrref(const matrice & a, matrice & res, std::vector<int> & permutation, vecteur & pivots, gen & det,int l, int lmax, int c,int cmax,
+	    int fullreduction_,int dont_swap_below,bool convert_internal,int algorithm_,int rref_or_det_or_lu,
 	    GIAC_CONTEXT){
     if (!ckmatrix(a))
       return 0;
@@ -7123,9 +7136,6 @@ namespace giac {
       convert_internal=false;
       fullreduction=0;
     }
-    vector<int> permutation(lmax);
-    for (int i=0;i<lmax;++i)
-      permutation[i]=i;
 #ifndef GIAC_HAS_STO_38
     // modular algorithm
     if ( ( (algorithm==RREF_GUESS && (

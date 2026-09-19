@@ -64,6 +64,31 @@ using namespace std;
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
+
+  bool has_undef(const gen & g){ // 2026-09-19 solve.cc 2.0.0 port
+    if (is_undef(g))
+      return true;
+    if (g.type==_VECT){
+      unsigned s=unsigned(g._VECTptr->size());
+      for (unsigned i=0;i<s;++i){
+	if (has_undef((*g._VECTptr)[i]))
+	  return true;
+      }
+      return false;
+    }
+    if (g.type==_POLY){
+      unsigned s=unsigned(g._POLYptr->coord.size());
+      for (unsigned i=0;i<s;++i){
+	if (has_undef(g._POLYptr->coord[i].value))
+	  return true;
+      }
+      return false;
+    }
+    if (g.type==_SYMB)
+      return has_undef(g._SYMBptr->feuille);
+    return false;
+  }
+
 #endif // ndef NO_NAMESPACE_GIAC
 
   // Left redimension p to degree n, i.e. size n+1

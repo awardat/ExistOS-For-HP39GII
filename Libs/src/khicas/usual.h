@@ -362,6 +362,7 @@ namespace giac {
   gen giac_additionally(const gen & a,GIAC_CONTEXT);
   // returns the assumed idnt name
   // used if assumptions are in OR conjonction
+  bool realset_glue(const vecteur & u,const vecteur & v,vecteur & w,GIAC_CONTEXT); // 2026-09-19 solve.cc 2.0.0 port
   gen assumesymbolic(const gen & a,gen idnt_must_be,GIAC_CONTEXT);
   // v = previous assumptions, a=the real value, direction
   // is positive for [a,+inf[, negative for ]-inf,a]

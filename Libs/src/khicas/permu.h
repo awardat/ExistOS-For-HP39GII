@@ -76,6 +76,21 @@ namespace giac {
   std::vector<int> c1op2(const std::vector<int> & c1, const std::vector<int> & p2);
   std::vector<int> p1oc2(const std::vector<int> & p1, const std::vector<int> & c2);
 
+  template<typename T>
+  void apply_permutation(std::vector<T>& v, const std::vector<int>& indices_){ // 2026-09-19 solve.cc 2.0.0 port
+    std::vector<int> indices(indices_); // copy since modified in place to track indices already done
+    for (size_t i = 0; i < indices.size(); i++) {
+      size_t current = i;
+      while (i != size_t(indices[current])) {
+	int next = indices[current];
+	std::swap(v[current], v[next]);
+	indices[current] = int(current);
+	current = size_t(next);
+      }
+      indices[current] = int(current);
+    }
+  }
+
   gen _hilbert(const gen & args,GIAC_CONTEXT);
   // arithmetic mean column by column  gen l2norm2(const gen & g);
   gen square_hadamard_bound(const matrice & m);

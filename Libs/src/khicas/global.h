@@ -335,6 +335,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern bool center_history,in_texmacs,block_signal,synchronize_history;
   extern int ABERTH_NMAX; // max number of iterations (2026-09-19 csturm 2.0.0 port)
   extern int ABERTH_NBITSMAX; // max precision (2026-09-19 csturm 2.0.0 port)
+  extern int RUR_PARAM_MAX_DEG; // 2026-09-19 solve.cc 2.0.0 port
   extern bool threads_allowed;
   extern bool mpzclass_allowed;
   enum { 

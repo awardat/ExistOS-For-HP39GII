@@ -128,6 +128,7 @@ namespace giac {
   vecteur proot(const vecteur & v,double eps);
   vecteur proot(const vecteur & v,double & eps,int & rprec);
   vecteur real_proot(const vecteur & v,double eps,GIAC_CONTEXT);
+  vecteur proot(const vecteur & v,double eps,GIAC_CONTEXT); // 2026-09-19 solve.cc 2.0.0 port（数值端口）
   gen symb_proot(const gen & e) ;
   gen _proot(const gen & e,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_proot ;
@@ -290,6 +291,8 @@ namespace giac {
   // Returns 0 on failure, 1 on success, 2 if success inverting and no need to remove identity
   int mrref(const matrice & a, matrice & res, vecteur & pivots, gen & det,int l, int lmax, int c,int cmax,
 	     int fullreduction,int dont_swap_below,bool convert_internal,int algorithm,int rref_or_det_or_lu,GIAC_CONTEXT);
+  int mrref(const matrice & a, matrice & res, std::vector<int> & permutation,vecteur & pivots, gen & det,int l, int lmax, int c,int cmax,
+	     int fullreduction,int dont_swap_below,bool convert_internal,int algorithm,int rref_or_det_or_lu,GIAC_CONTEXT); // 2026-09-19 solve.cc 2.0.0 port
   // holds temporary work storage for block operation
   struct smallmodrref_temp_t {
     std::vector< std::vector<int> > Ainvtran,Ainv,CAinv;

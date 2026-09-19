@@ -3594,6 +3594,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   bool center_history=false;
   int ABERTH_NMAX=25; // 2026-09-19 csturm 2.0.0 port（桌面版同值）
   int ABERTH_NBITSMAX=8192; // 2026-09-19 csturm 2.0.0 port（桌面版同值）
+  int RUR_PARAM_MAX_DEG=128; // 2026-09-19 solve.cc 2.0.0 port（桌面版同值）
   bool in_texmacs=false;
   bool block_signal=false;
   bool CAN_USE_LAPACK = true;

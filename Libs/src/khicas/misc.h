@@ -68,6 +68,7 @@ namespace giac {
   extern const unary_function_ptr * const  at_complex ;
 
   gen _tcoeff(const gen & args,GIAC_CONTEXT);
+  vecteur sqrfree(const gen & g,const vecteur & l,int mult,GIAC_CONTEXT); // 2026-09-19 solve.cc 2.0.0 port
   gen _sqrfree(const gen & args,GIAC_CONTEXT);
   gen _truncate(const gen & args,GIAC_CONTEXT);
   gen _canonical_form(const gen & args,GIAC_CONTEXT);

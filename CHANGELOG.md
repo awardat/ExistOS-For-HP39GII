@@ -9,6 +9,7 @@
 ### 已完成
 - **Console F1 快速插入菜单**：Console 的 F1 段由 algb 代数菜单替换为编辑器 F1 的 test 段（`if/else/</>/==/!=/and/or`；Python 模式为 `&&/||`），便于输入比较/逻辑运算符；原 algb 条目（simplify/factor/…）可通过命令目录输入
 - **语法切换恢复 + 持久化**：`Shift+Symb` 直通配置菜单（原 09-03 键位清理后配置菜单只能从 F6 文件菜单第 12 项进入）；语法选择（Xcas / 兼容 Python）持久化到 `/khi_lang.dat` 第 3 个 int（旧文件向后兼容），重启保持——此前每次启动回到编译默认 Python 兼容模式
+- **giac 2.0.0 有限移植三档（solve.cc）**：方程/不等式求解整体替换（9893→11712 行）+ `solve.h`（`gbasis_param_t` 新增 5 字段、`gbasis`/`vecteur2vector_polynome` 签名演进）；适配符号 `RUR_PARAM_MAX_DEG`/`has_undef`/`realset_glue`/`sqrfree`（内容递归）/`mrref` 排列重载/`apply_permutation` 模板/`proot` 兼容重载；编译 0 错误 0 undefined，固件 +34KB；测试用例见本地 docs/giac-solve-test.md（待真机验证）
 
 ### 规划
 - 独立 Python app（micropython 最新稳定版、独立入口）

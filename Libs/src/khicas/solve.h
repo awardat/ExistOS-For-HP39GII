@@ -105,13 +105,18 @@ namespace giac {
     int reinject_begin;
     int reinject_end;
     int reinject_for_calc;
+    bool interred;
+    bool gbasis; // for rur return gbasis too
+    bool rawcoeffs; // if true keep raw coeffs in transform matrix, if false try to reduce the degree
+    int buchberger_select_strategy; // for gbasis with coeffs, -1: default value system will set 0 (#var>8) or 1 (#var<=8) , 0: select spair minimizing coeffs degree 1: select first spair with smallest total degree, 2: coeffs+Buchberger with F4 first (not active)
+    std::vector<int> initsep; // separating variable (integer coeffs of monomials)
   };
   extern int rur_separate_max_tries;
-  vectpoly gbasis(const vectpoly & v,const gen & order,bool with_cocoa,bool with_f5,int & rur,environment * env,GIAC_CONTEXT,gbasis_param_t gbasis_param); // with_f5 is in fact modular_check
+  vectpoly gbasis(const vectpoly & v,const gen & order,bool with_cocoa,int modular,environment * env,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,std::vector< vectpoly> * coeffsptr=0); // with_f5 is in fact modular_check
   gen remove_equal(const gen & f);
   vecteur remove_equal(const_iterateur it,const_iterateur itend);
   vecteur gsolve(const vecteur & eq_orig,const vecteur & var,bool complexmode,int evalf_after,GIAC_CONTEXT);
-  bool vecteur2vector_polynome(const vecteur & eq_in,const vecteur & l,vectpoly & eqp);
+  bool vecteur2vector_polynome(const vecteur & eq_in,const vecteur & l,vectpoly & eqp,const gen * slackvar=0);
 
   vecteur true_lidnt(const gen & g); // lidnt without looking in int/sum/fsolve
   gen _greduce(const gen & args,GIAC_CONTEXT);

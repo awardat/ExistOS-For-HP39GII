@@ -27,6 +27,7 @@ namespace giac {
   class identificateur;
   struct unary_function_ptr;
   void restorepurge(const gen & xval,const gen & x,GIAC_CONTEXT);
+  bool has_undef(const gen & g); // 2026-09-19 solve.cc 2.0.0 port
   gen assumeeval(const gen & x,GIAC_CONTEXT);
   // auto-assumptions assuming g is real-defined
   // if an assumption is already made on a variable, it is ignored
