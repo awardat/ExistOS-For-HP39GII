@@ -6,8 +6,10 @@
 
 ## [build 138] - 2026-09-19 (开发中)
 
+### 已完成
+- **Console F1 快速插入菜单**：Console 的 F1 段由 algb 代数菜单替换为编辑器 F1 的 test 段（`if/else/</>/==/!=/and/or`；Python 模式为 `&&/||`），便于输入比较/逻辑运算符；原 algb 条目（simplify/factor/…）可通过命令目录输入
+
 ### 规划
-- **Console F1 换用编辑器 F1 的快速插入菜单**（便于输入符号/运算符）
 - 独立 Python app（micropython 最新稳定版、独立入口）
 - D4 FTL_Sync 真机掉电测试
 - FormCalc 遗留 P3 四项（AMORT BGN+用户 PMT / DB200 交叉法 / days360 31 日 / bondPrice 死参）与 `config_set_charge_mode` 死代码清理
