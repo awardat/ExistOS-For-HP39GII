@@ -44,7 +44,6 @@ void config_set_power_save(char mode);
 bool config_get_enable_charge(void);
 void config_set_enable_charge(bool enable);
 char config_get_charge_mode(void);
-void config_set_charge_mode(char mode);
 // 获取/设置充电状态
 bool config_get_charging(void);
 void config_set_charging(bool charging);

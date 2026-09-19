@@ -212,11 +212,6 @@ char config_get_charge_mode(void) {
     return g_config.charge_mode;
 }
 
-void config_set_charge_mode(char mode) {
-    g_config.charge_mode = mode;
-    g_config.dirty = true;
-}
-
 void config_set_enable_charge(bool enable) {
     g_config.enable_charge = enable;
     config_save();

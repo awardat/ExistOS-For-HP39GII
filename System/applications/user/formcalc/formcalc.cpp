@@ -191,11 +191,18 @@ static long dateJdn(double v) {
     parseDate(v, &m, &d, &y);
     return jdn(y, m, d);
 }
-// 简化 30/360（日不做 31 调整）
+// 30/360 US（NASD，2026-09-19 审核 P3）：31 日调整 + 2 月末调整
+static int isLeapY(int y) { return (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)); }
 static long days360(double a, double b) {
     int m1, d1, y1, m2, d2, y2;
     parseDate(a, &m1, &d1, &y1);
     parseDate(b, &m2, &d2, &y2);
+    int feb1 = (m1 == 2 && d1 == 28 + isLeapY(y1));
+    int feb2 = (m2 == 2 && d2 == 28 + isLeapY(y2));
+    if (d1 == 31) d1 = 30;                 // 规则 1
+    if (feb1) d1 = 30;                     // 规则 3（2 月末→30）
+    if (d2 == 31 && d1 >= 30) d2 = 30;     // 规则 2
+    if (feb2 && feb1) d2 = 30;             // 规则 4
     return 360L * (y2 - y1) + 30L * (m2 - m1) + (d2 - d1);
 }
 static long daysAct(double a, double b) { return dateJdn(b) - dateJdn(a); }
@@ -326,7 +333,7 @@ static void fcStatusRight(char *buf) { // 标题右侧状态文本（输入行�
     buf[0] = 0;
     if (fcLevel != 2) return;
     if (fcMod == 1) {
-        if (fcForm == 0) sprintf(buf, "FIX%d %s", fcFix, (fs_[1][0] & 1) ? ZH_QICHU : ZH_QIMMO);
+        if (fcForm == 0 || fcForm == 2) sprintf(buf, "FIX%d %s", fcFix, (fs_[1][0] & 1) ? ZH_QICHU : ZH_QIMMO);
         else if (fcForm == 3) sprintf(buf, "FIX%d frq%d", fcFix, (int)bondFreq[fs_[1][3] & 3]);
         else if (fcForm == 5) strcpy(buf, (fs_[1][5] & 1) ? "ACT" : "360");
         else sprintf(buf, "FIX%d", fcFix);
@@ -692,6 +699,13 @@ static int actCflow(int slot) {
 static int actAmort(int slot) {
     // 12C 语义（finanx-12c 核对）：INT = |bal|*i 按当前 FIX 位舍入、符号随 PMT；
     // PRN = PMT - INT；余额逐期更新收敛（贷款场景 INT/PRN 与 PMT 同负号）
+    // 2026-09-19 审核 P3：B/E 与 TVM 共用（12C 全局 BEG/END）；BGN 首期 INT=0；
+    // PMT 优先取 TVM 表单已填的 PMT（12C 金融寄存器语义），未填则按 PV/i/N 计算
+    if (slot == 5) {
+        fs_[1][0] ^= 1;
+        fcSave();
+        return 0;
+    }
     double *v = fv_[1][2];
     unsigned char *h = fh_[1][2];
     if (!h[0] || !h[1] || !h[2] || !h[3]) return 1;
@@ -704,11 +718,16 @@ static int actAmort(int slot) {
     if (nn > 1000000) return 1; // 大期数防 UI 冻结（审核四.1）
     if (p2 > nn) p2 = nn;
     double i = ip / 100.0;
+    int b = fs_[1][0] & 1;
     double pmt;
-    if (fabs(i) < 1e-12) pmt = -pv / nn;
+    if (fh_[1][0][3])
+        pmt = fv_[1][0][3]; // 用户/TVM 的 PMT
+    else if (fabs(i) < 1e-12) pmt = -pv / nn;
     else {
         double x = pow(1.0 + i, nn);
-        pmt = -pv * i * x / (x - 1.0);
+        double a = annF(nn, i);
+        if (b) a *= 1.0 + i; // BGN 年金
+        pmt = -x * pv / a;
     }
     if (pmt == 0 || pmt != pmt) return 1;
     double sgn = (pmt < 0) ? -1.0 : 1.0;
@@ -716,8 +735,12 @@ static int actAmort(int slot) {
     for (int k = 0; k < fcFix; k++) pp *= 10.0;
     double bal = pv, intSum = 0, prinSum = 0;
     for (long k = 1; k <= p2; k++) {
-        double ik = floor(fabs(bal) * i * pp + 0.5) / pp; // 12C 内部按显示位舍入利息
-        if (sgn < 0) ik = -ik;
+        double ik;
+        if (k == 1 && b) ik = 0; // 12C BGN 首期利息为 0
+        else {
+            ik = floor(fabs(bal) * i * pp + 0.5) / pp; // 12C 内部按显示位舍入利息
+            if (sgn < 0) ik = -ik;
+        }
         double pk = pmt - ik;
         if (k >= p1) { intSum += ik; prinSum += pk; }
         bal += pk;
@@ -735,7 +758,7 @@ static int actAmort(int slot) {
 
 // BOND（form 3）：字段 结算/到期/票息%/面值/价格/收益%；fs bit0-1=付息频(1<<(2*f))  日期同日号假设
 
-static double bondPrice(double yld, int Nc, double c, double rv, double y) {
+static double bondPrice(int Nc, double c, double rv, double y) { // 2026-09-19 审核 P3：移除死参 yld
     // y 比率；现值：票息现值年金 + 面值折现
     if (Nc <= 0) return rv;
     double pv;
@@ -774,7 +797,7 @@ static int actBond(int slot) {
     if (slot == 0) { // 解价格（收益已填）
         if (!h[4]) return 1;
         double y = v[4] / 100.0 / f;
-        double pr = bondPrice(0, Nc, c, rv, y);
+        double pr = bondPrice(Nc, c, rv, y);
         v[5] = pr;
         h[5] = 1;
         fcSave();
@@ -784,10 +807,10 @@ static int actBond(int slot) {
         if (!h[5]) return 1;
         double target = v[5];
         double lo = 0, hi = 1e-4;
-        double flo = bondPrice(0, Nc, c, rv, 0) - target;
+        double flo = bondPrice(Nc, c, rv, 0) - target;
         int found = 0;
         for (int k = 0; k < 60; k++) {
-            double fhi = bondPrice(0, Nc, c, rv, hi) - target;
+            double fhi = bondPrice(Nc, c, rv, hi) - target;
             if (fhi != fhi) { hi *= 4; continue; }
             if (fhi * flo <= 0) { found = 1; break; }
             hi *= 4;
@@ -796,7 +819,7 @@ static int actBond(int slot) {
         if (!found) return 1;
         for (int k = 0; k < 200; k++) {
             double mid = (lo + hi) * 0.5;
-            double fm = bondPrice(0, Nc, c, rv, mid) - target;
+            double fm = bondPrice(Nc, c, rv, mid) - target;
             if (fm != fm) return 1; // NaN 早退（审核四.4）
             if (fm * flo <= 0) hi = mid;
             else { lo = mid; flo = fm; }
@@ -824,17 +847,18 @@ static int actDeprec(int slot) {
     double dep = 0;
     if (slot == 0) { // 直线
         dep = (c - s) / l;
-    } else if (slot == 1) { // 双倍余额递减（200%）
+    } else if (slot == 1) { // 双倍余额递减（200%）+ SL 交叉（2026-09-19 审核 P3：当年 SL > DB 即切直线，含残值地板）
         double rate = 2.0 / l;
         double bal = c;
-        for (long k = 1; k < per; k++) {
-            double dk = bal * rate;
+        for (long k = 1; k <= per; k++) {
+            double ddb = bal * rate;
+            double sl = (bal - s) / (double)(l - k + 1);
+            double dk = (sl > ddb) ? sl : ddb;
             if (bal - dk < s) dk = bal - s;
+            if (dk < 0) dk = 0;
+            if (k == per) dep = dk;
             bal -= dk;
         }
-        dep = bal * rate;
-        if (bal - dep < s) dep = bal - s;
-        if (dep < 0) dep = 0;
     } else if (slot == 2) { // 年数总和
         dep = (c - s) * (l - per + 1) * 2.0 / (l * (l + 1.0));
     } else return 0;
@@ -941,7 +965,7 @@ static const FcFld marginFlds[3] = {
     { ZH_CB, "COST", 0 }, { ZH_SHOUJIA, "PRICE", 0 }, { ZH_LRL, "MARG%", 0 } };
 
 static const char *menuTvm[6] = { "N", "i%", "PV", "PMT", "FV", "B/E" };
-static const char *menuAmort[6] = { "INT", "PRIN", "BAL", "_", "_", "_" };
+static const char *menuAmort[6] = { "INT", "PRIN", "BAL", "_", "_", "B/E" };
 static const char *menuBond[6] = { "PRICE", "YLD", "_", "_", "_", "FRQ" };
 static const char *menuDeprec[6] = { "SL", "DB", "SYD", "_", "_", "_" };
 static const char *menuDate[6] = { "DAYS", "+DYS", "_", "_", "_", "360A" };
@@ -1152,6 +1176,13 @@ static void drawFormScreen(void) {
         sprintf(tt, "BOND %s", finItems[3]);
         drawTitle(tt, right);
         for (int i = 0; i < 6; i++) drawStdRow(3, i);
+    } else if (fcMod == 1 && fcForm == 2) { // AMORT 标题（与 TVM 共用期初/期末）
+        char right[24];
+        sprintf(right, "FIX%d %s", fcFix, (fs_[1][0] & 1) ? ZH_QICHU : ZH_QIMMO);
+        char tt[48];
+        sprintf(tt, "AMORT %s", finItems[2]);
+        drawTitle(tt, right);
+        for (int i = 0; i < 6; i++) drawStdRow(2, i);
     } else if (fcMod == 1 && fcForm == 5) { // DATE 标题（日基）
         char tt[48];
         sprintf(tt, "DATE %s", finItems[5]);
