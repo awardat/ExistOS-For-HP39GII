@@ -362,7 +362,7 @@ int GetKey(int *key) {
 
         INPUT_TRANSLATE(KEY_COMMA, ',', ',', ',', 'o', 'O');
 
-        INPUT_TRANSLATE(KEY_0, '0', 0000000000000, 0000000000000, '"', '"'); // 2026-09-16 删除 sh+0 目录映射
+        INPUT_TRANSLATE(KEY_0, '0', KEY_CTRL_RESERVE3, KEY_CTRL_RESERVE3, '"', '"'); // 2026-09-16 删除 sh+0 目录映射；2026-09-19 sh+0 → 命令自动补全
         INPUT_TRANSLATE(KEY_1, '1', KEY_CTRL_PRGM, KEY_CTRL_PRGM, 'x', 'X');
         INPUT_TRANSLATE(KEY_2, '2', KEY_CHAR_IMGNRY, KEY_CHAR_IMGNRY, 'y', 'Y');
         INPUT_TRANSLATE(KEY_3, '3', KEY_CHAR_PI, KEY_CHAR_PI, 'z', 'Z');

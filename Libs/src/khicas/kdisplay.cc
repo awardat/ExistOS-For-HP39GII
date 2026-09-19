@@ -19726,8 +19726,87 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
   void check_nspire_exam_mode(GIAC_CONTEXT){}
 #endif
 
+  // 2026-09-19 Shift+0 命令输入自动补全：前缀匹配 completeCaten（355 条）
+  // 唯一匹配 → 直接补全（函数补 "名("，程序结构插入原文本）；多匹配 → doMenu 选择；无匹配 → 忽略
+  int console_complete(GIAC_CONTEXT){
+    if (!Line || !Edit_Line) return 0;
+    if (Current_Line!=Last_Line || Current_Line<0) return 0;
+    if (Line[Current_Line].readonly) return 0;
+    string s(Edit_Line);
+    int col=Current_Col;
+    if (col<0 || col>(int)s.size()) return 0;
+    int start=col;
+    while (start>0){
+      unsigned char c=(unsigned char)s[start-1];
+      if (isalnum(c) || c=='_') --start;
+      else break;
+    }
+    string prefix=s.substr(start,col-start);
+    if (prefix.empty()) return 0;
+    vector<string> names,texts;
+    for (int i=0;i<CAT_COMPLETE_COUNT_EN;++i){
+      const catalogFunc &f=completeCaten[i];
+      if (xcas_python_eval!=0 && (f.category & XCAS_ONLY)) continue;
+      string cmd,text;
+      if (f.insert && f.insert[0]){
+	const char *p=f.insert;
+	while (*p==' ') ++p;
+	const char *q=p;
+	while (*q && *q!=' ' && *q!='(') ++q;
+	cmd.assign(p,q-p);
+	text=f.insert;
+      }
+      else {
+	const char *p=f.name;
+	while (*p==' ') ++p;
+	const char *q=strchr(p,'(');
+	if (q){
+	  cmd.assign(p,q-p);
+	  text=cmd+"(";
+	}
+	else {
+	  cmd=p;
+	  text=cmd;
+	}
+      }
+      if (cmd.empty() || cmd.size()<prefix.size()) continue;
+      bool ok=true;
+      for (size_t j=0;j<prefix.size();++j){
+	if (tolower((unsigned char)cmd[j])!=tolower((unsigned char)prefix[j])){ ok=false; break; }
+      }
+      if (!ok) continue;
+      names.push_back(lang? completeCatZhName[i] : f.name);
+      texts.push_back(text);
+    }
+    if (names.empty()) return 0;
+    int sel=0;
+    if (names.size()>1){
+      Menu menu;
+      menu.numitems=int(names.size());
+      vector<MenuItem> items(names.size());
+      for (size_t i=0;i<names.size();++i){
+	items[i].text=(char*)names[i].c_str();
+      }
+      menu.items=&items[0];
+      menu.height=MENUHEIGHT;
+      menu.scrollbar=1;
+      menu.scrollout=1;
+      int sres=doMenu(&menu);
+      if (sres!=MENU_RETURN_SELECTION && sres!=KEY_CTRL_EXE && sres!=76) return 0;
+      sel=menu.selection-1;
+      if (sel<0 || sel>=(int)texts.size()) return 0;
+    }
+    if (Console_DelStr(Edit_Line,col,prefix.size())!=CONSOLE_SUCCEEDED) return 0;
+    for (size_t i=0;i<prefix.size();++i) Console_MoveCursor(CURSOR_LEFT);
+    if (Console_InsStr(Edit_Line,texts[sel].c_str(),Current_Col)!=CONSOLE_SUCCEEDED) return 0;
+    Line[Current_Line].disp_len=Console_GetDispLen(Edit_Line);
+    for (size_t i=0;i<texts[sel].size();++i) Console_MoveCursor(CURSOR_RIGHT);
+    return 1;
+  }
+
   int Console_GetKey(GIAC_CONTEXT){
     int key;
+
     bool keytooltip=false;
     unsigned int i, move_line, move_col;
     char tmp_str[2];
@@ -19773,6 +19852,13 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
         if (!showCatalog(buf,0,0))
           buf[0]=0;
         return Console_Input((const char*)buf);
+      }
+      if (key==KEY_CTRL_RESERVE3){ // 2026-09-19 Shift+0 → 命令自动补全
+        if (console_complete(contextptr)){
+          Console_Disp(1,contextptr);
+          keytooltip=Console_tooltip(contextptr);
+        }
+        continue;
       }
 #endif      
       bool alph=alphawasactive(&key);
