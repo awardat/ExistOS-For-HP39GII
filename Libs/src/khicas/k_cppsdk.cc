@@ -160,6 +160,7 @@ const char * read_file(const char * filename){
 }
 bool write_file(const char * filename,const char * s,size_t len){
   printf("write_file %s %i\n",filename,len);
+  if (!len) len = strlen(s); // 2026-09-19：len=0 时按字符串长度（写 0 字节的根因兜底）
   unsigned short pFile[256];
   Bfile_StrToName_ncpy(pFile, (const unsigned char *)filename, strlen(filename) + 1);
   if (!file_exists(filename)){
@@ -172,6 +173,7 @@ bool write_file(const char * filename,const char * s,size_t len){
     return false;
   }
   Bfile_WriteFile_OS(hf,s,len);
+  Bfile_TruncateFile_OS(hf,len); // 覆盖更短内容时截断尾部残留
   Bfile_CloseFile_OS(hf);
   return true;
 }

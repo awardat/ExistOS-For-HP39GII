@@ -16133,9 +16133,10 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     int l=strlen(filenametns);
     if (l<4 || strncmp(filename+l-4,".tns",4))
       strcpy(filenametns+strlen(filename),".tns");
-    write_file(filenametns,buf);
+    write_file(filenametns,buf,strlen(buf));
 #else
-    write_file(filename,buf);
+    // 2026-09-19 修复：必须传长度——write_file 默认 len=0 导致 Bfile_WriteFile_OS 直接 return（"另存为 0 字节"根因）
+    write_file(filename,buf,strlen(buf));
 #endif
   }
 

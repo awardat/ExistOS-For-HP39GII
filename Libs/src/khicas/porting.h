@@ -105,6 +105,7 @@ int Bfile_OpenFile_OS(unsigned short * pFile, int mode);
 int Bfile_CreateFile(unsigned short * pFile, int size);
 void Bfile_CloseFile_OS(int hFile);
 void Bfile_WriteFile_OS(int hFile, const char *data, size_t len);
+void Bfile_TruncateFile_OS(int hFile, size_t size); // 2026-09-19
 void Bfile_DeleteEntry(unsigned short * pFile);
 int Bfile_ReadFile_OS( int HANDLE, void *buf, int size, int readpos );
 int Bfile_ReadFile(int HANDLE,void *buf,int size,int readpos);

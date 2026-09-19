@@ -764,6 +764,19 @@ void Bfile_WriteFile_OS(int hFile, const char *data, size_t len) {
     //printf("Bfile_WriteFile_OS\n");
 }
 
+void Bfile_TruncateFile_OS(int hFile, size_t size) {
+    #if FS_TYPE == FS_FATFS
+    FIL *handle = (FIL *)hFile;
+    f_lseek(handle, size);
+    f_truncate(handle);
+    f_sync(handle);
+    #else
+    lfs *fs = (lfs *)GetFsObj();
+    lfs_file_t *handle = (lfs_file_t *)hFile;
+    lfs_file_truncate(fs, handle, size);
+    #endif
+}
+
 void Bfile_DeleteEntry(unsigned short *pFile) {
     #if FS_TYPE == FS_FATFS
     char *c_path = (char *)pFile;

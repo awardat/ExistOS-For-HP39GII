@@ -18,12 +18,12 @@
 ## [build 139] - 2026-09-19 (开发中)
 
 ### 已完成
+- **KhiCAS `save_script` 写入 0 字节修复**（"另存为 0 字节"根因）：`save_script` 调用 `write_file` 时未传长度（默认 0），而 `Bfile_WriteFile_OS` 对 len=0 直接返回 → 文件被创建但内容为空；现传入实际长度，并在 `write_file` 加 len=0 兜底 + 写入后**按长度截断**（覆盖更短内容不再残留尾部旧数据）；新增平台 API `Bfile_TruncateFile_OS`（FatFs/littlefs 双实现）
 - **FormCalc 审核 P3 四项 + 死代码清理**：AMORT 支持 **B/E**（F6，与 TVM 共用全局期初/期末；BGN 首期 INT=0）与**用户 PMT**（优先取 TVM 表单的 PMT 寄存器）；DEPREC **DB200 增加 SL 交叉**（某年直线法超过余额递减即切换，残值地板保留）；DATE 的 30/360 增加**31 日与 2 月末调整**（US/NASD）；`bondPrice` 移除死参；删除 `config_set_charge_mode` 死代码（无调用方）
 - **KhiCAS 用户手册配图**：12 张实拍屏幕照片（压缩后插入 docs/images/khicas-manual/；命令目录、编辑器 F1 菜单两张待补）
 - **KhiCAS 用户手册**（`docs/KhiCAS-manual.md`）：启动退出 / 界面布局 / 输入求值 / 按键总览 / 菜单（Console 功能菜单 + 文件菜单 18 项）/ 变量 / 自动补全（Shift+0）/ 配置菜单 / 脚本编辑与运行 / Python 兼容模式与命名约束 / 绘图 / 持久化 / FAQ；README 中英双版与 samples/README 已加链接
 
 ### 规划
-- KhiCAS `save_script` 直接调用时 FatFs 写入失败待查（"另存为 0 字节"疑同源）
 - 独立 Python app（micropython 最新稳定版、独立入口；N-Queens 验证）
 
 ## [build 137] - 2026-09-19 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
