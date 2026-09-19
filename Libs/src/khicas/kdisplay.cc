@@ -99,15 +99,16 @@ const int xwaspy_shift=33; // must be between 32 and 63, reflect in xcas.js and 
 int clip_ymin=0;
 int lang=1;
 int saved_digits=0; // persisted decimal_digits (0 = not set)
+int saved_syntax=-100; // persisted python_compat (-100 = not set; 0=Xcas, 1/2=Python compat, 4|p=MicroPython, -1=QuickJS)
 
 // Save/load language setting (+ decimal digits)
 void save_lang_setting() {
     FILE *f = fopen("/khi_lang.dat", "wb");
-    if (f) { fwrite(&lang, sizeof(int), 1, f); fwrite(&saved_digits, sizeof(int), 1, f); fclose(f); }
+    if (f) { fwrite(&lang, sizeof(int), 1, f); fwrite(&saved_digits, sizeof(int), 1, f); fwrite(&saved_syntax, sizeof(int), 1, f); fclose(f); }
 }
 void load_lang_setting() {
     FILE *f = fopen("/khi_lang.dat", "rb");
-    if (f) { int saved=0; if (fread(&saved, sizeof(int), 1, f)==1) { if (saved==0||saved==1) lang=saved; } if (fread(&saved_digits, sizeof(int), 1, f)==1) { if (saved_digits<0 || saved_digits>15) saved_digits=0; } fclose(f); }
+    if (f) { int saved=0; if (fread(&saved, sizeof(int), 1, f)==1) { if (saved==0||saved==1) lang=saved; } if (fread(&saved_digits, sizeof(int), 1, f)==1) { if (saved_digits<0 || saved_digits>15) saved_digits=0; } if (fread(&saved_syntax, sizeof(int), 1, f)==1) { if (saved_syntax<-1 || saved_syntax>6) saved_syntax=-100; } fclose(f); }
 }
 short int nspirelua=0;
 bool warn_nr=true; 
@@ -17064,6 +17065,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 		    p=c;
 		}
 		giac::python_compat(p,contextptr);
+		saved_syntax = p<0?0:p; // 2026-09-19 persist syntax
+		save_lang_setting();
 		text->python=p;
 		xcas_python_eval=(c==3?1:(c==4?-1:0));
 		show_status(text,search,replace);
@@ -17618,6 +17621,8 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 	    int old_xcas_python_eval=xcas_python_eval;
 	    xcas_python_eval=c<0?c:(c==3?1:0);
 	    giac::python_compat(p<0?0:p,contextptr);
+	    saved_syntax = p<0?0:p; // 2026-09-19 persist syntax
+	    save_lang_setting();
 	    if (edptr)
 	      edptr->python=p;
 	    if (xcas_python_eval!=old_xcas_python_eval){
@@ -23492,6 +23497,11 @@ int kcas_main(int isAppli, unsigned short OptionNum)
   load_lang_setting(); // apply saved language preference before session restore
   if (saved_digits>0)
     decimal_digits(saved_digits,contextptr); // restore persisted decimal digits
+  if (saved_syntax>=-1){ // 2026-09-19 restore persisted syntax (python_compat)
+    giac::python_compat(saved_syntax,contextptr);
+    xcas_python_eval = (saved_syntax<0)?-1:((saved_syntax&4)?1:0);
+    xcas::Console_FMenu_Init(contextptr);
+  }
   xcas::restore_session("session", contextptr);
   // load_config();
   xcas::Console_Disp(1,contextptr);
@@ -23504,6 +23514,7 @@ int kcas_main(int isAppli, unsigned short OptionNum)
     
     if ((expr = xcas::Console_GetLine(contextptr)) == NULL){
       saved_digits = decimal_digits(contextptr);
+      saved_syntax = giac::python_compat(contextptr); // 2026-09-19 persist syntax
       save_lang_setting();
       xcas::save_session(contextptr);
       break;

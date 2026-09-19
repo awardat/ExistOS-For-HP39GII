@@ -340,7 +340,7 @@ int GetKey(int *key) {
             *key = g_kcas_graph_ui ? KEY_CTRL_RESERVE1 : KEY_CTRL_F1;
             break;
         INPUT_TRANSLATE(KEY_APPS, KEY_CTRL_APPS, KEY_CTRL_APPS, KEY_CTRL_APPS, KEY_CTRL_APPS, KEY_CTRL_APPS); // 2026-09-16 APPS → 打开脚本列表
-        INPUT_TRANSLATE(KEY_SYMB, KEY_CTRL_F14, KEY_CTRL_F14, KEY_CTRL_F14, KEY_CTRL_F14, KEY_CTRL_F14); // 2026-09-16 Symb → 程序命令菜单（F> prog）
+        INPUT_TRANSLATE(KEY_SYMB, KEY_CTRL_F14, KEY_CTRL_SETUP, KEY_CTRL_SETUP, KEY_CTRL_F14, KEY_CTRL_F14); // 2026-09-16 Symb → 程序命令菜单（F> prog）；2026-09-19 Shift+Symb → 配置菜单（语法切换）
         case KEY_PLOT: // 2026-09-16 Plot → 绘图菜单（F3 plot）；2026-09-19 图形界面内改用专用键码（不遮蔽软键 F3）
             *key = g_kcas_graph_ui ? KEY_CTRL_RESERVE2 : KEY_CTRL_F3;
             break;
