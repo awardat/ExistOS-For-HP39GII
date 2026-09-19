@@ -669,12 +669,15 @@ int Bfile_CreateFile(unsigned short *pFile, int size) {
         vPortFree(handle);
         return -1;
     }
-    fr = f_expand(handle, size, 1);
-    if(fr != FR_OK)
+    if (size > 0)   // 2026-09-19：size=0 时 f_expand 返回 FR_DENIED——空文件无需 expand
     {
-        printf("Create 2:[%s]:err:%d,%d\n",c_path,fr,size);
-        vPortFree(handle);
-        return -1;
+        fr = f_expand(handle, size, 1);
+        if(fr != FR_OK)
+        {
+            printf("Create 2:[%s]:err:%d,%d\n",c_path,fr,size);
+            vPortFree(handle);
+            return -1;
+        }
     }
 
     f_sync(handle);
