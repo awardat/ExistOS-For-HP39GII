@@ -19744,8 +19744,10 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     string prefix=s.substr(start,col-start);
     if (prefix.empty()) return 0;
     vector<string> names,texts,cmds;
-    for (int i=0;i<CAT_COMPLETE_COUNT_EN;++i){
-      const catalogFunc &f=completeCaten[i];
+    const catalogFunc *catbl=(lang? completeCatzh : completeCaten); // 2026-09-19 修复：中文模式须遍历中文表（与 completeCatZhName 平行；英文表 363 vs 中文名表 355 会整体错位）
+    int catn=(lang? CAT_COMPLETE_COUNT_ZH : CAT_COMPLETE_COUNT_EN);
+    for (int i=0;i<catn;++i){
+      const catalogFunc &f=catbl[i];
       if (xcas_python_eval!=0 && (f.category & XCAS_ONLY)) continue;
       string cmd,text;
       if (f.insert && f.insert[0]){
@@ -19776,7 +19778,15 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
       }
       if (!ok) continue;
       cmds.push_back(cmd);
-      names.push_back(lang? completeCatZhName[i] : f.name);
+      if (lang){ // 中文名与目录条目首名一致性守卫（防数组错位再次误显示）
+	const char *zn=completeCatZhName[i];
+	if (zn && strncmp(zn,f.name,strlen(f.name))==0)
+	  names.push_back(zn);
+	else
+	  names.push_back(f.name);
+      }
+      else
+	names.push_back(f.name);
       texts.push_back(text);
     }
     // 补充：内置函数表（static_lexer_numworks.h，1552 条；补齐目录未收录的常用函数如 sqrt/sin/ln/evalf）
