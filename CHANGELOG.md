@@ -22,10 +22,8 @@
 - **KhiCAS 用户手册**（`docs/KhiCAS-manual.md`）：启动退出 / 界面布局 / 输入求值 / 按键总览 / 菜单（Console 功能菜单 + 文件菜单 18 项）/ 变量 / 自动补全（Shift+0）/ 配置菜单 / 脚本编辑与运行 / Python 兼容模式与命名约束 / 绘图 / 持久化 / FAQ；README 中英双版与 samples/README 已加链接
 
 ### 规划
-- KhiCAS 编辑器滚动白闪优化（doTextArea 每帧清屏重绘；方案 B 不清屏直覆盖 / C 差量滚动）
 - KhiCAS `save_script` 直接调用时 FatFs 写入失败待查（"另存为 0 字节"疑同源）
 - 独立 Python app（micropython 最新稳定版、独立入口；N-Queens 验证）
-- D4 FTL_Sync 真机掉电测试
 - FormCalc 遗留 P3 四项（AMORT BGN+用户 PMT / DB200 交叉法 / days360 31 日 / bondPrice 死参）与 `config_set_charge_mode` 死代码清理
 
 ## [build 137] - 2026-09-19 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
