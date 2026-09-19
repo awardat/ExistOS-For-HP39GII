@@ -385,7 +385,7 @@ int GetKey(int *key) {
 
         INPUT_TRANSLATE(KEY_ENTER, KEY_CTRL_EXE, KEY_CHAR_ANS, KEY_CHAR_ANS, KEY_CHAR_CR, KEY_CHAR_CR);
 
-        INPUT_TRANSLATE(KEY_NEGATIVE, KEY_CHAR_PMINUS, '|', '|', ';', ';');
+        INPUT_TRANSLATE(KEY_NEGATIVE, KEY_CHAR_PMINUS, KEY_CHAR_VALR, KEY_CHAR_VALR, ';', ';'); // 2026-09-19 sh+(-) → abs(（原 '|'）
 
         case KEY_ON:
         {
