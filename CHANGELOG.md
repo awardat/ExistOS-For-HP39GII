@@ -12,6 +12,14 @@
 - **KhiCAS 小写锁定**：Shift+ALPHA 锁定小写输入（复用现有 0x80 锁定机制，按键后状态保留），再按 ALPHA 或 Shift+ALPHA 解除；原三态循环（大写→小写→退出）不变
 - **giac 2.0.0 有限移植试点 A**：`sym2poly.cc` 整体替换（4545→6771 行）——新增代数数算法簇（algnum_* 正规化/rref/gcd/evalf）、RUR 表示（rur_* 多项式系统求解）、多项式约化（mreduce）、项排序增强（sort1/sort2/cleanup_pow）；编译 0 警告、链接 0 undefined（ExistOS.sys +3.4KB）；回归测试用例 37 条见 docs/giac-sym2poly-test.md（本地）
 
+- **giac 2.0.0 有限移植一档（risch）**：`risch.cc` 整体替换（1047→1107 行）——里施微分方程塔选择优化、系数修复、对数系数处理；40 条积分测试用例通过（无回归，含奇异/不可积保护）
+- **giac 2.0.0 有限移植二档（csturm）**：`csturm.cc` 整体替换（2111→4989 行）——实根隔离重写（vas/aberth/mps_solve 等）；`csturm.h` 补 aberth/mps_solve 声明；global 补常量 `ABERTH_NMAX`/`ABERTH_NBITSMAX`；适配快照 proot 三参签名；17 项测试全部正确（实根隔离含重根/数值求根/求解联动）
+- **π 渲染修复**：数学排版视图 π 宽匹配（"pi"/GBK π/UTF-8 π）；Console 输出把 UTF-8 π 转 GBK π（HZK16S `A6D0` 字形）
+- **中文告警修复**：`giac2aspen` 语言映射修正（中文模式此前误用法语列），aspen 中文表转 GBK
+- **`(-)` 键修复**：输入 `-`（原为 `_`）
+- **File 菜单"保存日志"**：Console 历史导出到串口（带 begin/end 标记）
+- **Python 兼容层循环限制调研**：5 轮自检定位多分支循环体解析卡死；限制归档 docs/khicas-python-limits.md（本地）；N-Queens 样本归档 ref/nqueens/
+
 ### 规划
 - FormCalc 遗留 P3 四项（AMORT BGN+用户 PMT / DB200 交叉法 / days360 31 日 / bondPrice 死参）与 `config_set_charge_mode` 死代码清理
 - KhiCAS：giac 2.0.0 有限移植
