@@ -118,6 +118,7 @@ int esc_flag=0;
 int xcas_python_eval=0;
 char * python_heap=0;
 int g_home_req=0;      // 2026-09-16 HOME 键：置位后 GetKey 持续注入 EXIT，逐层返回直到 Console 根消费清零
+int g_kcas_graph_ui=0; // 2026-09-19 图形界面标志：物理 Num/Plot 在图形界面内映射为专用键码（RESERVE1/2，不遮蔽软键 F1/F3）
 
 #ifdef QUICKJS
 #include "qjsgiac.h"
@@ -11892,6 +11893,7 @@ namespace xcas {
   }
 
   int Graph2d::ui(){
+    g_kcas_graph_ui=1; // 2026-09-19 图形界面标志（khicas_stub 据此把物理 Num/Plot 映射为专用键码）
 #ifdef HP39
     if (is3d){
       int k=khicas_1bpp;
@@ -11899,10 +11901,13 @@ namespace xcas {
       os_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,SDK_WHITE);
       int r=in_ui();
       khicas_1bpp=k;
+      g_kcas_graph_ui=0;
       return r;
     }
 #endif
-    return in_ui();
+    int r=in_ui();
+    g_kcas_graph_ui=0;
+    return r;
   }
 
   // 2026-09-17 从 plot_instructions 递归提取数值点（复数点→[x,y]，数值→本身）
@@ -11971,12 +11976,11 @@ namespace xcas {
       bool alph=alphawasactive(&key);
       if (key==KEY_SHUTDOWN || key==KEY_CTRL_SYMB)
         return key;
-      printf("[INK] %d\n", key); // 2026-09-17 诊断：Graph2d::in_ui 收到的按键码
-      // 2026-09-17 用户映射（HP39 原生键码）：ON=退出、Plot=曲线分析、Home=回 console 注入
-      if (key==30070) return KEY_CTRL_EXIT;      // ON = 退出
-      if (key==30009) continue;                   // Num = 无映射（原误触发帮助）
-      if (key==30011){ curve_infos(); continue; } // Plot = 曲线分析
-      if (key==5){
+      // 2026-09-17 用户映射：ON=退出、Plot=曲线分析（物理 Num/Plot 经 khicas_stub 在图形界面内映射为专用键码）
+      if (key==KEY_CTRL_AC) return KEY_CTRL_EXIT;            // ON = 退出
+      if (key==KEY_CTRL_RESERVE1) continue;                   // 物理 Num = 无映射
+      if (key==KEY_CTRL_RESERVE2){ curve_infos(); continue; } // 物理 Plot = 曲线分析
+      if (key==KEY_CTRL_EXIT){
 	if (g_home_req){ return KEY_CTRL_EXIT; } // Home 连发（注入退出）= 回 console
 	// 2026-09-17 View（单击 5）= 视图循环：图形→数据→表达式→图形
 	static int kcas_view_mode=0;
@@ -18844,12 +18848,8 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
       }
   }
 
-  std::string khicas_log_buffer; // 2026-09-17 log 查看缓冲（累积 dConsolePut 内容）
+  std::string khicas_log_buffer; // 2026-09-17 log 查看缓冲（2026-09-19 统一仅在 Console_Output 单点收集，消除双路重复）
   void dConsolePut(const char * S){
-    printf("[DCP]%s\n", S); // 2026-09-17 诊断：log 通道是否被调用
-    khicas_log_buffer += S; // 2026-09-18 收集提前至 dconsole_mode 判断之前（脚本执行期间 mode 可能为 0，导致日志为空）
-    if (khicas_log_buffer.size() > 8000)
-      khicas_log_buffer.erase(0, khicas_log_buffer.size()-8000);
     if (!dconsole_mode)
       return;
     int l=strlen(S);
@@ -19502,7 +19502,6 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     string s;
     load_script(filename,s);
     kcas_set_busy(1);
-    printf("[RUN] script=%s size=%d\n", filename, (int)s.size()); // 2026-09-17 诊断
     { // 2026-09-17 跳过首部空行/注释行：run() 对 '#' 开头的整串直接 return 0，导致带编码声明的脚本完全不执行
       size_t pos=0, cur=0;
       while (cur < s.size()){
@@ -19534,7 +19533,6 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
           if (q>=line.size() || line[q]=='#') continue; // 空行/注释
           if (line[line.size()-1]==':'){ in_block=true; blk=line; continue; }
           // 2026-09-18 do_logo_graph_eqw: 7→6（保留图形 bit2/bit4，关闭 eqw 自动弹窗 bit1——脚本中间结果不再弹全屏）
-          printf("[RUNL]%s\n", line.c_str());
           run(line.c_str(),6,contextptr);
         } else {
           if (!line.empty() && line[0]!=' ' && line[0]!='\t'){
@@ -19555,7 +19553,6 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
     }
     python_compat(save_py,contextptr);
     kcas_set_busy(0); // 2026-09-17 熄灭沙漏
-    printf("[RUN] done rc\n"); // 2026-09-17 诊断
     dConsoleRedraw(); // 2026-09-17 运行后强制重绘 Console（print 的 log 直写 Console 缓冲，需刷新才可见）
     // execution_in_progress = 0;
     if (s.size()>=4){
@@ -19893,7 +19890,7 @@ smallmenuitems[1].text = (char*)((lang)?"\xd3\xef\xb7\xa8 (Xcas/Py/JS)":"Syntax 
 #if defined NUMWORKS && defined DEVICE
 	smallmenu.numitems=20;
 #else
-	smallmenu.numitems=17;
+	smallmenu.numitems=18; // 2026-09-19 17→18：修正 [17]=Quit 越界写，并恢复"退出"项显示
 #endif
 	MenuItem smallmenuitems[smallmenu.numitems];
       

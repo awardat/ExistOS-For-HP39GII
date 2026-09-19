@@ -79,13 +79,6 @@ void printTaskList() {
     //    printf("Free memory:   %d Bytes\n", (unsigned int)xPortGetFreeHeapSize());
 }
 
-void vTask1(void *par1) {
-    while (1) {
-        // printTaskList(); // 2026-09-17 用户要求去掉 SYSTEM STATUS 输出
-        vTaskDelay(pdMS_TO_TICKS(10000));
-    }
-}
-
 void softDelayMs(uint32_t ms) {
     uint32_t cur = ll_get_time_ms();
     while ((ll_get_time_ms() - cur) < ms) {
@@ -212,7 +205,6 @@ void main() {
     SwapMemorySize = ll_mem_swap_size();
     TotalAllocatableSize = OnChipMemorySize + SwapMemorySize;
 
-    xTaskCreate(vTask1, "PrintTask", 1024, NULL, configMAX_PRIORITIES - 1, NULL);
     xTaskCreate(main_thread, "System", 400, NULL, configMAX_PRIORITIES - 3, NULL);
 
     vTaskStartScheduler();

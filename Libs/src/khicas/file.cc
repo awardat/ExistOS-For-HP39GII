@@ -108,7 +108,7 @@ int GetFiles(File* files, MenuItem* menuitems, char* basepath, int* count, char*
         files[*count].size = fileinfo.fsize;
         files[*count].isfolder = menuitems[*count].isfolder = isdir;
 #if FILEICON
-        if(fileinfo.fsize == 0) menuitems[*count].icon = FILE_ICON_FOLDER; // it would be a folder icon anyway, because isfolder is true
+        if(isdir) menuitems[*count].icon = FILE_ICON_FOLDER; // 2026-09-19 用目录属性判断（原 fsize==0 对非空目录失效）
         else menuitems[*count].icon = fileIconFromName((char*)buffer);
 #endif
         menuitems[*count].isselected = 0; //clear selection. this means selection is cleared when changing directory (doesn't happen with native file manager)

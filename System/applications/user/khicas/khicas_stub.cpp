@@ -252,6 +252,7 @@ int GetKey(int *key) {
     // 2026-09-16 HOME 回根注入：标志置位期间每次取键直接返回 EXIT（各层按"EXIT=返回上级"契约逐级穿透），
     // 由 Console_GetKey 根部消费清零；80 次上限防止某层不消耗 EXIT 时死循环
     extern int g_home_req;
+    extern int g_kcas_graph_ui; // 2026-09-19 图形界面标志（kdisplay.cc 定义）：Num/Plot 在图形界面内用专用键码
     static int g_home_cnt = 0;
     if (g_home_req) {
         if (++g_home_cnt > 80) { g_home_req = 0; g_home_cnt = 0; }
@@ -335,10 +336,14 @@ int GetKey(int *key) {
             *key = KEY_CTRL_EXIT;
             break;
 
-        INPUT_TRANSLATE(KEY_NUM, KEY_CTRL_F1, KEY_CTRL_F1, KEY_CTRL_F1, KEY_CTRL_F1, KEY_CTRL_F1); // 2026-09-16 Num → 代数菜单（F1 algb）
+        case KEY_NUM: // 2026-09-16 Num → 代数菜单（F1 algb）；2026-09-19 图形界面内改用专用键码（不遮蔽软键 F1）
+            *key = g_kcas_graph_ui ? KEY_CTRL_RESERVE1 : KEY_CTRL_F1;
+            break;
         INPUT_TRANSLATE(KEY_APPS, KEY_CTRL_APPS, KEY_CTRL_APPS, KEY_CTRL_APPS, KEY_CTRL_APPS, KEY_CTRL_APPS); // 2026-09-16 APPS → 打开脚本列表
         INPUT_TRANSLATE(KEY_SYMB, KEY_CTRL_F14, KEY_CTRL_F14, KEY_CTRL_F14, KEY_CTRL_F14, KEY_CTRL_F14); // 2026-09-16 Symb → 程序命令菜单（F> prog）
-        INPUT_TRANSLATE(KEY_PLOT, KEY_CTRL_F3, KEY_CTRL_F3, KEY_CTRL_F3, KEY_CTRL_F3, KEY_CTRL_F3); // 2026-09-16 Plot → 绘图菜单（F3 plot）
+        case KEY_PLOT: // 2026-09-16 Plot → 绘图菜单（F3 plot）；2026-09-19 图形界面内改用专用键码（不遮蔽软键 F3）
+            *key = g_kcas_graph_ui ? KEY_CTRL_RESERVE2 : KEY_CTRL_F3;
+            break;
         INPUT_TRANSLATE(KEY_VARS, KEY_CTRL_VARS, KEY_CTRL_INS, KEY_CTRL_INS, 'a', 'A');
         INPUT_TRANSLATE(KEY_MATH, KEY_CTRL_CATALOG, KEY_CTRL_CATALOG, KEY_CTRL_CATALOG, 'b', 'B');
         INPUT_TRANSLATE(KEY_ABC, KEY_CTRL_FRACCNVRT, 0000000000000, 0000000000000, 'c', 'C'); // 2026-09-16 去除 sh+a b/c 的双引号映射
