@@ -53,9 +53,15 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (since build 126, see CHANGELOG.md)
 
-### build 138 (in development)
-- [ ] Console F1 switched to the editor F1 quick-insert menu (easier symbol/operator entry)
-- [ ] Standalone Python app (latest MicroPython); D4 FTL_Sync power-loss test; FormCalc remaining P3 items and `config_set_charge_mode` dead code cleanup
+### build 138 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138))
+- [x] **KhiCAS input autocompletion** (Shift+0): 355 catalog commands (Chinese names) + 1552 built-in function names; exact-match priority; unique -> `command(`; multiple -> menu; XCAS_ONLY filtered in Python mode
+- [x] **giac 2.0.0 limited port tier 3 (solve.cc)**: equation/inequality/system solving replaced (9893->11712 lines, RUR/gbasis struct evolution + 7 adaptation symbols)
+- [x] **Console F1 quick-insert menu** (editor test segment) + **syntax switch restored and persisted** (Shift+Symb -> config menu; stored in `khi_lang.dat`)
+- [x] **pi rendering fix** (math typeset + Console); Shift+(-) enters `abs(`; README speed note added
+
+### build 139 (in development)
+- [ ] KhiCAS operation manual (keys + Python compat constraints); editor scroll flicker optimization
+- [ ] Standalone Python app (latest MicroPython); D4 FTL_Sync power-loss test; FormCalc remaining P3 items and `config_set_charge_mode` dead code cleanup; `save_script` FatFs write investigation
 
 ### build 137 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
 - [x] **giac 2.0.0 limited port**: tier 1 sym2poly + risch (40 cases pass); tier 2 csturm real-root isolation rewrite (17 cases pass, benefits solve for polynomials/inequalities)
@@ -153,6 +159,16 @@ If ExistOS has already been installed on your device:
   - Your calculatr will reboot automatically.
 1. Enjoy ExistOS!
   - If you are in trouble with the installation or anything else, open an issue or join our Discord server to seek for help.
+
+## Note on KhiCAS Computation Speed
+
+Some symbolic operations take seconds to tens of seconds on the HP39GII. This is inherent to symbolic algorithms (not a hang; the busy indicator lights up while computing):
+
+- Hardware: ARM926EJ-S @240MHz (480MHz in boost mode), no hardware FPU; giac uses libtommath software bignum arithmetic
+- One symbolic evaluation costs ~85ms; solving equations/inequalities/systems needs hundreds to thousands of evaluations
+- Measured (standard 240MHz / boost 480MHz): `solve(exp(x)=x^2,x)` 17.4s / 8.3s; a small nonlinear system 15.2s; `integrate(sin(x)/x,x)` 12.6s; a cubic inequality 8.7s
+- Tip: switch to **boost mode** (Shift+Symb config menu -> speed) for roughly 2x speedup
+- Compared with the old snapshot (~1.4/1.5), the giac 2.0.0 solver is more complete (multiple roots, inequalities, RUR systems) at some speed cost
 
 ## Compiling and Installing
 

@@ -52,9 +52,15 @@
 
 ## 目前工作进展（build 126 起，详见 CHANGELOG.md）
 
-### build 138（开发中）
-- [ ] Console F1 换用编辑器 F1 的快速插入菜单（便于输入符号/运算符）
-- [ ] 独立 Python app（micropython 最新稳定版）；D4 FTL_Sync 真机掉电测试；FormCalc 遗留 P3 四项与 `config_set_charge_mode` 死代码清理
+### build 138（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138)）
+- [x] **KhiCAS 输入自动补全**（Shift+0）：355 条命令目录（中文名）+ 1552 条内置函数名；完整命令名精确匹配优先；唯一→`命令(`；多匹配→菜单；Python 模式过滤 XCAS_ONLY
+- [x] **giac 2.0.0 有限移植三档（solve.cc）**：方程/不等式/方程组求解整体替换（9893→11712 行，RUR/gbasis 结构演进 + 7 个适配符号）
+- [x] **Console F1 快速插入菜单**（编辑器 test 段）+ **语法切换恢复与持久化**（Shift+Symb → 配置菜单；写入 `khi_lang.dat`，重启保持）
+- [x] **π 渲染修复**（数学排版 + Console 双通道）；Shift+(-) 输入 `abs(`；README 新增运算速度说明
+
+### build 139（开发中）
+- [ ] KhiCAS 操作说明文档（按键 + Python 兼容层约束）；编辑器滚动白闪优化
+- [ ] 独立 Python app（micropython 最新稳定版）；D4 FTL_Sync 真机掉电测试；FormCalc 遗留 P3 四项与 `config_set_charge_mode` 死代码清理；`save_script` FatFs 写入待查
 
 ### build 137（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137)）
 - [x] **giac 2.0.0 有限移植**：一档 sym2poly + risch（40 用例通过）；二档 csturm 实根隔离重写（17 用例全通过，solve 多项式/不等式受益）
@@ -167,6 +173,24 @@
 ### RPN39 用户手册
 
 RPN39 用户手册（功能/用法/示例）：[docs/RPN39-manual.md](./docs/RPN39-manual.md)。
+
+## KhiCAS 运算速度说明
+
+部分符号运算在 HP39GII 上需要数秒到数十秒，这是符号计算算法的**固有开销**（不是死机；计算中顶部沙漏图标点亮）：
+
+- 硬件限制：ARM926EJ-S @240MHz（加速模式 480MHz），无硬件浮点；giac 使用 libtommath 软件大数运算
+- 一次符号求值约 85ms；解方程/不等式/方程组内部需要成百上千次求值与多项式运算
+- 实测参考（标准 240MHz / 加速 480MHz）：
+
+| 命令 | 标准 | 加速 |
+|------|------|------|
+| `solve(exp(x)=x^2,x)` | 17.4s | 8.3s |
+| `solve([x^2+y^2=1,x^2-y^2=1/2],[x,y])` | 15.2s | — |
+| `integrate(sin(x)/x,x)` | 12.6s | — |
+| `solve((x-1)*(x-2)*(x-3)>0,x)` | 8.7s | — |
+
+- 建议：耗时计算前切换**加速模式**（Shift+Symb 配置菜单 → 速度），约 2×
+- 相对旧快照（~1.4/1.5），giac 2.0.0 求解器更完整（重根/不等式/方程组 RUR 等），部分场景付出速度代价
 
 ## 编译和安装
 
