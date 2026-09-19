@@ -5089,7 +5089,10 @@ namespace xcas {
       draw_line(x+fontsize/2-3,y-7,x+fontsize/2+1,y-3,c);   
       return;
     }
-    if (ss==2 && strcmp(s,"pi")==0){
+    if (ss==2 && (strcmp(s,"pi")==0
+		  || ((unsigned char)s[0]==0xA6 && (unsigned char)s[1]==0xD0)   // GBK π
+		  || ((unsigned char)s[0]==0xCF && (unsigned char)s[1]==0x80))){ // UTF-8 π
+      if (fontsize>=18) y -= 16; else y -= 12; // 2026-09-19 与普通文本一致的状态区偏移（原缺失致 π 画到视野外/错位）
       if (mode==4){
 	drawRectangle(x,y+2-fontsize,fontsize,fontsize,c);
 	c=bg;
