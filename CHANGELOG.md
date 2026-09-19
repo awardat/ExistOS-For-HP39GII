@@ -17,8 +17,10 @@
 
 ## [build 139] - 2026-09-19 (开发中)
 
+### 已完成
+- **KhiCAS 用户手册**（`docs/KhiCAS-manual.md`）：启动退出 / 界面布局 / 输入求值 / 按键总览 / 菜单（Console 功能菜单 + 文件菜单 18 项）/ 变量 / 自动补全（Shift+0）/ 配置菜单 / 脚本编辑与运行 / Python 兼容模式与命名约束 / 绘图 / 持久化 / FAQ；README 中英双版与 samples/README 已加链接
+
 ### 规划
-- KhiCAS 操作说明文档（基本按键功能 + Python 兼容层内置名约束；清单见 samples/README.md）
 - KhiCAS 编辑器滚动白闪优化（doTextArea 每帧清屏重绘；方案 B 不清屏直覆盖 / C 差量滚动）
 - KhiCAS `save_script` 直接调用时 FatFs 写入失败待查（"另存为 0 字节"疑同源）
 - 独立 Python app（micropython 最新稳定版、独立入口；N-Queens 验证）

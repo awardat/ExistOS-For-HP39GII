@@ -327,6 +327,10 @@ This will install ExistOS on your calculator.
 
 Your calculator will reboot automatically.
 
+## KhiCAS Calculator
+
+KhiCAS user manual (startup / keys / menus / scripts / Python compat mode / FAQ): [docs/KhiCAS-manual.md](./docs/KhiCAS-manual.md).
+
 ## Basic Usage of the Firmware
 
 ### Booting for the first time

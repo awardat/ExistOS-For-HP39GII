@@ -57,4 +57,4 @@ print(caseval("bench_ms"))
 
 ## 备注
 
-以上命名约束将同步收录进后续的《KhiCAS 操作说明》（待 giac 集成工作完成后编写）。
+以上命名约束已收录进《KhiCAS 用户手册》：[docs/KhiCAS-manual.md](../docs/KhiCAS-manual.md)。

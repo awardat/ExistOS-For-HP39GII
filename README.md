@@ -168,11 +168,9 @@
 
 按键定义详见 [docs/keymap.md](./docs/keymap.md)（代码实际键位：编码表 / KhiCAS 映射 / ExistOS UI 按键），原厂键位表见 [docs/keymap_org.md](./docs/keymap_org.md)。
 
-## RPN39 计算器
+## KhiCAS 计算器
 
-### RPN39 用户手册
-
-RPN39 用户手册（功能/用法/示例）：[docs/RPN39-manual.md](./docs/RPN39-manual.md)。
+KhiCAS 用户手册（启动/按键/菜单/脚本/Python 兼容模式/FAQ）：[docs/KhiCAS-manual.md](./docs/KhiCAS-manual.md)。
 
 ## KhiCAS 运算速度说明
 
@@ -191,6 +189,12 @@ RPN39 用户手册（功能/用法/示例）：[docs/RPN39-manual.md](./docs/RPN
 
 - 建议：耗时计算前切换**加速模式**（Shift+Symb 配置菜单 → 速度），约 2×
 - 相对旧快照（~1.4/1.5），giac 2.0.0 求解器更完整（重根/不等式/方程组 RUR 等），部分场景付出速度代价
+
+## RPN39 计算器
+
+### RPN39 用户手册
+
+RPN39 用户手册（功能/用法/示例）：[docs/RPN39-manual.md](./docs/RPN39-manual.md)。
 
 ## 编译和安装
 
