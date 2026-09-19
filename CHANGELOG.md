@@ -18,6 +18,7 @@
 ## [build 139] - 2026-09-19 (开发中)
 
 ### 已完成
+- **KhiCAS 用户手册配图**：12 张实拍屏幕照片（压缩后插入 docs/images/khicas-manual/；命令目录、编辑器 F1 菜单两张待补）
 - **KhiCAS 用户手册**（`docs/KhiCAS-manual.md`）：启动退出 / 界面布局 / 输入求值 / 按键总览 / 菜单（Console 功能菜单 + 文件菜单 18 项）/ 变量 / 自动补全（Shift+0）/ 配置菜单 / 脚本编辑与运行 / Python 兼容模式与命名约束 / 绘图 / 持久化 / FAQ；README 中英双版与 samples/README 已加链接
 
 ### 规划
