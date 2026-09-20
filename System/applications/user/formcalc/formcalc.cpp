@@ -1960,8 +1960,14 @@ static void snFmtRange(uint32_t a, uint32_t b, char *out) { // 公共前缀压�
     int i = 0;
     while (sa[i] && sb[i] && sa[i] == sb[i]) i++;
     while (i > 0 && sa[i - 1] != '.') i--; // 回退到最后一个 '.'
-    if (i > 0) sprintf(out, "%s%s-%s", sa, sa + i, sb + i);
-    else sprintf(out, "%s-%s", sa, sb);
+    if (i > 0) {
+        char pre[20];
+        memcpy(pre, sa, i);
+        pre[i] = 0;
+        sprintf(out, "%s%s-%s", pre, sa + i, sb + i); // 公共前缀 + 各自后缀
+    } else {
+        sprintf(out, "%s-%s", sa, sb);
+    }
 }
 
 static void snAdj(int d) {
