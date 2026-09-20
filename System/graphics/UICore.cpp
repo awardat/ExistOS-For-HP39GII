@@ -1315,17 +1315,14 @@ void UI_keyScanner(void *_) {
                 console->blink();
             }
         }
+        if (UIForceRefresh) { // 2026-09-20：应用退出后立即重绘（原在 333 计数块内，最长约 10s 才刷新）
+            mainw->refreshWindow();
+            drawPage(curPage);
+            UIForceRefresh = false;
+            config_save();
+        }
         if (cnt % 333 == 0) { // 3000→10000ms（2026-09-09）：时钟仅到分钟——3s 白刷；页面信息（时钟/设置页）刷新再降频
             pageUpdate();
-
-            if (UIForceRefresh) {
-                mainw->refreshWindow();
-                drawPage(curPage);
-                UIForceRefresh = false;
-                
-                // �ڽ���ˢ��ʱ��������
-                config_save();
-            }
         }
     }
 }

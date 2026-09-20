@@ -1,6 +1,6 @@
 // Python app —— 独立 MicroPython（v1.29.0）终端式 REPL
-// 2026-09-20 M1/M2：事件驱动 REPL + 键盘/显示 HAL + 4 行回看
-// 方案见 docs/Python-app-plan.md（本地）
+// 2026-09-20 v2：修复数字键映射（HP39GII 数字键码不连续）、ANSI 转义（退格/擦除）、
+// 闪烁光标、底部出界、Shift 指示、Shift+ON 退出、Shift+ALPHA 小写锁定、堆自适应
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -23,7 +23,6 @@ void SystemUISuspend();
 void SystemUIResume();
 void ll_disp_set_indicator(int indicateBit, int BatInt);
 uint32_t ll_get_time_ms();
-// MicroPython 端口 API（Libs/src/micropython/ports/eoslib/mpy_port.c）
 void mpy_init(void *heap, size_t heap_size);
 int mpy_repl_init(void);
 int mpy_repl_feed_char(int c);
@@ -31,49 +30,84 @@ int mpy_exec_str(const char *src);
 void mpy_gc_collect(void);
 }
 
-// ---- 终端缓冲（96 行回看，环形）----
+// ---- 终端缓冲（96 行环形回看）----
 #define TERM_COLS 31
 #define TERM_ROWS 8
 #define TERM_LINES 96
-#define PY_HEAP_SIZE (256 * 1024)
+#define ROW_Y0 13
+#define ROW_STEP 12
+#define TITLE_Y 0
+#define HINT_Y 112
 
 static char term[TERM_LINES][TERM_COLS + 1];
-static int termLines = 0;   // 已产生行数（总）
-static int termCol = 0;     // 当前行光标列
-static int termScroll = 0;  // 回看偏移（0=最新）
+static int termLines = 0; // 已产生行数
+static int tCol = 0;      // 当前列
+static int termScroll = 0;
 static volatile int termDirty = 1;
+static int cursorOn = 1;
 
 static int termCur() { return termLines ? (termLines - 1) % TERM_LINES : 0; }
 
+static void termClearLineFrom(int idx, int col) {
+    char *l = term[idx % TERM_LINES];
+    for (int i = col; i <= TERM_COLS; i++) l[i] = 0;
+}
+
 static void termNewline() {
     termLines++;
-    int idx = termLines % TERM_LINES;
-    memset(term[idx], 0, sizeof(term[idx]));
-    termCol = 0;
-    if (termLines >= TERM_LINES) termScroll = 0;
+    memset(term[termLines % TERM_LINES], 0, TERM_COLS + 1);
+    tCol = 0;
+    termScroll = 0; // 有新输出时回到最新
+}
+
+// ANSI 转义（readline 会发 ESC[K / ESC[D 等）
+static int escState = 0, escN = 0, escHasN = 0;
+static void termEscFinal(char c) {
+    int n = escHasN ? escN : 1;
+    if (n < 1) n = 1;
+    switch (c) {
+    case 'K': termClearLineFrom(termCur(), tCol); break; // 擦除行（0K）
+    case 'D': tCol -= n; if (tCol < 0) tCol = 0; break;  // 左移
+    case 'C': tCol += n; if (tCol > TERM_COLS) tCol = TERM_COLS; break;
+    case 'A': break;                                     // 上移（忽略：行结构由 \n 管理）
+    case 'B': break;
+    case 'J':                                            // 清屏/清到末尾
+        if (escHasN && escN == 2) for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0;
+        else { termClearLineFrom(termCur(), tCol); for (int i = 1; i < TERM_LINES; i++) { int idx = (termLines - 1 + i) % TERM_LINES; term[idx][0] = 0; } }
+        break;
+    case 'H': break;                                     // 光标定位（忽略）
+    default: break;
+    }
 }
 
 static void termPutc(char c) {
-    if (c == '\n') { termNewline(); return; }
-    if (c == '\r') { termCol = 0; return; }
-    if (c == 0x08) { // 退格
-        char *l = term[termCur()];
-        if (termCol > 0) { termCol--; l[termCol] = 0; }
+    if (escState == 1) {
+        if (c == '[') { escState = 2; escN = 0; escHasN = 0; }
+        else escState = 0;
         return;
     }
-    if ((unsigned char)c < 0x20 && c != 0x09) return; // 控制字符忽略（除 TAB）
+    if (escState == 2) {
+        if (c >= '0' && c <= '9') { escN = escN * 10 + (c - '0'); escHasN = 1; return; }
+        termEscFinal(c);
+        escState = 0;
+        return;
+    }
+    if (c == 0x1B) { escState = 1; return; }
+    if (c == '\n') { termNewline(); return; }
+    if (c == '\r') { tCol = 0; return; }
+    if (c == 0x08) { if (tCol > 0) { tCol--; term[termCur()][tCol] = 0; } return; }
+    if ((unsigned char)c < 0x20 && c != 0x09) return;
     char *l = term[termCur()];
-    if (termCol >= TERM_COLS) termNewline();
-    l = term[termCur()];
-    l[termCol++] = c;
-    l[termCol] = 0;
+    if (tCol >= TERM_COLS) { termNewline(); l = term[termCur()]; }
+    if (tCol < TERM_COLS) {
+        l[tCol++] = c;
+        l[tCol] = 0;
+    }
 }
 
-static void termPuts(const char *s) {
-    while (*s) termPutc(*s++);
-}
+static void termPuts(const char *s) { while (*s) termPutc(*s++); }
 
-// ---- MicroPython HAL（强符号覆盖端口的弱定义）----
+// ---- MicroPython HAL ----
 extern "C" uint32_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
     for (size_t i = 0; i < len; i++) termPutc(str[i]);
     termDirty = 1;
@@ -82,13 +116,29 @@ extern "C" uint32_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
 extern "C" uint32_t mp_hal_ticks_ms(void) { return (uint32_t)ll_get_time_ms(); }
 extern "C" uint32_t mp_hal_ticks_us(void) { return (uint32_t)ll_get_time_ms() * 1000; }
 extern "C" void mp_hal_delay_us(uint32_t us) { (void)us; }
-extern "C" void mp_hal_delay_ms(uint32_t ms) { vTaskDelay(pdMS_TO_TICKS(ms)); } // time.sleep()
+extern "C" void mp_hal_delay_ms(uint32_t ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
 extern "C" uint32_t mp_hal_ticks_cpu(void) { return 0; }
 extern "C" int mp_hal_stdin_rx_chr(void) { return 0; }
 extern "C" void mp_hal_set_interrupt_char(int c) { (void)c; }
 
-// ---- 键盘映射（HP39GII 无独立字母键；沿用 KhiCAS 键盘表）----
-// alpha: 0=关 1=小写 2=大写
+// ---- 键盘映射（数字键码不连续：显式映射；字母沿用 KhiCAS 布局）----
+static int keyDigit(uint32_t key) {
+    switch (key) {
+    case KEY_0: return '0';
+    case KEY_1: return '1';
+    case KEY_2: return '2';
+    case KEY_3: return '3';
+    case KEY_4: return '4';
+    case KEY_5: return '5';
+    case KEY_6: return '6';
+    case KEY_7: return '7';
+    case KEY_8: return '8';
+    case KEY_9: return '9';
+    default: return 0;
+    }
+}
+
+// alpha: 0=关 1=大写 2=小写；lock: Shift+ALPHA 锁定小写
 static int keyToChar(uint32_t key, int shift, int alpha) {
     if (alpha) {
         switch (key) {
@@ -125,13 +175,13 @@ static int keyToChar(uint32_t key, int shift, int alpha) {
         default: return 0;
         }
     }
-    if (shift) { // Shift 层：Python 常用符号
+    if (shift) {
         switch (key) {
         case KEY_5: return '[';
         case KEY_6: return ']';
         case KEY_8: return '{';
         case KEY_9: return '}';
-        case KEY_3: return '#'; // 注释（KhiCAS 该位为 π，此处按 Python 用途）
+        case KEY_3: return '#';
         case KEY_0: return '"';
         case KEY_DOT: return '=';
         case KEY_MULTIPLICATION: return '!';
@@ -139,10 +189,9 @@ static int keyToChar(uint32_t key, int shift, int alpha) {
         default: break;
         }
     }
+    int d = keyDigit(key);
+    if (d) return d;
     switch (key) {
-    case KEY_0: case KEY_1: case KEY_2: case KEY_3: case KEY_4:
-    case KEY_5: case KEY_6: case KEY_7: case KEY_8: case KEY_9:
-        return '0' + (int)(key - KEY_0);
     case KEY_DOT: return '.';
     case KEY_PLUS: return '+';
     case KEY_SUBTRACTION: return '-';
@@ -152,75 +201,94 @@ static int keyToChar(uint32_t key, int shift, int alpha) {
     case KEY_RIGHTBRACKET: return ')';
     case KEY_COMMA: return ',';
     case KEY_NEGATIVE: return '-';
-    default: break;
+    default: return 0;
     }
-    return 0;
 }
 
+// ---- 主任务状态（draw 需读取堆大小）----
+static volatile int pyRunning = 0;
+static void *pyHeap = NULL;
+static size_t pyHeapSize = 0;
+static int pyInited = 0;
+
 // ---- 绘制 ----
+static void drawCursorMark(int visibleRow, int col) {
+    if (visibleRow < 0) return;
+    int x = 1 + col * 8, y = ROW_Y0 + visibleRow * ROW_STEP + 10;
+    uidisp->draw_box(x, y, x + 7, y + 1, 0, -1);
+}
+
 static void draw() {
     uidisp->draw_box(0, 0, LCD_PIX_W - 1, LCD_PIX_H - 1, 255, 255);
-    uidisp->draw_printf(2, 1, 12, 0, 255, "Python 3.4 / MicroPython 1.29");
-    // 文本区（8 行 12px 字体，y=15 起，行距 13）
+    uidisp->draw_printf(2, TITLE_Y, 12, 0, 255, "Python 3.4 / MicroPython 1.29  [%dK]", (int)(pyHeapSize / 1024));
     int last = termLines - 1 - termScroll;
     for (int i = 0; i < TERM_ROWS; i++) {
         int ln = last - (TERM_ROWS - 1 - i);
         if (ln < 0) continue;
-        uidisp->draw_printf(1, 15 + i * 13, 12, 0, 255, "%s", term[ln % TERM_LINES]);
+        uidisp->draw_printf(1, ROW_Y0 + i * ROW_STEP, 12, 0, 255, "%s", term[ln % TERM_LINES]);
     }
-    uidisp->draw_printf(2, 119, 12, 0, 255, "ON exit  ALPHA a-z  UP/DN scroll");
+    if (cursorOn && termScroll == 0 && termLines >= 1) drawCursorMark(TERM_ROWS - 1, tCol);
+    uidisp->draw_printf(2, HINT_Y, 12, 0, 255, "ON:-  sh+ON:exit  ALPHA:a-z  UP/DN:scroll");
     uidisp->flush();
 }
 
 // ---- 主任务 ----
-static volatile int pyRunning = 0;
-static void *pyHeap = NULL;
-static int pyInited = 0;
-
 static void pyTask(void *_) {
     SystemUISuspend();
     uidisp->restoreBuffer();
     pyRunning = 1;
 
-    if (!pyHeap) pyHeap = malloc(PY_HEAP_SIZE);
+    if (!pyHeap) { // 自适应堆：优先片上，依次尝试
+        static const size_t tries[] = {96 * 1024, 64 * 1024, 32 * 1024};
+        for (unsigned i = 0; i < sizeof(tries) / sizeof(tries[0]); i++) {
+            pyHeap = malloc(tries[i]);
+            if (pyHeap) { pyHeapSize = tries[i]; break; }
+        }
+    }
     if (!pyHeap) {
         uidisp->draw_box(0, 0, 255, 127, 255, 255);
-        uidisp->draw_printf(2, 40, 12, 0, 255, "Python: not enough memory!");
-        uidisp->draw_printf(2, 60, 12, 0, 255, "need %d KB", PY_HEAP_SIZE / 1024);
+        uidisp->draw_printf(2, 40, 12, 0, 255, "Python: no memory (need 32KB+)");
+        uidisp->draw_printf(2, 60, 12, 0, 255, "Enable MEM SWAP in settings");
         uidisp->flush();
         vTaskDelay(pdMS_TO_TICKS(3000));
         SystemUIResume();
         vTaskDelete(NULL);
         return;
     }
-    if (!pyInited) { // 首次进入：初始化（会话在退出后保留，变量不丢）
-        mpy_init(pyHeap, PY_HEAP_SIZE);
+    if (!pyInited) {
+        mpy_init(pyHeap, pyHeapSize);
         mpy_repl_init();
         pyInited = 1;
     }
     termDirty = 1;
     draw();
 
-    int lastKey = -1, shift = 0, alpha = 0;
+    int lastKey = -1, shift = 0, alpha = 0, alphaLock = 0, blinkDiv = 0;
     while (pyRunning) {
         uint32_t keys = ll_vm_check_key();
         uint32_t kp = keys >> 16, key = keys & 0xFFFF;
         if (kp) {
-            if (key == KEY_SHIFT) { // Shift 按下沿
-                lastKey = key;
-                if (alpha) { // Shift+ALPHA：切换大小写
-                    alpha = (alpha == 1) ? 2 : 1;
-                    ll_disp_set_indicator(alpha == 1 ? INDICATE_A__Z : INDICATE_a__z, -1);
-                } else {
+            if (key == KEY_SHIFT) {
+                if (key != (uint32_t)lastKey) {
+                    lastKey = key;
                     shift = 1;
+                    ll_disp_set_indicator(INDICATE_LEFT, -1);
                 }
             } else if (key != (uint32_t)lastKey) {
                 lastKey = key;
-                if (key == KEY_ON) {
-                    pyRunning = 0; // 退出
+                if (shift && key == KEY_ON) { // Shift+ON 退出
+                    pyRunning = 0;
+                } else if (shift && key == KEY_ALPHA) { // Shift+ALPHA：锁定小写（再按解除）
+                    if (alphaLock) { alphaLock = 0; alpha = 0; ll_disp_set_indicator(0, -1); }
+                    else { alphaLock = 1; alpha = 2; ll_disp_set_indicator(INDICATE_a__z, -1); }
+                } else if (key == KEY_ON) {
+                    // 单独 ON：不退出（避免误触）——无操作
                 } else if (key == KEY_ALPHA) {
-                    alpha = (alpha + 1) % 3; // 大写(A..Z)→小写(a..z)→关（一次有效）
-                    ll_disp_set_indicator(alpha == 1 ? INDICATE_A__Z : (alpha == 2 ? INDICATE_a__z : 0), -1);
+                    if (alphaLock) { alphaLock = 0; alpha = 0; ll_disp_set_indicator(0, -1); }
+                    else {
+                        alpha = (alpha + 1) % 3; // 大写→小写→关
+                        ll_disp_set_indicator(alpha == 1 ? INDICATE_A__Z : (alpha == 2 ? INDICATE_a__z : 0), -1);
+                    }
                 } else if (key == KEY_ENTER) {
                     mpy_repl_feed_char('\r');
                 } else if (key == KEY_BACKSPACE) {
@@ -236,20 +304,29 @@ static void pyTask(void *_) {
                     int ch = keyToChar(key, shift, alpha);
                     if (ch) {
                         mpy_repl_feed_char(ch);
-                        if (alpha) { // 一次性 alpha：用后关闭
+                        if (alpha && !alphaLock) { // 一次性 alpha
                             alpha = 0;
                             ll_disp_set_indicator(0, -1);
                         }
                     }
                 }
-                if (key != KEY_SHIFT) shift = 0;
+                if (shift && key != KEY_SHIFT && key != KEY_ALPHA) {
+                    shift = 0;
+                    ll_disp_set_indicator(0, -1);
+                }
+                termDirty = 1;
             }
         } else {
             lastKey = -1;
-            shift = 0;
+        }
+        blinkDiv++;
+        if (blinkDiv >= 25) { // ~500ms 光标闪烁
+            blinkDiv = 0;
+            cursorOn = !cursorOn;
+            if (termScroll == 0) termDirty = 1;
         }
         if (termDirty) { termDirty = 0; draw(); }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 
     ll_disp_set_indicator(0, -1);
