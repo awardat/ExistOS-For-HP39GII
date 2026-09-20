@@ -47,6 +47,16 @@ static volatile int termDirty = 1;
 static int rowDirty = -1; // >=0：仅刷新该可见行
 static int cursorOn = 1;
 static int lineLen = 0;   // 当前输入行长度（用于退格边界）
+static int contMode = 0;  // REPL 续行态（尾部提示符为 "... "）
+static char outTail[8];
+static int outTailLen = 0;
+
+static void trackPrompt(void) { // 尾部匹配 ">>> " / "... "
+    if (outTailLen >= 4) {
+        if (memcmp(outTail + outTailLen - 4, "... ", 4) == 0) contMode = 1;
+        else if (memcmp(outTail + outTailLen - 4, ">>> ", 4) == 0) contMode = 0;
+    }
+}
 
 static int termCur() { return termLines ? (termLines - 1) % TERM_LINES : 0; }
 
@@ -107,6 +117,12 @@ static void termPutc(char c) {
         l[tCol++] = c;
         l[tCol] = 0;
         rowDirty = TERM_ROWS - 1; // 当前行即最底可见行
+        if (outTailLen < (int)sizeof(outTail)) outTail[outTailLen++] = c;
+        else {
+            memmove(outTail, outTail + 1, sizeof(outTail) - 1);
+            outTail[sizeof(outTail) - 1] = c;
+        }
+        trackPrompt();
     }
 }
 
@@ -316,10 +332,12 @@ static void pyTask(void *_) {
                         ll_disp_set_indicator(alpha == 1 ? INDICATE_A__Z : (alpha == 2 ? INDICATE_a__z : 0), -1);
                     }
                 } else if (key == KEY_ENTER) {
-                    mpy_repl_feed_char('\r');
+                    if (lineLen == 0 && contMode) mpy_repl_feed_char(0x04); // 空行：Ctrl-D 结束块（否则 auto-indent 会反复续行）
+                    else mpy_repl_feed_char('\r');
                     lineLen = 0;
                 } else if (shift && key == KEY_BACKSPACE) { // Shift+退格 = Ctrl-C：取消当前输入（续行卡住的逃生口）
                     mpy_repl_feed_char(0x03);
+                    contMode = 0;
                     lineLen = 0;
                 } else if (key == KEY_BACKSPACE) {
                     if (lineLen > 0) { // 行首忽略：MP readline 在空行退格会重打提示符
