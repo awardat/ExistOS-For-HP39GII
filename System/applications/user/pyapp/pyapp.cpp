@@ -147,8 +147,7 @@ static void termPuts(const char *s) { while (*s) termPutc(*s++); }
 
 // ---- MicroPython HAL ----
 extern "C" uint32_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
-    for (size_t i = 0; i < len; i++) termPutc(str[i]);
-    termDirty = 1;
+    for (size_t i = 0; i < len; i++) termPutc(str[i]); // 细粒度标记：普通字符→行刷新，换行→整屏
     return len;
 }
 extern "C" uint32_t mp_hal_ticks_ms(void) { return (uint32_t)ll_get_time_ms(); }
@@ -367,6 +366,15 @@ static void pyTask(void *_) {
                         mpy_repl_feed_char(0x08);
                         lineLen--;
                     }
+                } else if (shift && key == KEY_UP) { // Shift+UP = PageUp（整页回看）
+                    termScroll += TERM_ROWS;
+                    if (termScroll > termLines - TERM_ROWS) termScroll = termLines - TERM_ROWS;
+                    if (termScroll < 0) termScroll = 0;
+                    termDirty = 1;
+                } else if (shift && key == KEY_DOWN) { // Shift+DOWN = PageDown
+                    termScroll -= TERM_ROWS;
+                    if (termScroll < 0) termScroll = 0;
+                    termDirty = 1;
                 } else if (key == KEY_UP) {
                     if (termLines > TERM_ROWS) termScroll++;
                     if (termScroll > termLines - TERM_ROWS) termScroll = termLines - TERM_ROWS;
