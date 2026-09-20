@@ -220,6 +220,15 @@ static void scanPyFiles(void) {
     f_closedir(&dir);
 }
 
+// 运行列表单行重绘（选中态）——避免每次移动整屏刷新
+static void drawRunRow(int idx) {
+    if (idx < runTop || idx >= runTop + 6 || idx >= pyFileCount) return;
+    int y = 36 + (idx - runTop) * 12;
+    uidisp->draw_box(2, y - 1, LCD_PIX_W - 3, y + 10, -1, (idx == runSel) ? 0 : 255);
+    uidisp->draw_printf(4, y, 12, (idx == runSel) ? 255 : 0, (idx == runSel) ? 0 : 255, "%s", pyFiles[idx]);
+    uidisp->flushRect(2, y - 1, LCD_PIX_W - 3, y + 10);
+}
+
 static void runPyFile(int idx) {
     char path[48];
     snprintf(path, sizeof(path), "/xcas/%s", pyFiles[idx]);
@@ -532,10 +541,22 @@ static void pyTask(void *_) {
                     termDirty = 1;
                 } else if (uiMode == UI_RUN) {
                     if (key == KEY_F4 || key == KEY_ON) uiMode = UI_REPL;
-                    else if (key == KEY_UP) { if (runSel > 0) { runSel--; if (runSel < runTop) runTop = runSel; } }
-                    else if (key == KEY_DOWN) { if (runSel + 1 < pyFileCount) { runSel++; if (runSel >= runTop + 6) runTop = runSel - 5; } }
-                    else if (key == KEY_ENTER) { runPyFile(runSel); uiMode = UI_REPL; }
-                    termDirty = 1;
+                    else if (key == KEY_UP) {
+                        if (runSel > 0) {
+                            int old = runSel;
+                            runSel--;
+                            if (runSel < runTop) { runTop = runSel; termDirty = 1; } // 翻页才整屏
+                            else { drawRunRow(old); drawRunRow(runSel); }
+                        }
+                    } else if (key == KEY_DOWN) {
+                        if (runSel + 1 < pyFileCount) {
+                            int old = runSel;
+                            runSel++;
+                            if (runSel >= runTop + 6) { runTop = runSel - 5; termDirty = 1; }
+                            else { drawRunRow(old); drawRunRow(runSel); }
+                        }
+                    } else if (key == KEY_ENTER) { runPyFile(runSel); uiMode = UI_REPL; termDirty = 1; }
+                    else termDirty = 1;
                 } else if (key == KEY_F1) { uiMode = UI_SYMB; symSel = 0; termDirty = 1;
                 } else if (key == KEY_F4) { scanPyFiles(); runSel = 0; runTop = 0; if (pyFileCount > 0) uiMode = UI_RUN; termDirty = 1;
                 } else if (key == KEY_F5) { uiMode = UI_HELP; helpPage = 0; termDirty = 1;
@@ -635,7 +656,7 @@ static void pyTask(void *_) {
         if (blinkDiv >= 25) { // ~500ms 光标闪烁（仅刷新光标 2px 竖条，不整屏重绘）
             blinkDiv = 0;
             cursorOn = !cursorOn;
-            if (!termDirty) cursorPaint(cursorOn);
+            if (!termDirty && uiMode == UI_REPL) cursorPaint(cursorOn);
         }
         if (termDirty) {
             termDirty = 0;
