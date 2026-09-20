@@ -84,6 +84,7 @@ static void termClearLineFrom(int idx, int col) {
 static void termNewline() {
     rowDirty = -1;
     lineLen = 0;
+    termDirty = 1; // 换行使可见行整体上移 → 需整屏重绘（普通按键不触发）
     termLines++;
     memset(term[termLines % TERM_LINES], 0, TERM_COLS + 1);
     tCol = 0;
@@ -389,8 +390,7 @@ static void pyTask(void *_) {
                     shift = 0;
                     ll_disp_set_indicator(0, -1);
                 }
-                cursorOn = 1;
-                termDirty = 1;
+                cursorOn = 1; // 有输入时点亮光标；重绘交由输出（rowDirty）或换行（termDirty）
             }
         } else {
             lastKey = -1;
