@@ -60,7 +60,7 @@ bool isMsgBoxShow = false;
 static int curPage = 0;
 static int page3Subpage = 0;
 #ifndef APP_COUNT
-#define APP_COUNT 3 // 主界面应用数（新增应用时 +1，并在 drawAppIcon/KEY_ENTER 登记）
+#define APP_COUNT 3 // 主界面应用数（4x1 单行；新增应用时 +1，并在 drawAppIcon/KEY_ENTER 登记）
 #endif
 static int appPage_select = 0;
 
@@ -329,8 +329,10 @@ static void drawAppIcon(int idx, int ix, int iy) {
     default:
         break;
     }
-    if (name)
-        uidisp->draw_printf(ix, iy + 49, 16, 0, 0xFF, "%s", name);
+    if (name) { // 名称 12px 居中（16px 时 FormCalc 8 字符 = 64px 会压到相邻图标）
+        int lx = ix + (48 - 6 * (int)strlen(name)) / 2;
+        uidisp->draw_printf(lx, iy + 49, 12, 0, 0xFF, "%s", name);
+    }
 }
 
 void drawPage(int page) {
@@ -342,13 +344,11 @@ void drawPage(int page) {
                      -1, 0xFF);
 
     switch (page) {
-    case 0: { // 应用页：2 列网格（每页 4 个图标；APP_COUNT 控制数量）
-        for (int i = 0; i < APP_COUNT; i++) {
-            int col = i % 2, row = i / 2;
-            drawAppIcon(i, mainw->content_x0 + 12 + col * 80, mainw->content_y0 + 12 + row * 72);
-        }
-        int col = appPage_select % 2, row = appPage_select / 2;
-        int sx = mainw->content_x0 + 12 + col * 80, sy = mainw->content_y0 + 12 + row * 72;
+    case 0: { // 应用页：4x1 单行（LCD 逻辑 256x127，内容区高 95px 只容一行）
+        for (int i = 0; i < APP_COUNT; i++)
+            drawAppIcon(i, mainw->content_x0 + 8 + i * 60, mainw->content_y0 + 12);
+        int sx = mainw->content_x0 + 8 + appPage_select * 60;
+        int sy = mainw->content_y0 + 12;
         uidisp->draw_box(sx, sy, sx + 48, sy + 48, 0, -1);
         break;
     }
@@ -708,12 +708,6 @@ void keyMsg(uint32_t key, int state) {
             if (curPage == 1) {
                 goto CONSOLE_KEY_EVENT;
             }
-            if (curPage == 0) { // 网格第二行 → 第一行（2026-09-20）
-                if (appPage_select >= 2) {
-                    appPage_select -= 2;
-                    drawPage(curPage);
-                }
-            }
             if (curPage == 2) {
                 if (*selectedItem != 1) {
                     (*selectedItem)--;
@@ -731,12 +725,6 @@ void keyMsg(uint32_t key, int state) {
         case KEY_DOWN:
             if (curPage == 1) {
                 goto CONSOLE_KEY_EVENT;
-            }
-            if (curPage == 0) { // 网格第一行 → 第二行（2026-09-20）
-                if (appPage_select + 2 < APP_COUNT) {
-                    appPage_select += 2;
-                    drawPage(curPage);
-                }
             }
             if (curPage == 2) {
                 if (*selectedItem != 5 && (*pageNow - 1) * 5 + *selectedItem != *filesCount) {
