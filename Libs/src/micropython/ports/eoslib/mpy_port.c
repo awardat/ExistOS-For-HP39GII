@@ -28,6 +28,7 @@
 #include "py/repl.h"
 #include "py/mphal.h"
 #include "py/mperrno.h"
+#include "py/stream.h"
 #include "shared/runtime/pyexec.h"
 #include "mpconfigport.h"
 
@@ -138,14 +139,146 @@ mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
     mp_raise_OSError(MP_ENOENT);
 }
 
-// open()：M2 接入 FatFs 前先抛错（modio/modbuiltins 要求端口提供）
-mp_obj_t mp_builtin_open_obj_stub(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
-    (void)n_args;
-    (void)args;
-    (void)kwargs;
-    mp_raise_OSError(MP_ENOENT);
+/* ---- 文件对象（M3：FatFs 垫片，App 侧实现下列钩子）---- */
+MP_WEAK void *mpy_fs_fopen(const char *path, const char *mode) {
+    (void)path;
+    (void)mode;
+    return NULL;
 }
-MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open_obj_stub);
+MP_WEAK size_t mpy_fs_fread(void *h, void *buf, size_t n) {
+    (void)h;
+    (void)buf;
+    (void)n;
+    return 0;
+}
+MP_WEAK size_t mpy_fs_fwrite(void *h, const void *buf, size_t n) {
+    (void)h;
+    (void)buf;
+    (void)n;
+    return 0;
+}
+MP_WEAK int mpy_fs_fclose(void *h) {
+    (void)h;
+    return -1;
+}
+MP_WEAK long mpy_fs_fseek(void *h, long off, int whence) {
+    (void)h;
+    (void)off;
+    (void)whence;
+    return -1;
+}
+MP_WEAK long mpy_fs_ftell(void *h) {
+    (void)h;
+    return -1;
+}
+
+typedef struct _mp_obj_mpyfile_t {
+    mp_obj_base_t base;
+    void *h;
+} mp_obj_mpyfile_t;
+
+static mp_uint_t mpyfile_read(mp_obj_t self_in, void *buf, mp_uint_t size, int *errcode) {
+    mp_obj_mpyfile_t *self = MP_OBJ_TO_PTR(self_in);
+    if (self->h == NULL) {
+        *errcode = MP_EBADF;
+        return MP_STREAM_ERROR;
+    }
+    return mpy_fs_fread(self->h, buf, size);
+}
+
+static mp_uint_t mpyfile_write(mp_obj_t self_in, const void *buf, mp_uint_t size, int *errcode) {
+    mp_obj_mpyfile_t *self = MP_OBJ_TO_PTR(self_in);
+    if (self->h == NULL) {
+        *errcode = MP_EBADF;
+        return MP_STREAM_ERROR;
+    }
+    return mpy_fs_fwrite(self->h, buf, size);
+}
+
+static mp_uint_t mpyfile_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
+    mp_obj_mpyfile_t *self = MP_OBJ_TO_PTR(self_in);
+    switch (request) {
+    case MP_STREAM_SEEK: {
+        struct mp_stream_seek_t *s = (struct mp_stream_seek_t *)arg;
+        long r = mpy_fs_fseek(self->h, (long)s->offset, (int)s->whence);
+        if (r < 0) {
+            *errcode = MP_EINVAL;
+            return MP_STREAM_ERROR;
+        }
+        s->offset = r;
+        return 0;
+    }
+    case MP_STREAM_FLUSH:
+        return 0;
+    case MP_STREAM_CLOSE: {
+        int r = mpy_fs_fclose(self->h);
+        self->h = NULL;
+        return r == 0 ? 0 : MP_STREAM_ERROR;
+    }
+    default:
+        *errcode = MP_EINVAL;
+        return MP_STREAM_ERROR;
+    }
+}
+
+static void mpyfile_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+    (void)kind;
+    mp_obj_mpyfile_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_printf(print, "<file %p>", self->h);
+}
+
+static const mp_rom_map_elem_t mpyfile_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&mp_stream_read_obj) },
+    { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_stream_readinto_obj) },
+    { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj) },
+    { MP_ROM_QSTR(MP_QSTR_readlines), MP_ROM_PTR(&mp_stream_unbuffered_readlines_obj) },
+    { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
+    { MP_ROM_QSTR(MP_QSTR_seek), MP_ROM_PTR(&mp_stream_seek_obj) },
+    { MP_ROM_QSTR(MP_QSTR_tell), MP_ROM_PTR(&mp_stream_tell_obj) },
+    { MP_ROM_QSTR(MP_QSTR_flush), MP_ROM_PTR(&mp_stream_flush_obj) },
+    { MP_ROM_QSTR(MP_QSTR_close), MP_ROM_PTR(&mp_stream_close_obj) },
+    { MP_ROM_QSTR(MP_QSTR___enter__), MP_ROM_PTR(&mp_identity_obj) },
+    { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&mp_stream___exit___obj) },
+};
+static MP_DEFINE_CONST_DICT(mpyfile_locals_dict, mpyfile_locals_dict_table);
+
+static const mp_stream_p_t mpyfile_stream_p = {
+    .read = mpyfile_read,
+    .write = mpyfile_write,
+    .ioctl = mpyfile_ioctl,
+    .is_text = true,
+};
+
+MP_DEFINE_CONST_OBJ_TYPE(
+    mp_type_mpyfile,
+    MP_QSTR_mpyfile,
+    MP_TYPE_FLAG_ITER_IS_STREAM,
+    print, mpyfile_print,
+    protocol, &mpyfile_stream_p,
+    locals_dict, &mpyfile_locals_dict
+    );
+
+static mp_obj_t mpy_open(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_mode, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+        { MP_QSTR_encoding, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+    };
+    mp_arg_val_t vals[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, vals);
+    const char *path = mp_obj_str_get_str(args[0]);
+    const char *mode = "r";
+    if (vals[0].u_obj != mp_const_none) {
+        mode = mp_obj_str_get_str(vals[0].u_obj);
+    }
+    void *h = mpy_fs_fopen(path, mode);
+    if (h == NULL) {
+        mp_raise_OSError(MP_ENOENT);
+    }
+    mp_obj_mpyfile_t *o = mp_obj_malloc(mp_obj_mpyfile_t, &mp_type_mpyfile);
+    o->h = h;
+    return MP_OBJ_FROM_PTR(o);
+}
+MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mpy_open);
 
 void nlr_jump_fail(void *val) {
     (void)val;

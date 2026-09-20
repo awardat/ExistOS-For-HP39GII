@@ -55,6 +55,19 @@ print(caseval("bench_ms"))
 - 必须用 **3 个参数**调用（`time(1,2,3)`）；`time(a,b)` 两参数用于设置 RTC 时间，不要使用
 - 另可用 `time(表达式)` 对单个表达式计时（返回秒，如 `time(integrate(sin(x)/x,x))`）
 
+## Python app 样本（独立 MicroPython，2026-09-20）
+
+**Python app**（首页第 4 个图标）是真正的 MicroPython 解释器，样本以 **`pyNN_` 前缀**与 KhiCAS 样本区分：
+
+| 文件 | 内容 |
+|------|------|
+| `py01_basics.py` | 语言基础：算术/字符串/列表/循环/条件/函数/字典 + 计时 |
+| `py07_nqueens.py` | N-Queens 8x8 基准（92 解 / 2057 节点 + 计时） |
+
+**运行方式**：把文件复制到设备 `/xcas/` → Python app 内按 **F4（运行）** 选择文件，或 **F6 文件 → 打开并运行**。
+
+与 KhiCAS 样本的差异：MicroPython 无 giac 兼容层限制（`i`/`sign` 等可自由使用）；支持 `open()` 文件读写（`/xcas/`）；暂不支持 `import` 本地文件。
+
 ## 备注
 
 以上命名约束已收录进《KhiCAS 用户手册》：[docs/KhiCAS-manual.md](../docs/KhiCAS-manual.md)。

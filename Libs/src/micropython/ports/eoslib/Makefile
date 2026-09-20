@@ -43,7 +43,7 @@ SRC_C = \
 	shared/runtime/stdout_helpers.c \
 	shared/readline/readline.c
 
-SRC_QSTR += shared/runtime/pyexec.c shared/readline/readline.c
+SRC_QSTR += mpy_port.c shared/runtime/pyexec.c shared/readline/readline.c
 
 OBJ += $(PY_O)  # PY_O = py 核心 + extmod（py.mk 约定）
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))

@@ -13,6 +13,11 @@
 #include "task.h"
 #include "../../../core/SystemConfig.h"
 #include "../../../third_party/freertos/include/SysConf.h"
+#if FS_TYPE == FS_FATFS
+    #include "filesystem/fatfs/ff.h"
+#else
+    #include "filesystem/littlefs/lfs.h"
+#endif
 #include "../../graphics/UICore.h"
 #include "../../drivers/keyboard_gii39.h"
 
@@ -151,6 +156,99 @@ extern "C" uint32_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
     for (size_t i = 0; i < len; i++) termPutc(str[i]); // 细粒度标记：普通字符→行刷新，换行→整屏
     return len;
 }
+// ---- FatFs 钩子（MicroPython open() 后端；M3）----
+extern "C" void *mpy_fs_fopen(const char *path, const char *mode) {
+    BYTE flags = FA_READ;
+    bool plus = strchr(mode, '+') != 0;
+    switch (mode[0]) {
+    case 'r': flags = plus ? (FA_READ | FA_WRITE) : FA_READ; break;
+    case 'w': flags = FA_CREATE_ALWAYS | FA_WRITE | (plus ? FA_READ : 0); break;
+    case 'a': flags = FA_OPEN_APPEND | FA_WRITE | (plus ? FA_READ : 0); break;
+    default: flags = FA_READ; break;
+    }
+    FIL *f = (FIL *)malloc(sizeof(FIL));
+    if (!f) return NULL;
+    if (f_open(f, path, flags) != FR_OK) { free(f); return NULL; }
+    return f;
+}
+extern "C" size_t mpy_fs_fread(void *h, void *buf, size_t n) {
+    UINT br = 0;
+    if (f_read((FIL *)h, buf, (UINT)n, &br) != FR_OK) return 0;
+    return br;
+}
+extern "C" size_t mpy_fs_fwrite(void *h, const void *buf, size_t n) {
+    UINT bw = 0;
+    if (f_write((FIL *)h, buf, (UINT)n, &bw) != FR_OK) return 0;
+    return bw;
+}
+extern "C" int mpy_fs_fclose(void *h) {
+    FIL *f = (FIL *)h;
+    FRESULT r = f_close(f);
+    free(f);
+    return r == FR_OK ? 0 : -1;
+}
+extern "C" long mpy_fs_fseek(void *h, long off, int whence) {
+    FIL *f = (FIL *)h;
+    FSIZE_t pos;
+    if (whence == 0) pos = (FSIZE_t)off;
+    else if (whence == 1) pos = f_tell(f) + off;
+    else pos = f_size(f) + off;
+    if (f_lseek(f, pos) != FR_OK) return -1;
+    return (long)f_tell(f);
+}
+extern "C" long mpy_fs_ftell(void *h) { return (long)f_tell((FIL *)h); }
+
+// ---- 脚本列表与运行（/xcas/*.py）----
+#define PY_MAX_FILES 64
+static char pyFiles[PY_MAX_FILES][28];
+static int pyFileCount = 0, runSel = 0, runTop = 0;
+
+static void scanPyFiles(void) {
+    pyFileCount = 0;
+    DIR dir;
+    FILINFO fno;
+    if (f_opendir(&dir, "/xcas") != FR_OK) return;
+    while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0]) {
+        if (fno.fattrib & AM_DIR) continue;
+        int n = strlen(fno.fname);
+        if (n > 3 && (fno.fname[n - 3] == '.') && (fno.fname[n - 2] == 'p' || fno.fname[n - 2] == 'P') && (fno.fname[n - 1] == 'y' || fno.fname[n - 1] == 'Y')) {
+            strncpy(pyFiles[pyFileCount], fno.fname, 27);
+            pyFiles[pyFileCount][27] = 0;
+            if (++pyFileCount >= PY_MAX_FILES) break;
+        }
+    }
+    f_closedir(&dir);
+}
+
+static void runPyFile(int idx) {
+    char path[48];
+    snprintf(path, sizeof(path), "/xcas/%s", pyFiles[idx]);
+    FIL f;
+    if (f_open(&f, path, FA_READ) != FR_OK) {
+        termPuts("[open failed]");
+        termNewline();
+        return;
+    }
+    FSIZE_t sz = f_size(&f);
+    if (sz > 64 * 1024) sz = 64 * 1024;
+    char *buf = (char *)malloc((size_t)sz + 1);
+    if (!buf) {
+        f_close(&f);
+        termPuts("[no memory]");
+        termNewline();
+        return;
+    }
+    UINT br = 0;
+    f_read(&f, buf, (UINT)sz, &br);
+    buf[br] = 0;
+    f_close(&f);
+    termPuts("\r\n");
+    termNewline();
+    mpy_exec_str(buf);
+    free(buf);
+    termNewline();
+}
+
 extern "C" uint32_t mp_hal_ticks_ms(void) { return (uint32_t)ll_get_time_ms(); }
 extern "C" uint32_t mp_hal_ticks_us(void) { return (uint32_t)ll_get_time_ms() * 1000; }
 extern "C" void mp_hal_delay_us(uint32_t us) { (void)us; }
@@ -254,23 +352,26 @@ static int pyInited = 0;
 #define UI_SYMB 1
 #define UI_HELP 2
 #define UI_FILE 3
+#define UI_RUN 4
 static int uiMode = UI_REPL;
 static int symPage = 0, symSel = 0, helpPage = 0, fileSel = 0;
 
-static const char *symItems[3][10] = {
+#define SYM_PAGES 4
+static const char *symItems[SYM_PAGES][10] = {
     {":", ",", ".", "=", "<", ">", "_", "#", "\"", "'"},
-    {"(", ")", "[", "]", "{", "}", "+", "-", "*", "/"},
-    {"if ", "elif ", "else:", "for ", "while ", "def ", "return ", "print(", "import ", "%"},
+    {"==", "!=", "<=", ">=", "+", "-", "*", "/", "%", "**"},
+    {"(", ")", "[", "]", "{", "}", "//", "+=", "-=", "="},
+    {"if ", "elif ", "else:", "for ", "while ", "def ", "return ", "print(", "import ", "in "},
 };
-static const char *symTitles[3] = {"\xb7\xfb\xba\xc5", "\xd4\xcb\xcb\xe3\xb7\xfb", "\xbd\xe1\xb9\xb9"};
+static const char *symTitles[SYM_PAGES] = {"\xb7\xfb\xba\xc5", "\xd4\xcb\xcb\xe3\xb7\xfb", "\xc0\xa8\xba\xc5\xd3\xeb\xb8\xb3\xd6\xb5", "\xbd\xe1\xb9\xb9"};
 static const char *helpText[4][6] = {
     {"\xb0\xef\xd6\xfa 1/4 \xbb\xf9\xb1\xbe\xb2\xd9\xd7\xf7", "\xc6\xd5\xcd\xa8\xbc\xfc\xa3\xba\xca\xfd\xd7\xd6\xd3\xeb\xd4\xcb\xcb\xe3\xb7\xfb", "ALPHA\xa3\xba\xd7\xd6\xc4\xb8\xa3\xa8\xd2\xbb\xb4\xce\xb4\xf3\xd0\xb4\xa3\xac\xc1\xbd\xb4\xce\xd0\xa1\xd0\xb4\xa3\xa9", "Shift+ALPHA\xa3\xba\xcb\xf8\xb6\xa8\xd0\xa1\xd0\xb4", "ENT\xa3\xba\xd6\xb4\xd0\xd0\xa3\xbb\xbf\xe9\xce\xb4\xbd\xe1\xca\xf8\xd7\xd4\xb6\xaf\xd0\xf8\xd0\xd0", "Shift+ON\xa3\xba\xcd\xcb\xb3\xf6"},
     {"\xb0\xef\xd6\xfa 2/4 \xb1\xe0\xbc\xad\xd3\xeb\xb9\xf6\xb6\xaf", "\xcd\xcb\xb8\xf1\xa3\xba\xc9\xbe\xb3\xfd\xd7\xd6\xb7\xfb", "Shift+\xcd\xcb\xb8\xf1\xa3\xba\xc8\xa1\xcf\xfb\xb5\xb1\xc7\xb0\xca\xe4\xc8\xeb", "UP/DOWN\xa3\xba\xd6\xf0\xd0\xd0\xb9\xf6\xb6\xaf", "Shift+UP/DOWN\xa3\xba\xb7\xad\xd2\xb3", "ON\xa3\xba\xc7\xe5\xc6\xc1"},
     {"\xb0\xef\xd6\xfa 3/4 \xb6\xe0\xd0\xd0\xd3\xef\xbe\xe4", "\xc0\xfd\xa3\xba""for i in range(3):", "\xcf\xc2\xd2\xbb\xd0\xd0\xd6\xb1\xbd\xd3\xca\xe4\xc8\xeb\xa3\xa8\xd7\xd4\xb6\xaf\xcb\xf5\xbd\xf8\xa3\xa9", "\xcc\xe5\xd0\xd0\xca\xe4\xc8\xeb\xcd\xea\xba\xf3\xb0\xb4 ENT", "\xd4\xd9\xb0\xb4\xd2\xbb\xb4\xce ENT\xa3\xa8\xbf\xd5\xd0\xd0\xa3\xa9\xbf\xaa\xca\xbc\xd6\xb4\xd0\xd0", "F1\xa3\xba\xb7\xfb\xba\xc5\xc3\xe6\xb0\xe5"},
     {"\xb0\xef\xd6\xfa 4/4 \xb9\xd8\xd3\xda", "MicroPython 1.29 \xb6\xc0\xc1\xa2\xd3\xa6\xd3\xc3", "\xcf\xd4\xca\xbe\xbf\xed\xb6\xc8 31 \xd7\xd6\xb7\xfb x 8 \xd0\xd0", "\xca\xe4\xb3\xf6\xb1\xa3\xc1\xf4\xd7\xee\xbd\xfc 96 \xd0\xd0", "\xbb\xe1\xbb\xb0\xb1\xe4\xc1\xbf\xd4\xda\xcd\xcb\xb3\xf6\xba\xf3\xb1\xa3\xc1\xf4", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7\xa3\xba""F6 \xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5"},
 };
-static const char *fileItems[4] = {"\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
-static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "", "\xb0\xef\xd6\xfa", "\xce\xc4\xbc\xfe"};
+static const char *fileItems[5] = {"\xb4\xf2\xbf\xaa\xb2\xa2\xd4\xcb\xd0\xd0", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
+static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "\xd4\xcb\xd0\xd0", "\xb0\xef\xd6\xfa", "\xce\xc4\xbc\xfe"};
 static const char *barLabelsSymb[6] = {"\xd1\xa1\xd4\xf1", "\xc8\xa1\xcf\xfb", "\xc9\xcf\xb7\xad", "\xcf\xc2\xb7\xad", "", ""};
 
 static void feedStr(const char *str) {
@@ -316,7 +417,7 @@ static void draw() {
     // 菜单覆盖层
     if (uiMode == UI_SYMB) {
         uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
-        uidisp->draw_printf(2, 14, 16, 0, 255, "%s %d/3", symTitles[symPage], symPage + 1);
+        uidisp->draw_printf(2, 14, 16, 0, 255, "%s %d/%d", symTitles[symPage], symPage + 1, SYM_PAGES);
         for (int i = 0; i < 10; i++) {
             int col = i % 5, row = i / 5;
             int x = 6 + col * 50, y = 42 + row * 24;
@@ -327,11 +428,21 @@ static void draw() {
         uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
         for (int i = 0; i < 6; i++)
             if (helpText[helpPage][i][0]) uidisp->draw_printf(2, 15 + i * 16, 16, 0, 255, "%s", helpText[helpPage][i]);
+    } else if (uiMode == UI_RUN) {
+        uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
+        uidisp->draw_printf(2, 14, 16, 0, 255, "\xd4\xcb\xd0\xd0\xbd\xc5\xb1\xbe (%d)", pyFileCount);
+        for (int i = 0; i < 6; i++) {
+            int idx = runTop + i;
+            if (idx >= pyFileCount) break;
+            int y = 36 + i * 12;
+            if (idx == runSel) uidisp->draw_box(2, y - 1, LCD_PIX_W - 3, y + 10, -1, 0);
+            uidisp->draw_printf(4, y, 12, (idx == runSel) ? 255 : 0, (idx == runSel) ? 0 : 255, "%s", pyFiles[idx]);
+        }
     } else if (uiMode == UI_FILE) {
         uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
         uidisp->draw_printf(2, 14, 16, 0, 255, "\xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5");
-        for (int i = 0; i < 4; i++) {
-            int y = 38 + i * 17;
+        for (int i = 0; i < 5; i++) {
+            int y = 34 + i * 15;
             if (i == fileSel) uidisp->draw_box(2, y - 2, LCD_PIX_W - 3, y + 14, -1, 0);
             uidisp->draw_printf(6, y, 16, (i == fileSel) ? 255 : 0, (i == fileSel) ? 0 : 255, "%s", fileItems[i]);
         }
@@ -395,8 +506,8 @@ static void pyTask(void *_) {
                 if (uiMode == UI_SYMB) {
                     if (key == KEY_F1 || key == KEY_ENTER) { feedStr(symItems[symPage][symSel]); uiMode = UI_REPL; } // 选择
                     else if (key == KEY_F2 || key == KEY_ON) uiMode = UI_REPL;                                        // 取消
-                    else if (key == KEY_F3) { symPage = (symPage + 2) % 3; symSel = 0; }                              // 上翻
-                    else if (key == KEY_F4) { symPage = (symPage + 1) % 3; symSel = 0; }                              // 下翻
+                    else if (key == KEY_F3) { symPage = (symPage + SYM_PAGES - 1) % SYM_PAGES; symSel = 0; }                              // 上翻
+                    else if (key == KEY_F4) { symPage = (symPage + 1) % SYM_PAGES; symSel = 0; }                              // 下翻
                     else if (key == KEY_UP) { if (symSel >= 5) symSel -= 5; }
                     else if (key == KEY_DOWN) { if (symSel < 5) symSel += 5; }
                     else if (key == KEY_LEFT) { if ((symSel % 5) > 0) symSel--; }
@@ -410,15 +521,23 @@ static void pyTask(void *_) {
                 } else if (uiMode == UI_FILE) {
                     if (key == KEY_F6 || key == KEY_ON) uiMode = UI_REPL;
                     else if (key == KEY_UP) { if (fileSel > 0) fileSel--; }
-                    else if (key == KEY_DOWN) { if (fileSel < 3) fileSel++; }
+                    else if (key == KEY_DOWN) { if (fileSel < 4) fileSel++; }
                     else if (key == KEY_ENTER) {
-                        if (fileSel == 0) { for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0; termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; uiMode = UI_REPL; } // 清屏
-                        else if (fileSel == 1) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); contMode = 0; uiMode = UI_REPL; }                            // 复位解释器
-                        else if (fileSel == 2) { uiMode = UI_HELP; helpPage = 3; }                                                                                        // 关于 → 帮助
+                        if (fileSel == 0) { scanPyFiles(); runSel = 0; runTop = 0; uiMode = (pyFileCount > 0) ? UI_RUN : UI_REPL; } // 打开并运行
+                        else if (fileSel == 1) { for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0; termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; uiMode = UI_REPL; } // 清屏
+                        else if (fileSel == 2) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); contMode = 0; uiMode = UI_REPL; }                            // 复位解释器
+                        else if (fileSel == 3) { uiMode = UI_HELP; helpPage = 3; }                                                                                        // 关于 → 帮助
                         else { pyRunning = 0; }                                                                                                                           // 退出
                     }
                     termDirty = 1;
+                } else if (uiMode == UI_RUN) {
+                    if (key == KEY_F4 || key == KEY_ON) uiMode = UI_REPL;
+                    else if (key == KEY_UP) { if (runSel > 0) { runSel--; if (runSel < runTop) runTop = runSel; } }
+                    else if (key == KEY_DOWN) { if (runSel + 1 < pyFileCount) { runSel++; if (runSel >= runTop + 6) runTop = runSel - 5; } }
+                    else if (key == KEY_ENTER) { runPyFile(runSel); uiMode = UI_REPL; }
+                    termDirty = 1;
                 } else if (key == KEY_F1) { uiMode = UI_SYMB; symSel = 0; termDirty = 1;
+                } else if (key == KEY_F4) { scanPyFiles(); runSel = 0; runTop = 0; if (pyFileCount > 0) uiMode = UI_RUN; termDirty = 1;
                 } else if (key == KEY_F5) { uiMode = UI_HELP; helpPage = 0; termDirty = 1;
                 } else if (key == KEY_F6) { uiMode = UI_FILE; fileSel = 0; termDirty = 1;
                 } else if (key == KEY_F2) { // 清屏
