@@ -8,6 +8,7 @@
 // 功能等级：EXTRA（含 math/cmath/random/struct/array/collections/io/time）
 #define MICROPY_CONFIG_ROM_LEVEL (MICROPY_CONFIG_ROM_LEVEL_EXTRA_FEATURES)
 
+#define MICROPY_USE_INTERNAL_PRINTF (0) // 用 newlib printf（MP 内置版不支持 %*s，会覆盖系统 UI 的 vsnprintf）
 #define MICROPY_ENABLE_COMPILER (1)
 #define MICROPY_ENABLE_GC (1)
 #define MICROPY_HELPER_REPL (1)

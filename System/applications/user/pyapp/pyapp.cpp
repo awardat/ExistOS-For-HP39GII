@@ -212,11 +212,20 @@ static size_t pyHeapSize = 0;
 static int pyInited = 0;
 
 // ---- 绘制 ----
-static void drawCursorMark(int visibleRow, int col) {
-    if (visibleRow < 0) return;
-    int x = 1 + col * 8, y = ROW_Y0 + visibleRow * ROW_STEP + 10;
-    uidisp->draw_box(x, y, x + 7, y + 1, 0, -1);
+// 光标：单元格右侧 2px 竖条（字形仅 6px 宽，不会压到字符；支持局部擦除）
+static void cursorCell(int *px, int *py) {
+    if (termScroll != 0 || termLines < 1) return;
+    *px = 1 + tCol * 8 + 6;
+    *py = ROW_Y0 + (TERM_ROWS - 1) * ROW_STEP;
 }
+static void cursorPaint(int on) {
+    int x, y;
+    cursorCell(&x, &y);
+    if (x < 0) return;
+    uidisp->draw_box(x, y, x + 1, y + 11, on ? 0 : 255, -1);
+    uidisp->flushRect(x, y, x + 1, y + 11);
+}
+
 
 static void draw() {
     uidisp->draw_box(0, 0, LCD_PIX_W - 1, LCD_PIX_H - 1, 255, 255);
@@ -227,7 +236,11 @@ static void draw() {
         if (ln < 0) continue;
         uidisp->draw_printf(1, ROW_Y0 + i * ROW_STEP, 12, 0, 255, "%s", term[ln % TERM_LINES]);
     }
-    if (cursorOn && termScroll == 0 && termLines >= 1) drawCursorMark(TERM_ROWS - 1, tCol);
+    if (cursorOn && termScroll == 0 && termLines >= 1) {
+        int x, y;
+        cursorCell(&x, &y);
+        if (x >= 0) uidisp->draw_box(x, y, x + 1, y + 11, 0, -1);
+    }
     uidisp->draw_printf(2, HINT_Y, 12, 0, 255, "ON:-  sh+ON:exit  ALPHA:a-z  UP/DN:scroll");
     uidisp->flush();
 }
@@ -282,7 +295,12 @@ static void pyTask(void *_) {
                     if (alphaLock) { alphaLock = 0; alpha = 0; ll_disp_set_indicator(0, -1); }
                     else { alphaLock = 1; alpha = 2; ll_disp_set_indicator(INDICATE_a__z, -1); }
                 } else if (key == KEY_ON) {
-                    // 单独 ON：不退出（避免误触）——无操作
+                    // 单独 ON：清屏（终端清屏，不退出）
+                    for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0;
+                    termLines = 0;
+                    tCol = 0;
+                    termScroll = 0;
+                    termDirty = 1;
                 } else if (key == KEY_ALPHA) {
                     if (alphaLock) { alphaLock = 0; alpha = 0; ll_disp_set_indicator(0, -1); }
                     else {
@@ -314,16 +332,17 @@ static void pyTask(void *_) {
                     shift = 0;
                     ll_disp_set_indicator(0, -1);
                 }
+                cursorOn = 1;
                 termDirty = 1;
             }
         } else {
             lastKey = -1;
         }
         blinkDiv++;
-        if (blinkDiv >= 25) { // ~500ms 光标闪烁
+        if (blinkDiv >= 25) { // ~500ms 光标闪烁（仅刷新光标 2px 竖条，不整屏重绘）
             blinkDiv = 0;
             cursorOn = !cursorOn;
-            if (termScroll == 0) termDirty = 1;
+            if (!termDirty) cursorPaint(cursorOn);
         }
         if (termDirty) { termDirty = 0; draw(); }
         vTaskDelay(pdMS_TO_TICKS(20));
