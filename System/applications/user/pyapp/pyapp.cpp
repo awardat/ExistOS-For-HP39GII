@@ -281,6 +281,20 @@ static void scanPyFiles(void) {
     f_closedir(&dir);
 }
 
+// 运行列表整区重绘（滚动时只刷列表区：y=13..109，不重绘 console 行）
+static void drawRunList(void) {
+    uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
+    uidisp->draw_printf(2, 14, 16, 0, 255, "运行脚本 (%d)", pyFileCount);
+    for (int i = 0; i < 6; i++) {
+        int idx = runTop + i;
+        if (idx >= pyFileCount) break;
+        int y = 36 + i * 12;
+        if (idx == runSel) uidisp->draw_box(2, y - 1, LCD_PIX_W - 3, y + 10, -1, 0);
+        uidisp->draw_printf(4, y, 12, (idx == runSel) ? 255 : 0, (idx == runSel) ? 0 : 255, "%s", pyFiles[idx]);
+    }
+    uidisp->flushRect(0, 13, LCD_PIX_W - 1, 109);
+}
+
 // 运行列表单行重绘（选中态）——避免每次移动整屏刷新
 static void drawRunRow(int idx) {
     if (idx < runTop || idx >= runTop + 6 || idx >= pyFileCount) return;
@@ -629,14 +643,14 @@ static void pyTask(void *_) {
                         if (runSel > 0) {
                             int old = runSel;
                             runSel--;
-                            if (runSel < runTop) { runTop = runSel; termDirty = 1; } // 翻页才整屏
+                            if (runSel < runTop) { runTop = runSel; drawRunList(); } // 滚动只刷列表区
                             else { drawRunRow(old); drawRunRow(runSel); }
                         }
                     } else if (key == KEY_DOWN) {
                         if (runSel + 1 < pyFileCount) {
                             int old = runSel;
                             runSel++;
-                            if (runSel >= runTop + 6) { runTop = runSel - 5; termDirty = 1; }
+                            if (runSel >= runTop + 6) { runTop = runSel - 5; drawRunList(); }
                             else { drawRunRow(old); drawRunRow(runSel); }
                         }
                     } else if (key == KEY_ENTER) { runPyFile(runSel); uiMode = UI_REPL; termDirty = 1; }
