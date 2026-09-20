@@ -556,6 +556,7 @@ void keyMsg(uint32_t key, int state) {
                 viewerClose();                                   // 释放缓冲 + 关标志
                 uidisp->draw_box(0, 0, 255, 126, 255, 255);      // 清全屏（含标题栏区，防残留）
                 uidisp->flush();
+                mainw->refreshWindow();                          // 恢复标题栏底色与底部菜单
                 drawPage(curPage);
                 return;
             } else {
