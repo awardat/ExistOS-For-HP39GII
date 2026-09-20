@@ -346,33 +346,56 @@ static void drawAppIcon(int idx, int ix, int iy) {
 }
 
 // ==================== 文本查看器（2026-09-20）====================
-// 文件管理器中打开 .txt/.py：7 行 12px 小字体、只读、可滚动/翻页
+// 文件管理器中打开任意文件：7 行 12px 小字体、只读、可滚动/翻页
+// 缓冲按需 malloc（P3-1：不再常驻 16KB BSS）；GBK 双字节算一个占位符（P3-3）
+#define VIEWER_MAX (16 * 1024)
 static bool viewerActive = false;
-static char viewerBuf[16 * 1024];
+static char *viewerBuf = NULL;
+static const char *viewerMsg = NULL; // 无缓冲时的短提示（静态字符串）
 static uint16_t viewerOff[800];
 static int viewerLineCount = 0, viewerTop = 0;
 static char viewerTitle[40];
 
+static void viewerClose(void) {
+    viewerActive = false;
+    viewerMsg = NULL;
+    if (viewerBuf) {
+        free(viewerBuf);
+        viewerBuf = NULL;
+    }
+}
+
 static bool viewerOpen(const char *dir, const char *name) {
     char path[80];
     snprintf(path, sizeof(path), "%s%s", dir, name);
+    strncpy(viewerTitle, name, sizeof(viewerTitle) - 1);
+    viewerTitle[sizeof(viewerTitle) - 1] = 0;
+    viewerTop = 0;
+    if (!viewerBuf) viewerBuf = (char *)malloc(VIEWER_MAX);
+    if (!viewerBuf) { // 内存不足：仅提示
+        viewerMsg = "\xc4\xda\xb4\xe6\xb2\xbb\xd7\xe3";
+        viewerLineCount = 0;
+        viewerActive = true;
+        return false;
+    }
     FIL f;
-    FRESULT vres = f_open(&f, path, FA_READ);
-    printf("VIEW open [%s] res=%d\n", path, (int)vres);
-    if (vres != FR_OK) {
-        // 打开失败也进入查看器显示原因（路径），便于排查
-        strncpy(viewerBuf, path, sizeof(viewerBuf) - 1);
-        viewerBuf[sizeof(viewerBuf) - 1] = 0;
+    if (f_open(&f, path, FA_READ) != FR_OK) {
+        const char *msg = "\xb4\xf2\xbf\xaa\xca\xa7"; // 打开失败
+        int ml = (int)strlen(msg);
+        memcpy(viewerBuf, msg, ml);
+        viewerBuf[ml] = 0;
         viewerOff[0] = 0;
-        viewerLineCount = 1;
-        viewerTop = 0;
-        strncpy(viewerTitle, "\xb4\xf2\xbf\xaa\xca\xa7\xb0\xdc", sizeof(viewerTitle) - 1);
-        viewerTitle[sizeof(viewerTitle) - 1] = 0;
+        int pl = (int)strlen(path);
+        if (pl > VIEWER_MAX - ml - 2) pl = VIEWER_MAX - ml - 2;
+        memcpy(viewerBuf + ml + 1, path, pl);
+        viewerBuf[ml + 1 + pl] = 0;
+        viewerOff[1] = (uint16_t)(ml + 1);
+        viewerLineCount = 2;
         viewerActive = true;
         return false;
     }
     FSIZE_t sz = f_size(&f);
-    if (sz > sizeof(viewerBuf) - 1) sz = sizeof(viewerBuf) - 1;
+    if (sz > VIEWER_MAX - 1) sz = VIEWER_MAX - 1;
     UINT br = 0;
     f_read(&f, viewerBuf, (UINT)sz, &br);
     f_close(&f);
@@ -388,13 +411,12 @@ static bool viewerOpen(const char *dir, const char *name) {
         }
     }
     if (br == 0) { // 空文件提示
-        strncpy(viewerBuf, "\xa3\xa8\xbf\xd5\xce\xc4\xbc\xfe\xa3\xa9", sizeof(viewerBuf) - 1);
+        const char *msg = "\xa3\xa8\xbf\xd5\xce\xc4\xbc\xfe\xa3\xa9";
+        strncpy(viewerBuf, msg, VIEWER_MAX - 1);
+        viewerBuf[VIEWER_MAX - 1] = 0;
         viewerOff[0] = 0;
         viewerLineCount = 1;
     }
-    viewerTop = 0;
-    strncpy(viewerTitle, name, sizeof(viewerTitle) - 1);
-    viewerTitle[sizeof(viewerTitle) - 1] = 0;
     viewerActive = true;
     return true;
 }
@@ -402,15 +424,25 @@ static bool viewerOpen(const char *dir, const char *name) {
 static void viewerDraw(void) {
     uidisp->draw_box(0, 0, 255, 126, 255, 255);
     uidisp->draw_printf(2, 1, 12, 0, 255, "%s  %d/%d", viewerTitle, viewerTop + 1, viewerLineCount);
+    if (viewerMsg) {
+        uidisp->draw_printf(2, 16, 16, 0, 255, "%s", viewerMsg);
+        uidisp->flush();
+        return;
+    }
     char line[40];
     for (int i = 0; i < 7; i++) {
         int ln = viewerTop + i;
         if (ln >= viewerLineCount) break;
         const char *t = viewerBuf + viewerOff[ln];
         int n = 0;
-        while (t[n] && n < 31) { // 非 ASCII 以 . 占位（12px 字体无中文字形）
-            line[n] = ((unsigned char)t[n] < 0x80) ? t[n] : '.';
-            n++;
+        while (*t && n < 31) { // GBK 双字节算一个 '?'
+            unsigned char c = (unsigned char)*t++;
+            if (c < 0x80) {
+                line[n++] = c;
+            } else {
+                line[n++] = '?';
+                if ((unsigned char)*t >= 0x80) t++;
+            }
         }
         line[n] = 0;
         uidisp->draw_printf(2, 16 + i * 12, 12, 0, 255, "%s", line);
@@ -521,7 +553,9 @@ void keyMsg(uint32_t key, int state) {
                 if (viewerTop > viewerLineCount - 7) viewerTop = viewerLineCount - 7;
                 if (viewerTop < 0) viewerTop = 0;
             } else if (key == KEY_ON) {
-                viewerActive = false;
+                viewerClose();                                   // 释放缓冲 + 关标志
+                uidisp->draw_box(0, 0, 255, 126, 255, 255);      // 清全屏（含标题栏区，防残留）
+                uidisp->flush();
                 drawPage(curPage);
                 return;
             } else {

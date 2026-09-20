@@ -202,14 +202,14 @@ extern "C" uint32_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
     return len;
 }
 // ---- FatFs 钩子（MicroPython open()/import 后端；M3）----
-static void fsPath(const char *in, char *out, int n) { // 相对路径按 /xcas/ 解析
-    if (in[0] == '/') snprintf(out, n, "%s", in);
-    else snprintf(out, n, "/xcas/%s", in);
+static bool fsPath(const char *in, char *out, int n) { // 相对路径按 /xcas/ 解析；超长返回 false
+    int r = (in[0] == '/') ? snprintf(out, n, "%s", in) : snprintf(out, n, "/xcas/%s", in);
+    return (r >= 0 && r < n);
 }
 
 extern "C" int mpy_fs_stat(const char *path, int *isdir) {
     char p[64];
-    fsPath(path, p, sizeof(p));
+    if (!fsPath(path, p, sizeof(p))) return 0;
     FILINFO fno;
     if (f_stat(p, &fno) != FR_OK) return 0;
     *isdir = (fno.fattrib & AM_DIR) ? 1 : 0;
@@ -218,7 +218,7 @@ extern "C" int mpy_fs_stat(const char *path, int *isdir) {
 
 extern "C" void *mpy_fs_fopen(const char *path, const char *mode) {
     char p[64];
-    fsPath(path, p, sizeof(p));
+    if (!fsPath(path, p, sizeof(p))) return NULL;
     BYTE flags = FA_READ;
     bool plus = strchr(mode, '+') != 0;
     switch (mode[0]) {
@@ -251,9 +251,18 @@ extern "C" int mpy_fs_fclose(void *h) {
 extern "C" long mpy_fs_fseek(void *h, long off, int whence) {
     FIL *f = (FIL *)h;
     FSIZE_t pos;
-    if (whence == 0) pos = (FSIZE_t)off;
-    else if (whence == 1) pos = f_tell(f) + off;
-    else pos = f_size(f) + off;
+    if (whence == 0) {
+        if (off < 0) return -1;
+        pos = (FSIZE_t)off;
+    } else if (whence == 1) {
+        FSIZE_t cur = f_tell(f);
+        if (off < 0 && (FSIZE_t)(-off) > cur) return -1;
+        pos = cur + off;
+    } else {
+        FSIZE_t sz = f_size(f);
+        if (off < 0 && (FSIZE_t)(-off) > sz) return -1; // 防无符号下溢（P3-5）
+        pos = sz + off;
+    }
     if (f_lseek(f, pos) != FR_OK) return -1;
     return (long)f_tell(f);
 }
@@ -474,7 +483,7 @@ static const char *helpText[4][6] = {
     {"\xb0\xef\xd6\xfa 1/4 \xbb\xf9\xb1\xbe\xb2\xd9\xd7\xf7", "\xc6\xd5\xcd\xa8\xbc\xfc\xa3\xba\xca\xfd\xd7\xd6\xd3\xeb\xd4\xcb\xcb\xe3\xb7\xfb", "ALPHA\xa3\xba\xd7\xd6\xc4\xb8\xa3\xa8\xd2\xbb\xb4\xce\xb4\xf3\xd0\xb4\xa3\xac\xc1\xbd\xb4\xce\xd0\xa1\xd0\xb4\xa3\xa9", "Shift+ALPHA\xa3\xba\xcb\xf8\xb6\xa8\xd0\xa1\xd0\xb4", "ENT\xa3\xba\xd6\xb4\xd0\xd0\xa3\xbb\xbf\xe9\xce\xb4\xbd\xe1\xca\xf8\xd7\xd4\xb6\xaf\xd0\xf8\xd0\xd0", "Shift+ON\xa3\xba\xcd\xcb\xb3\xf6"},
     {"\xb0\xef\xd6\xfa 2/4 \xb1\xe0\xbc\xad\xd3\xeb\xb9\xf6\xb6\xaf", "\xcd\xcb\xb8\xf1\xa3\xba\xc9\xbe\xb3\xfd\xd7\xd6\xb7\xfb", "Shift+\xcd\xcb\xb8\xf1\xa3\xba\xc8\xa1\xcf\xfb\xb5\xb1\xc7\xb0\xca\xe4\xc8\xeb", "UP/DOWN\xa3\xba\xd6\xf0\xd0\xd0\xb9\xf6\xb6\xaf", "Shift+UP/DOWN\xa3\xba\xb7\xad\xd2\xb3", "ON\xa3\xba\xc7\xe5\xc6\xc1"},
     {"\xb0\xef\xd6\xfa 3/4 \xb6\xe0\xd0\xd0\xd3\xef\xbe\xe4", "\xc0\xfd\xa3\xba""for i in range(3):", "\xcf\xc2\xd2\xbb\xd0\xd0\xd6\xb1\xbd\xd3\xca\xe4\xc8\xeb\xa3\xa8\xd7\xd4\xb6\xaf\xcb\xf5\xbd\xf8\xa3\xa9", "\xcc\xe5\xd0\xd0\xca\xe4\xc8\xeb\xcd\xea\xba\xf3\xb0\xb4 ENT", "\xd4\xd9\xb0\xb4\xd2\xbb\xb4\xce ENT\xa3\xa8\xbf\xd5\xd0\xd0\xa3\xa9\xbf\xaa\xca\xbc\xd6\xb4\xd0\xd0", "F1\xa3\xba\xb7\xfb\xba\xc5\xc3\xe6\xb0\xe5"},
-    {"\xb0\xef\xd6\xfa 4/4 \xb9\xd8\xd3\xda", "MicroPython 1.29 \xb6\xc0\xc1\xa2\xd3\xa6\xd3\xc3", "\xcf\xd4\xca\xbe\xbf\xed\xb6\xc8 31 \xd7\xd6\xb7\xfb x 8 \xd0\xd0", "\xca\xe4\xb3\xf6\xb1\xa3\xc1\xf4\xd7\xee\xbd\xfc 96 \xd0\xd0", "\xbb\xe1\xbb\xb0\xb1\xe4\xc1\xbf\xd4\xda\xcd\xcb\xb3\xf6\xba\xf3\xb1\xa3\xc1\xf4", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7\xa3\xba""F6 \xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5"},
+    {"\xb0\xef\xd6\xfa 4/4 \xb9\xd8\xd3\xda", "MicroPython 1.29 \xb6\xc0\xc1\xa2\xd3\xa6\xd3\xc3", "\xcf\xd4\xca\xbe\xbf\xed\xb6\xc8 31 \xd7\xd6\xb7\xfb x 6 \xd0\xd0", "\xca\xe4\xb3\xf6\xb1\xa3\xc1\xf4\xd7\xee\xbd\xfc 96 \xd0\xd0", "\xbb\xe1\xbb\xb0\xb1\xe4\xc1\xbf\xd4\xda\xcd\xcb\xb3\xf6\xba\xf3\xb1\xa3\xc1\xf4", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7\xa3\xba""F6 \xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5"},
 };
 static const char *fileItems[6] = {"\xb4\xf2\xbf\xaa\xb2\xa2\xd4\xcb\xd0\xd0", "\xb1\xa3\xb4\xe6\xbb\xe1\xbb\xb0", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
 static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "\xd4\xcb\xd0\xd0", "\xb0\xef\xd6\xfa", "\xce\xc4\xbc\xfe"};
@@ -566,6 +575,8 @@ static void draw() {
 }
 
 // ---- 主任务 ----
+static volatile int pyTaskAlive = 0; // 退出/重入互斥（P2-1）：任务存活期间禁止再次启动
+
 static void pyTask(void *_) {
     SystemUISuspend();
     uidisp->restoreBuffer();
@@ -584,6 +595,7 @@ static void pyTask(void *_) {
         uidisp->draw_printf(2, 60, 12, 0, 255, "Enable MEM SWAP in settings");
         uidisp->flush();
         vTaskDelay(pdMS_TO_TICKS(3000));
+        pyTaskAlive = 0;
         SystemUIResume();
         vTaskDelete(NULL);
         return;
@@ -779,10 +791,13 @@ static void pyTask(void *_) {
     ll_disp_set_indicator(0, -1);
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
     uidisp->flush();
+    pyTaskAlive = 0; // 先释放守卫，再恢复 UI / 删除任务（防止退出瞬间重入）
     SystemUIResume();
     vTaskDelete(NULL);
 }
 
 extern "C" void StartPython() {
+    if (pyTaskAlive) return; // 已有实例（退出窗口期内）→ 忽略重复启动
+    pyTaskAlive = 1;
     xTaskCreate(pyTask, "Python", 4096, NULL, configMAX_PRIORITIES - 3, NULL);
 }

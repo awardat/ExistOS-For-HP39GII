@@ -4,16 +4,13 @@
 
 ---
 
-## [build 138] - 2026-09-19 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138))
+## [build 140] - 2026-09-20 (开发中)
 
 ### 已完成
-- **Console F1 快速插入菜单**：Console 的 F1 段由 algb 代数菜单替换为编辑器 F1 的 test 段（`if/else/</>/==/!=/and/or`；Python 模式为 `&&/||`），便于输入比较/逻辑运算符；原 algb 条目（simplify/factor/…）可通过命令目录输入
-- **语法切换恢复 + 持久化**：`Shift+Symb` 直通配置菜单（原 09-03 键位清理后配置菜单只能从 F6 文件菜单第 12 项进入）；语法选择（Xcas / 兼容 Python）持久化到 `/khi_lang.dat` 第 3 个 int（旧文件向后兼容），重启保持——此前每次启动回到编译默认 Python 兼容模式
-- **KhiCAS 输入自动补全**（Shift+0）：前缀匹配 355 条命令目录（completeCaten，显示中文名）+ 1552 条内置函数名（static_lexer_numworks，补齐 sqrt/sin/ln/evalf 等目录未收录命令）；输入完整命令名优先精确匹配；唯一匹配直接补全为 `命令(`（程序结构 while/if/for 插入原文本）；多匹配弹出选择菜单；无匹配不动作；Python 模式过滤 XCAS_ONLY 条目、跳过大小写别名
-- **giac 2.0.0 有限移植三档（solve.cc）**：方程/不等式求解整体替换（9893→11712 行）+ `solve.h`（`gbasis_param_t` 新增 5 字段、`gbasis`/`vecteur2vector_polynome` 签名演进）；适配符号 `RUR_PARAM_MAX_DEG`/`has_undef`/`realset_glue`/`sqrfree`（内容递归）/`mrref` 排列重载/`apply_permutation` 模板/`proot` 兼容重载；编译 0 错误 0 undefined，固件 +34KB；测试用例见本地 docs/giac-solve-test.md（待真机验证）
-
-### 说明
-- README 新增「KhiCAS 运算速度说明」：部分符号运算需数秒到数十秒属算法固有开销（一次符号求值约 85ms；实测 solve(exp(x)=x^2,x) 17.4s / 加速 8.3s 等），建议耗时计算使用加速模式
+- **独立 Python app（MicroPython v1.29.0）**：首页应用页第 4 个图标（原创图标）；终端式 REPL（6 行 × 31 字符、16px 中英混排、96 行回看、行级局部刷新）；完整键位（数字/运算符/Shift 层/ALPHA 26 字母表、Shift+ALPHA 小写锁定、←→ 行内编辑、UP/DOWN 滚动、Shift+UP/DOWN 翻页、ON 清屏、Shift+ON 退出）；底部 F 键菜单（符号面板 4 页 / 清屏 / 取消 / 运行 / 帮助 4 页 / 文件菜单 6 项）；中文报错映射（25 条常见异常）；MicroPython 文件对象（`open()` 走 FatFs）与本地 `import`（按 `/xcas/` 解析）；脚本浏览与运行（F4 或文件菜单，`/xcas/pyNN_*.py`）；会话变量保留 + 复位解释器；「保存会话」导出终端 96 行到 `/xcas/session.txt`
+- **应用页 4x1 布局**（4 图标单行、名称 12px 居中）与**文本查看器**（文件管理器内打开任意文件：7 行 12px 小字体、UP/DOWN 滚动、Shift+UP/DOWN 翻页、只读）
+- **文档与样本**：Python app 用户手册（`docs/Python-app-manual.md`）；样本 `py01_basics.py` / `py02_module.py` / `py07_nqueens.py`（N-Queens 8×8：标准 1221ms / 加速 703ms）
+- **审核整改**：Python app 退出/重入互斥（防双任务共用解释器堆）、查看器退出清全屏、查看器缓冲按需分配（原 16KB 常驻）、GBK 占位按字符、路径截断与负偏移防护、诊断输出清理
 
 ## [build 139] - 2026-09-19 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139))
 
@@ -25,6 +22,17 @@
 
 ### 规划
 - 独立 Python app（micropython 最新稳定版、独立入口；N-Queens 验证）
+
+## [build 138] - 2026-09-19 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138))
+
+### 已完成
+- **Console F1 快速插入菜单**：Console 的 F1 段由 algb 代数菜单替换为编辑器 F1 的 test 段（`if/else/</>/==/!=/and/or`；Python 模式为 `&&/||`），便于输入比较/逻辑运算符；原 algb 条目（simplify/factor/…）可通过命令目录输入
+- **语法切换恢复 + 持久化**：`Shift+Symb` 直通配置菜单（原 09-03 键位清理后配置菜单只能从 F6 文件菜单第 12 项进入）；语法选择（Xcas / 兼容 Python）持久化到 `/khi_lang.dat` 第 3 个 int（旧文件向后兼容），重启保持——此前每次启动回到编译默认 Python 兼容模式
+- **KhiCAS 输入自动补全**（Shift+0）：前缀匹配 355 条命令目录（completeCaten，显示中文名）+ 1552 条内置函数名（static_lexer_numworks，补齐 sqrt/sin/ln/evalf 等目录未收录命令）；输入完整命令名优先精确匹配；唯一匹配直接补全为 `命令(`（程序结构 while/if/for 插入原文本）；多匹配弹出选择菜单；无匹配不动作；Python 模式过滤 XCAS_ONLY 条目、跳过大小写别名
+- **giac 2.0.0 有限移植三档（solve.cc）**：方程/不等式求解整体替换（9893→11712 行）+ `solve.h`（`gbasis_param_t` 新增 5 字段、`gbasis`/`vecteur2vector_polynome` 签名演进）；适配符号 `RUR_PARAM_MAX_DEG`/`has_undef`/`realset_glue`/`sqrfree`（内容递归）/`mrref` 排列重载/`apply_permutation` 模板/`proot` 兼容重载；编译 0 错误 0 undefined，固件 +34KB；测试用例见本地 docs/giac-solve-test.md（待真机验证）
+
+### 说明
+- README 新增「KhiCAS 运算速度说明」：部分符号运算需数秒到数十秒属算法固有开销（一次符号求值约 85ms；实测 solve(exp(x)=x^2,x) 17.4s / 加速 8.3s 等），建议耗时计算使用加速模式
 
 ## [build 137] - 2026-09-19 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
 
