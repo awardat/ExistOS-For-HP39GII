@@ -13,6 +13,8 @@
 #define MICROPY_ENABLE_GC (1)
 #define MICROPY_HELPER_REPL (1)
 #define MICROPY_REPL_EVENT_DRIVEN (1) // App 侧逐字符喂入（终端式 REPL）
+#define MICROPY_LONGINT_IMPL (MICROPY_LONGINT_IMPL_MPZ) // 任意精度整数（2026-09-20）
+#define MP_SSIZE_MAX (0x7FFFFFFF)                       // 工具链未定义 SSIZE_MAX（32 位）
 #define MICROPY_ENABLE_EXTERNAL_IMPORT (1) // 本地 .py 导入（App 侧 mpy_fs_stat/mp_lexer_new_from_file 支持）
 #define MICROPY_ALLOC_PATH_MAX (256)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)

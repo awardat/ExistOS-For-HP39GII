@@ -123,7 +123,7 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 
 | 支持 | 说明 |
 |------|------|
-| 变量 / 运算 / 字符串 / f-string | 含 `%` 与 `str.format` |
+| 变量 / 运算 / 字符串 / f-string | 含 `%` 与 `str.format`；整数为**任意精度** |
 | 列表 / 元组 / 字典 / 集合 / frozenset | 推导式（list/dict/set）、切片（**步长必须为 1**） |
 | 条件 / 循环 | `if/elif/else`、`for`（含 `enumerate/zip/range`）、`while`、`break/continue` |
 | 函数 | 默认参数、关键字参数、`*args`、`**kwargs`、lambda、闭包、装饰器 |
@@ -172,13 +172,13 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 | 负步长切片 | `s[::-1]` 报 `NotImplementedError`（用循环或 `reversed`） |
 | 多继承 | 不支持（单继承） |
 | `match` 语句 | 不支持 |
-| 大整数 | 整数为 **30 位机器整数**，超出报 `OverflowError`（无任意精度；`math.factorial(20)` 会溢出） |
+| 大整数 | **支持任意精度整数**（MPZ）：`2**100`、`math.factorial(50)` 等均可；大数运算比机器整数慢 |
 | 浮点 | 双精度但为**软件实现**（无 FPU），复杂浮点计算较慢 |
 | 递归深度 | 受任务栈限制（建议 < 100 层） |
 | `os` 模块 | 已编译但文件相关函数依赖 VFS（未启用），请用 `open()` |
 | 中文输出 | 终端为 ASCII 字体（界面菜单已汉化）；中文以占位符显示 |
 
-> 需要 `json`/`re`/`hashlib`/大整数等功能时可以开启（重新编译固件）：在 `Libs/src/micropython/ports/eoslib/mpconfigport.h` 把对应 `MICROPY_PY_*` 置 1，或把 `MICROPY_LONGINT_IMPL` 设为 `MICROPY_LONGINT_IMPL_MPZ`。
+> 需要 `json`/`re`/`hashlib` 等功能时可以开启（重新编译固件）：在 `Libs/src/micropython/ports/eoslib/mpconfigport.h` 把对应 `MICROPY_PY_*` 置 1 即可。
 
 ## 7. 文件与脚本
 
