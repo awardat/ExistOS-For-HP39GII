@@ -50,18 +50,7 @@
 | 文档 (待补) | [代码提交规范](#代码提交规范) |
 | **[如何卸载并刷回原生系统](#系统卸载并刷回原生系统)** | **[本项目贡献者](#贡献者)** | **[开源许可证](#许可协议)** |
 
-## 目前工作进展（build 126 起，详见 CHANGELOG.md）
-
-### build 138（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138)）
-- [x] **KhiCAS 输入自动补全**（Shift+0）：355 条命令目录（中文名）+ 1552 条内置函数名；完整命令名精确匹配优先；唯一→`命令(`；多匹配→菜单；Python 模式过滤 XCAS_ONLY
-- [x] **giac 2.0.0 有限移植三档（solve.cc）**：方程/不等式/方程组求解整体替换（9893→11712 行，RUR/gbasis 结构演进 + 7 个适配符号）
-- [x] **Console F1 快速插入菜单**（编辑器 test 段）+ **语法切换恢复与持久化**（Shift+Symb → 配置菜单；写入 `khi_lang.dat`，重启保持）
-- [x] **π 渲染修复**（数学排版 + Console 双通道）；Shift+(-) 输入 `abs(`；README 新增运算速度说明
-
-### build 139（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139)）
-- [x] **KhiCAS 用户手册**（`docs/KhiCAS-manual.md`：按键/菜单/脚本/Python 兼容约束/FAQ）+ **14 张实机配图**；README 中英双版、samples/README 已加链接
-- [x] **KhiCAS `save_script` 写入 0 字节修复**（"另存为 0 字节"根因：未传长度 → `Bfile_WriteFile_OS(len=0)` 直接返回）；`write_file` 长度兜底 + 写后截断；空文件可建
-- [x] **FormCalc 审核 P3 四项**：AMORT 期初/期末（BGN 首期 INT=0）+ 用户 PMT（取 TVM 寄存器）；DB200 直线法交叉；30/360 日规则（31 日+2 月末）；bondPrice 死参与 `config_set_charge_mode` 死代码清理
+## 目前工作进展（仅列大功能发布，详见 CHANGELOG.md）
 
 ### build 140（2026-09-20 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-140)）
 - [x] **独立 Python app（MicroPython v1.29.0）**：首页第 4 个图标；终端式 REPL（6 行 × 31 字符、96 行回看、行级局部刷新）；完整键位（Shift 层/ALPHA 26 字母表/Shift+ALPHA 小写锁定/←→ 行内编辑/翻页）；底部 F 键菜单（F1 符号面板 4 页、F2 清屏、F3 取消、F4 运行脚本、F5 中文帮助、F6 文件菜单 6 项）；中文报错映射（25 条）；`open()` 走 FatFs + 本地 `import`（`/xcas/`）；脚本浏览运行；会话保留 + 复位解释器；「保存会话」导出 `/xcas/session.txt`
@@ -69,16 +58,22 @@
 - [x] **Python app 手册与样本**（`docs/Python-app-manual.md`；`samples/py01_basics.py` / `py02_module.py` / `py07_nqueens.py`——N-Queens 8×8：标准 1221ms / 加速 703ms）
 - [x] **审核整改**：Python app 退出/重入互斥、查看器退出恢复窗口装饰、查看器缓冲按需分配、路径截断/负偏移防护、诊断输出清理
 
+### build 139（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139)）
+- [x] **KhiCAS 用户手册**（`docs/KhiCAS-manual.md`：按键/菜单/脚本/Python 兼容约束/FAQ）+ **14 张实机配图**；README 中英双版、samples/README 已加链接
+- [x] **KhiCAS `save_script` 写入 0 字节修复**（"另存为 0 字节"根因：未传长度 → `Bfile_WriteFile_OS(len=0)` 直接返回）；`write_file` 长度兜底 + 写后截断；空文件可建
+- [x] **FormCalc 审核 P3 四项**：AMORT 期初/期末（BGN 首期 INT=0）+ 用户 PMT（取 TVM 寄存器）；DB200 直线法交叉；30/360 日规则（31 日+2 月末）；bondPrice 死参与 `config_set_charge_mode` 死代码清理
+
+### build 138（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138)）
+- [x] **KhiCAS 输入自动补全**（Shift+0）：355 条命令目录（中文名）+ 1552 条内置函数名；完整命令名精确匹配优先；唯一→`命令(`；多匹配→菜单；Python 模式过滤 XCAS_ONLY
+- [x] **giac 2.0.0 有限移植三档（solve.cc）**：方程/不等式/方程组求解整体替换（9893→11712 行，RUR/gbasis 结构演进 + 7 个适配符号）
+- [x] **Console F1 快速插入菜单**（编辑器 test 段）+ **语法切换恢复与持久化**（Shift+Symb → 配置菜单；写入 `khi_lang.dat`，重启保持）
+- [x] **π 渲染修复**（数学排版 + Console 双通道）；Shift+(-) 输入 `abs(`；README 新增运算速度说明
+
 ### build 137（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137)）
 - [x] **giac 2.0.0 有限移植**：一档 sym2poly + risch（40 用例通过）；二档 csturm 实根隔离重写（17 用例全通过，solve 多项式/不等式受益）
 - [x] **KhiCAS**：键位批次调整（Symb/Plot/Num/Apps、矩阵/列表菜单、字符表两页）；图形界面键位（ON/View/Plot/Home）；脚本执行链路（逐行执行/注释跳过/编辑器 F5 运行/samples 6 例）；π 数学排版与 Console 渲染修复；中文告警映射修正；`(-)` 键修复；Console 日志导出
 - [x] **文件浏览器修复**：ENTER 菜单选中（build 119 遗留）、目录识别、枚举模式；`screen_1bpp` 堆化修复偶发全黑
 - [x] **审核整改**：File 菜单数组越界/退出项恢复、图形软键遮蔽修复、诊断输出清理、空任务删除
-
-### build 136（2026-09-16 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-136)）
-- [x] **KhiCAS**：HOME 键任意位置回初始界面；命令目录中文名（260 条中英对照，函数名保持英文输入）；修复中文模式目录/帮助计数错配（越界读取）
-- [x] **系统**：micropython 1.18 死代码清理（约 47MB）；Round 4 C 组整改（CDC 断开 VMResume / EN_RCSCALE 统一 / 1.4V+2h 迟滞）；CDC 档位恢复加 PING 门槛；时间显示仅时:分
-- [x] **调研**：FreeRTOS 维持 V10.4.3 LTS Patch 2（上游 V11 已移除 ARM7/9 port，安全修复零命中）
 
 ### build 135（2026-09-11 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-135)）
 - [x] **充电系统完整修复**（真机每秒日志驱动）：断充测量真断充（PWD）、恢复块不再打断测量/重开充满停充、重插 USB 自动恢复；三重停充判据（1.5V×2 / 1.4V+2h / 24h）验收通过，充满终压 1.416V
@@ -96,16 +91,6 @@
 - [x] **Round 4 审核整改**：统计 Welford 稳定方差/会话重置、矩阵光标钳制与 F6 槽直达、复数溢出保护
 - [x] RPN39 阶段 3 真机测试完成（[docs/RPN39-phase3-test.md](../RPN39-phase3-test.md) 在本地工作区）
 
-### build 132（2026-09-04 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-132)）
-- [x] **RPN39 阶段 3 计算扩展**：12C 百分比 %/Δ%/%T（MATH 页 1）、STO 运算（42S 累加器）、复数 CPLX（Shift+,）、矩阵 MATX（Shift+4）、统计 STAT（Shift+7 + 主界面 F4/F5）
-- [x] **RPN39 用户手册**（[docs/RPN39-manual.md](./docs/RPN39-manual.md)：功能/用法/示例 15 章）
-- [x] 矩阵/复数修复批次（数字键码不连续、高亮反显、方向纯格导航、R→P 辐角修正、页残留）
-- [x] 电源两档制（标准 240/120 ↔ 加速 480/240）、HCLK 120MHz + 空闲轻载
-- [x] 充电锂电/镍氢类型选择、KhiCAS 待机电流优化
-
-### build 131（2026-09-03 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-131)）
-- [x] **RPN39 阶段 2 科学计算**（角度模式 DEG/RAD/GRAD 持久化、直接键位函数、Shift 层、MATH 菜单 5 页、a b/c 分数显示、EEX）
-
 ### build 130（2026-09-02 已发布）
 - [x] **RPN39 RPN 计算器**（42S 基准）：4 层栈 + 四则 + 寄存器（STO/RCL/VARS）+ 掉电持久化 + 自动栈提升
 - [x] KhiCAS 帮助/ON/C 语义、E 组整改 15 项
@@ -115,11 +100,17 @@
 - [x] 电源三档变频（标准/省电/加速）
 - [x] 安全加固（CDC 参数校验/VM 沙箱）、FTL_Sync、GBK 统一
 
-### build 128（2026-09-01 已发布）
-- [x] KhiCAS 菜单中文显示/错位/quit 修复 + 汉化
-
 ### build 127 / 126（2026-08-30 已发布）
 - [x] 安装修复；25 项 Bug 修复 + 文档
+
+## 内存与 MEM SWAP（重要）
+
+设备片上 RAM 有限（可用 malloc 堆约 160KB）。**设置 → MEM SWAP** 开启后，3MB 的 FTL 交换区并入 malloc 堆（合计约 **3.16MB**），KhiCAS 大型运算与 Python app 需要它。
+
+- **每次刷机后 MEM SWAP 默认关闭**（配置重置）：请进 **设置** 开启 MEM SWAP 并重启
+- 关闭时：KhiCAS 长会话可能耗尽片上堆，串口出现 `EXT HEAP NOMEM !`（build 141 起会**提前中断运算**而不是崩溃）
+- 代价：swap 通过 NAND 页面交换实现，频繁换页有**磨损**；轻量日常使用可不开启
+- 查看用量：设置页显示 `已用/总量`（开启后总量约 3.16MB）
 
 ## 仅安装
 

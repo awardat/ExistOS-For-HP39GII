@@ -51,18 +51,7 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 | Documents (To do) | [Code submission standard](#code-submission-standard) |
 | **[Uninstalling and Flashing Back](#uninstalling-existos-and-flashing-back-to-the-hp-firmware)** | **[Contributors](#contributors)** | **[License](#license)** |
 
-## Current Development Status (since build 126, see CHANGELOG.md)
-
-### build 138 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138))
-- [x] **KhiCAS input autocompletion** (Shift+0): 355 catalog commands (Chinese names) + 1552 built-in function names; exact-match priority; unique -> `command(`; multiple -> menu; XCAS_ONLY filtered in Python mode
-- [x] **giac 2.0.0 limited port tier 3 (solve.cc)**: equation/inequality/system solving replaced (9893->11712 lines, RUR/gbasis struct evolution + 7 adaptation symbols)
-- [x] **Console F1 quick-insert menu** (editor test segment) + **syntax switch restored and persisted** (Shift+Symb -> config menu; stored in `khi_lang.dat`)
-- [x] **pi rendering fix** (math typeset + Console); Shift+(-) enters `abs(`; README speed note added
-
-### build 139 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139))
-- [x] **KhiCAS user manual** (`docs/KhiCAS-manual.md`: keys/menus/scripts/Python compat constraints/FAQ) + 14 device photos; linked from READMEs and samples/README
-- [x] **KhiCAS `save_script` 0-byte write fix** (root cause: length not passed -> `Bfile_WriteFile_OS(len=0)` returned early); length fallback + post-write truncate; empty files can be created
-- [x] **FormCalc review P3 items**: AMORT Begin/End (INT=0 in BGN first period) + user PMT (from TVM register); DB200 straight-line crossover; 30/360 day rules (31st + Feb-end); bondPrice dead parameter and `config_set_charge_mode` dead code removed
+## Current Development Status (major feature releases only, see CHANGELOG.md)
 
 ### build 140 (2026-09-20 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-140))
 - [x] **Standalone Python app (MicroPython v1.29.0)**: 4th icon on the apps page; terminal-style REPL (6x31 chars, 96-line scrollback, row-level refresh); full key layout (Shift layer / ALPHA 26-letter table / Shift+ALPHA lowercase lock / arrow editing / paging); bottom F-key menu (F1 symbol panel 4 pages, F2 clear, F3 cancel, F4 run script, F5 Chinese help, F6 file menu); Chinese error mapping (25 cases); `open()` via FatFs + local `import` (`/xcas/`); script browser and runner; session kept + interpreter reset; "Save session" to `/xcas/session.txt`
@@ -70,16 +59,22 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 - [x] **Python app manual and samples** (`docs/Python-app-manual.md`; `samples/py01_basics.py` / `py02_module.py` / `py07_nqueens.py` - N-Queens 8x8: 1221 ms standard / 703 ms boost)
 - [x] **Review remediation**: Python app exit/re-entry mutex, viewer exit restores window chrome, viewer buffer on demand, path truncation/negative-offset guards, diagnostics cleanup
 
+### build 139 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139))
+- [x] **KhiCAS user manual** (`docs/KhiCAS-manual.md`: keys/menus/scripts/Python compat constraints/FAQ) + 14 device photos; linked from READMEs and samples/README
+- [x] **KhiCAS `save_script` 0-byte write fix** (root cause: length not passed -> `Bfile_WriteFile_OS(len=0)` returned early); length fallback + post-write truncate; empty files can be created
+- [x] **FormCalc review P3 items**: AMORT Begin/End (INT=0 in BGN first period) + user PMT (from TVM register); DB200 straight-line crossover; 30/360 day rules (31st + Feb-end); bondPrice dead parameter and `config_set_charge_mode` dead code removed
+
+### build 138 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138))
+- [x] **KhiCAS input autocompletion** (Shift+0): 355 catalog commands (Chinese names) + 1552 built-in function names; exact-match priority; unique -> `command(`; multiple -> menu; XCAS_ONLY filtered in Python mode
+- [x] **giac 2.0.0 limited port tier 3 (solve.cc)**: equation/inequality/system solving replaced (9893->11712 lines, RUR/gbasis struct evolution + 7 adaptation symbols)
+- [x] **Console F1 quick-insert menu** (editor test segment) + **syntax switch restored and persisted** (Shift+Symb -> config menu; stored in `khi_lang.dat`)
+- [x] **pi rendering fix** (math typeset + Console); Shift+(-) enters `abs(`; README speed note added
+
 ### build 137 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
 - [x] **giac 2.0.0 limited port**: tier 1 sym2poly + risch (40 cases pass); tier 2 csturm real-root isolation rewrite (17 cases pass, benefits solve for polynomials/inequalities)
 - [x] **KhiCAS**: key remap batch (Symb/Plot/Num/Apps, matrix/list menus, 2-page char table); graph view keys (ON/View/Plot/Home); script execution pipeline (line-by-line, comment skip, editor F5 run, 6 samples); pi math-typeset and Console rendering fixes; Chinese warning mapping fix; `(-)` key fix; Console log export
 - [x] **File browser fixes**: ENTER menu selection (since build 119), directory detection, enumeration pattern; `screen_1bpp` heap allocation fixes occasional all-black screen
 - [x] **Review remediation**: File menu array overflow/Quit restored, graph softkey shadowing fix, diagnostic output cleanup, empty task removal
-
-### build 136 (2026-09-16 released)
-- [x] **KhiCAS**: HOME key returns to the initial screen from anywhere; command catalog shows Chinese names (260 bilingual entries, function names stay English for input); fixed Chinese-mode catalog/help counter mismatch (out-of-bounds read)
-- [x] **System**: MicroPython 1.18 dead-code removal (~47MB); Round 4 C group (CDC disconnect VMResume / EN_RCSCALE unified / 1.4V+2h hysteresis); CDC slowdown restore gated on PING; clock shows HH:MM only
-- [x] **Research**: FreeRTOS stays on V10.4.3 LTS Patch 2 (upstream V11 drops ARM7/9 ports; security fixes irrelevant to this project)
 
 ### build 135 (2026-09-11 released)
 - [x] **Charging system fully fixed** (driven by per-second on-device logs): true charge cut-off during measurement (PWD), auto-resume no longer interrupts measurement or re-opens a completed charge, 5V re-plug auto-resume; triple stop criteria (1.5V x2 / 1.4V+2h / 24h) verified, final 1.416V
@@ -97,9 +92,6 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 - [x] **Round 4 audit fixes**: Welford stable variance/stat session reset, matrix cursor clamp & F6 slot-to-page, complex overflow guards
 - [x] RPN39 Phase 3 on-device tests complete
 
-### build 132 (2026-09-04 released)
-- [x] **RPN39 Phase 3 extensions** (percentages, STO ops, complex, matrix, statistics), user manual
-
 ### build 130 (2026-09-02 released)
 - [x] **RPN39 RPN calculator** (HP-42S baseline): 4-level stack + four operations + registers (STO/RCL/VARS) + power-loss persistence + auto stack lift
 - [x] KhiCAS help / ON/C semantics, E-group fixes (15 items)
@@ -109,11 +101,17 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 - [x] Three-mode variable-frequency power (standard / power save / boost)
 - [x] Security hardening (CDC parameter validation / VM sandbox), FTL_Sync, unified GBK decoding
 
-### build 128 (2026-09-01 released)
-- [x] KhiCAS menu Chinese display / misalignment / quit fixes + localization
-
 ### build 127 / 126 (2026-08-30 released)
 - [x] Installation fixes; 25 bug fixes + documentation
+
+## Memory and MEM SWAP (important)
+
+On-chip RAM is limited (malloc heap ~160KB). Enabling **Settings -> MEM SWAP** merges the 3MB FTL swap area into the malloc heap (about **3.16MB** total); KhiCAS heavy computations and the Python app need it.
+
+- **MEM SWAP defaults to OFF after every firmware flash** (config reset): enable it in **Settings** and reboot
+- With it off: a long KhiCAS session can exhaust the on-chip heap and the serial port prints `EXT HEAP NOMEM !` (since build 141 the computation aborts early instead of crashing)
+- Cost: swap uses NAND page swapping, so heavy paging causes **wear**; light everyday use may keep it off
+- Usage: the Settings page shows `used/total` (about 3.16MB when enabled)
 
 ## Only Installing
 

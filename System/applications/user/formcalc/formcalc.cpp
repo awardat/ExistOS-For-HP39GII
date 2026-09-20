@@ -124,16 +124,17 @@ static const char *finItems[8] = {
     ZH_HSJZ, "\xCF\xD6\xBD\xF0\xC1\xF7", "\xCC\xAF\xCF\xFA", "\xD5\xAE\xC8\xAF",
     "\xD5\xDB\xBE\xC9", "\xC8\xD5\xC6\xDA", "\xC0\xFB\xC2\xCA\xBB\xBB\xCB\xE3", "\xC0\xFB\xC8\xF3" };
 static const char *finAbbr[8] = { "TVM", "CFLOW", "AMORT", "BOND", "DEPREC", "DATE", "ICONV", "MARGIN" };
-static const char *eeItems[9] = {
+static const char *eeItems[10] = {
     "\xC5\xB7\xC4\xB7\xB6\xA8\xC2\xC9", "\xB7\xD6\xD1\xB9\xC6\xF7", "\xB4\xAE\xB2\xA2\xC1\xAA",
     "\xCA\xB1\xBC\xE4\xB3\xA3\xCA\xFD", "\xD0\xB3\xD5\xF1\xC6\xB5\xC2\xCA", "\xC6\xB5\xC2\xCA\xD6\xDC\xC6\xDA",
-    "\xD5\xFD\xCF\xD2\xB7\xF9\xD6\xB5", "dBm \xB9\xA6\xC2\xCA", "\xB1\xE4\xD1\xB9\xC6\xF7" };
-static const char *eeAbbr[9] = { "OHM", "VDIV", "RPAR", "RC", "RESO", "FREQ", "SINE", "DBM", "XFMR" };
+    "\xD5\xFD\xCF\xD2\xB7\xF9\xD6\xB5", "dBm \xB9\xA6\xC2\xCA", "\xB1\xE4\xD1\xB9\xC6\xF7",
+    "\xD7\xD3\xCD\xF8\xD1\xDA\xC2\xEB" };
+static const char *eeAbbr[10] = { "OHM", "VDIV", "RPAR", "RC", "RESO", "FREQ", "SINE", "DBM", "XFMR", "SUBNET" };
 static const char *unItems[10] = {
     "\xB3\xA4\xB6\xC8", "\xC3\xE6\xBB\xFD", "\xCC\xE5\xBB\xFD", "\xD6\xCA\xC1\xBF", "\xCE\xC2\xB6\xC8",
     "\xCB\xD9\xB6\xC8", "\xD1\xB9\xC1\xA6", "\xC4\xDC\xC1\xBF", "\xB9\xA6\xC2\xCA", "\xCA\xFD\xBE\xDD" };
 static const char *unAbbr[10] = { "LEN", "AREA", "VOL", "MASS", "TEMP", "VEL", "PRES", "ENER", "POW", "DATA" };
-static int finCount = 8, eeCount = 9, unCount = 10;
+static int finCount = 8, eeCount = 10, unCount = 10;
 
 // ---- 输入/消息 ----
 static char ebuf[24];
@@ -213,7 +214,11 @@ static long daysAct(double a, double b) { return dateJdn(b) - dateJdn(a); }
 static unsigned char saveBuf[2300];
 static FIL gfile;
 
+static void snSave(void);
+static void snLoad(void);
+
 static void fcSave(void) {
+    snSave(); // 子网掩码计算器数据（独立小文件）
     unsigned char *p = saveBuf;
     memcpy(p, "FC03", 4); p += 4;
     *p++ = (unsigned char)fcFix;
@@ -244,6 +249,7 @@ static void fcSave(void) {
 }
 
 static void fcLoad(void) {
+    snLoad();
     f_mkdir("/formcalc"); // session 子目录（2026-09-06：程序文件分类存放；已存在返回 FR_EXIST 忽略）
     if (f_open(&gfile, "/formcalc/formcalc.dat", FA_READ) != FR_OK) { // 新路径
         if (f_open(&gfile, "/formcalc.dat", FA_READ) != FR_OK) return; // 旧路径兼容（自动迁移：下次保存写新路径）
@@ -1371,12 +1377,17 @@ static void drawFocRowOnly(void) {
 static void drawUnit(void);
 static int fcUnitKey(int key);
 
+// ---- 子网掩码计算器（fcMod==2 第 10 项，定义见文件尾）----
+static void drawSubnet(void);
+static int fcSubnetKey(int key);
+
 static int fcFlushMax = 127;
 static double uVal = 0; // 单位换算：已提交值（eAct 编辑中以 ebuf 为准）——上移供主循环 ON 提交用 // 全刷高度上限：F 求解等动作限 110（保住菜单行 111-127 不重送——菜单不闪）
 static void fcDraw(void) {
     if (fcLevel == 3) drawFormula();
     else if (fcLevel == 2) {
         if ((fcMod == 1 && fcForm < 8) || (fcMod == 2 && fcForm < 9)) drawFormScreen();
+        else if (fcMod == 2 && fcForm == 9) drawSubnet();
         else if (fcMod == 3 && fcForm >= 0) drawUnit();
         else drawUnderConstruction();
     } else if (fcLevel == 4) drawFixPage();
@@ -1527,6 +1538,7 @@ static int fcHandleKey(int key) {
         return 0;
     }
     if (fcLevel == 2 && ((fcMod == 1 && fcForm < 8) || (fcMod == 2 && fcForm < 9))) return fcFormKey(key);
+    if (fcLevel == 2 && fcMod == 2 && fcForm == 9) return fcSubnetKey(key);
     if (fcLevel == 2 && fcMod == 3) return fcUnitKey(key);
     if (fcLevel == 2) { // 建设中页
         if (key == KEY_ON || key == KEY_HOME || key == KEY_BACKSPACE || key == KEY_APPS) {
@@ -1892,5 +1904,148 @@ static int fcUnitKey(int key) {
     if (key == KEY_ENTER) { if (eAct) { uVal = atof(ebuf); eAct = 0; elen = 0; ebuf[0] = 0; fcFlushMax = 110; return 1; } return 0; }
     if (key == KEY_F1) { eAct = 0; elen = 0; ebuf[0] = 0; uVal = 0; fcFlushMax = 110; return 1; }
     // ON/HOME/APPS 被主循环在 fcHandleKey 前拦截（含提交），此处无此分支（审核五.11 死代码已清）
+    return 0;
+}
+
+// ==================== 子网掩码计算器（fcMod==2 第 10 项）====================
+static int snIp[4] = { 192, 168, 1, 10 };
+static int snPfx = 24;
+static int snFoc = 0; // 0-3 = 四个八位组，4 = 前缀
+
+static void snSave(void) {
+    FIL f;
+    if (f_open(&f, "/formcalc/subnet.dat", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) return;
+    unsigned char b[20];
+    for (int i = 0; i < 20; i++) b[i] = 0;
+    for (int i = 0; i < 4; i++) b[i * 4] = (unsigned char)snIp[i];
+    b[16] = (unsigned char)snPfx;
+    UINT bw = 0;
+    f_write(&f, b, sizeof(b), &bw);
+    f_close(&f);
+}
+
+static void snLoad(void) {
+    FIL f;
+    if (f_open(&f, "/formcalc/subnet.dat", FA_READ) != FR_OK) return;
+    unsigned char b[20];
+    UINT br = 0;
+    f_read(&f, b, sizeof(b), &br);
+    f_close(&f);
+    if (br < 17) return;
+    for (int i = 0; i < 4; i++) {
+        int v = b[i * 4];
+        snIp[i] = (v >= 0 && v <= 255) ? v : 0;
+    }
+    if (b[16] <= 32) snPfx = b[16];
+}
+
+static uint32_t snMask(void) {
+    if (snPfx <= 0) return 0;
+    if (snPfx >= 32) return 0xFFFFFFFFu;
+    return 0xFFFFFFFFu << (32 - snPfx);
+}
+
+static uint32_t snAddr(void) {
+    return ((uint32_t)snIp[0] << 24) | ((uint32_t)snIp[1] << 16) | ((uint32_t)snIp[2] << 8) | (uint32_t)snIp[3];
+}
+
+static void snFmtIp(uint32_t v, char *b) {
+    sprintf(b, "%u.%u.%u.%u", (unsigned)((v >> 24) & 255), (unsigned)((v >> 16) & 255), (unsigned)((v >> 8) & 255), (unsigned)(v & 255));
+}
+
+static void snAdj(int d) {
+    if (snFoc < 4) {
+        int v = snIp[snFoc] + d;
+        if (v < 0) v = 255;
+        if (v > 255) v = 0;
+        snIp[snFoc] = v;
+    } else {
+        int v = snPfx + d;
+        if (v < 0) v = 32;
+        if (v > 32) v = 0;
+        snPfx = v;
+    }
+}
+
+static void snDigit(int d) {
+    if (snFoc < 4) {
+        int v = snIp[snFoc] * 10 + d;
+        snIp[snFoc] = (v > 255) ? d : v;
+    } else {
+        int v = snPfx * 10 + d;
+        snPfx = (v > 32) ? d : v;
+    }
+}
+
+static void snDrawField(int idx, int x, int y, int w, const char *txt) {
+    int sel = (snFoc == idx);
+    if (sel) uidisp->draw_box(x, y, x + w, y + 17, 0, -1);
+    uidisp->draw_printf(x + (w + 1 - (int)strlen(txt) * 8) / 2, y + 1, 16, sel ? 255 : 0, sel ? 0 : 255, "%s", txt);
+}
+
+static void drawSubnet(void) {
+    char tt[48], rb[20], b[40], line[64];
+    sprintf(tt, "SUBNET %s", eeItems[9]);
+    uint32_t ip = snAddr(), mask = snMask();
+    uint32_t net = ip & mask, bc = net | ~mask;
+    int hosts = (snPfx >= 31) ? ((snPfx == 32) ? 1 : 2) : (int)((1u << (32 - snPfx)) - 2);
+    sprintf(rb, "/%d %dh", snPfx, hosts);
+    drawTitle(tt, rb);
+
+    // IP 行：四个八位组（聚焦反显）
+    fDrawMix(4, 16, "IP", 0, 255);
+    int x = 36;
+    for (int i = 0; i < 4; i++) {
+        sprintf(b, "%d", snIp[i]);
+        snDrawField(i, x, 14, 40, b);
+        x += 44;
+        if (i < 3) uidisp->draw_printf(x - 8, 16, 16, 0, 255, ".");
+    }
+
+    // 前缀行：/n（聚焦反显）+ 掩码
+    fDrawMix(4, 38, "\xD7\xD3\xCD\xF8\xD1\xDA", 0, 255);
+    sprintf(b, "/%d", snPfx);
+    snDrawField(4, 36, 36, 40, b);
+    snFmtIp(mask, b);
+    uidisp->draw_printf(84, 38, 16, 0, 255, "%s", b);
+
+    // 结果：网络 / 广播 / 可用范围
+    char n1[20], b1[20], f1[20], l1[20];
+    snFmtIp(net, n1);
+    snFmtIp(bc, b1);
+    snFmtIp(net + (snPfx >= 31 ? 0 : 1), f1);
+    snFmtIp(bc - (snPfx >= 31 ? 0 : 1), l1);
+
+    fDrawMix(4, 58, "\xCD\xF8\xC2\xE7", 0, 255);
+    uidisp->draw_printf(44, 58, 16, 0, 255, "%s", n1);
+    fDrawMix(4, 76, "\xB9\xE3\xB2\xA5", 0, 255);
+    uidisp->draw_printf(44, 76, 16, 0, 255, "%s", b1);
+    sprintf(line, "%s-%s", f1, l1);
+    fDrawMix(4, 94, "\xB7\xB6\xCE\xA7", 0, 255);
+    uidisp->draw_printf(44, 94, 16, 0, 255, "%s", line);
+
+    const char *menus[6] = { "CLR", "_", "_", "NEXT", "_", "BACK" };
+    drawMenu(menus);
+}
+
+static int fcSubnetKey(int key) {
+    int d = fcDigit(key);
+    if (d >= 0) { snDigit(d); return 1; }
+    if (key == KEY_BACKSPACE) {
+        if (snFoc < 4) snIp[snFoc] = 0;
+        else snPfx = 0;
+        return 1;
+    }
+    if (key == KEY_LEFT) { if (snFoc > 0) snFoc--; return 1; }
+    if (key == KEY_RIGHT) { if (snFoc < 4) snFoc++; return 1; }
+    if (key == KEY_UP) { snAdj(1); return 1; }
+    if (key == KEY_DOWN) { snAdj(-1); return 1; }
+    if (key == KEY_ENTER || key == KEY_F4) { snFoc = (snFoc < 4) ? snFoc + 1 : 0; return 1; }
+    if (key == KEY_F1) {
+        snIp[0] = 192; snIp[1] = 168; snIp[2] = 1; snIp[3] = 10;
+        snPfx = 24;
+        snFoc = 0;
+        return 1;
+    }
     return 0;
 }
