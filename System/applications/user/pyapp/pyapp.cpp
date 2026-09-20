@@ -247,7 +247,7 @@ static void draw() {
         cursorCell(&x, &y);
         if (x >= 0) uidisp->draw_box(x, y, x + 7, y + 1, 0, -1);
     }
-    uidisp->draw_printf(2, HINT_Y, 12, 0, 255, "ON:cls sh+ON:exit UP/DN:scr");
+    uidisp->draw_printf(2, HINT_Y, 12, 0, 255, "ON:cls shON:exit AC:^C UP/DN");
     uidisp->flush();
 }
 
@@ -317,6 +317,9 @@ static void pyTask(void *_) {
                     }
                 } else if (key == KEY_ENTER) {
                     mpy_repl_feed_char('\r');
+                    lineLen = 0;
+                } else if (shift && key == KEY_BACKSPACE) { // Shift+退格 = Ctrl-C：取消当前输入（续行卡住的逃生口）
+                    mpy_repl_feed_char(0x03);
                     lineLen = 0;
                 } else if (key == KEY_BACKSPACE) {
                     if (lineLen > 0) { // 行首忽略：MP readline 在空行退格会重打提示符
