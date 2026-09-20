@@ -115,14 +115,70 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 | 关于 | 打开帮助的"关于"页 |
 | 退出 | 同 Shift+ON |
 
-## 6. Python 语法要点（MicroPython 差异）
+## 6. Python 支持的功能
 
-- **不支持负步长切片**：`s[::-1]` 会报 `NotImplementedError`（用循环或 `reversed` 替代）
-- 内置模块：`sys` `math` `cmath` `random` `struct` `array` `collections` `io` `time`（`utime`）
-- `time.ticks_ms()` / `time.ticks_diff(a,b)` 可做毫秒计时
-- 浮点为双精度（软件浮点，速度较慢；整数运算快）
-- **支持 `import` 本地 `.py` 文件**（按 `/xcas/` 解析，如 `import py02_module`）
-- 文件读写：`open()` 已接通设备文件系统（见下）
+> 基于 **MicroPython v1.29.0**，编译档位为 EXTRA FEATURES（详见下文"不支持"清单）。
+
+### 6.1 语言特性
+
+| 支持 | 说明 |
+|------|------|
+| 变量 / 运算 / 字符串 / f-string | 含 `%` 与 `str.format` |
+| 列表 / 元组 / 字典 / 集合 / frozenset | 推导式（list/dict/set）、切片（**步长必须为 1**） |
+| 条件 / 循环 | `if/elif/else`、`for`（含 `enumerate/zip/range`）、`while`、`break/continue` |
+| 函数 | 默认参数、关键字参数、`*args`、`**kwargs`、lambda、闭包、装饰器 |
+| 类 | 单继承、`super()`、属性（property）、`staticmethod`/`classmethod`、特殊方法（`__init__/__str__/__len__/__getitem__` 等） |
+| 生成器 | `yield`、生成器表达式 |
+| 异常 | `try/except/else/finally`、`raise`、自定义异常类 |
+| 上下文管理 | `with`（`__enter__`/`__exit__`） |
+| 模块 | `import`（内置模块 + `/xcas/` 下的本地 `.py`） |
+
+### 6.2 内置函数与类型（常用）
+
+`print` `len` `range` `enumerate` `zip` `map` `filter` `sorted` `reversed` `sum` `min` `max` `abs` `round` `pow` `divmod` `int` `float` `complex` `bool` `str` `bytes` `bytearray` `list` `tuple` `dict` `set` `frozenset` `type` `isinstance` `id` `hash` `repr` `dir` `getattr` `setattr` `hasattr` `delattr` `callable` `iter` `next` `chr` `ord` `hex` `bin` `oct` `any` `all` `format` `open` `exec` `eval` `compile` `help` `memoryview` `super` `property` `staticmethod` `classmethod` `NotImplemented`
+
+### 6.3 内置模块
+
+| 模块 | 可用内容 |
+|------|----------|
+| `math` | 常数 `pi/e/tau/inf/nan`；`sqrt/exp/log/log2/log10/pow`；三角与反三角、双曲；`floor/ceil/trunc/fabs/fmod/frexp/ldexp/modf/copysign`；`isnan/isinf/isclose`；`factorial/gamma/lgamma/erf/erfc` |
+| `cmath` | 复数版数学函数（配合 `complex`） |
+| `random` | `random/randint/randrange/choice/shuffle/uniform/gauss/seed/getrandbits` |
+| `struct` | `pack/unpack/pack_into/unpack_from/calcsize` |
+| `array` | 类型化数组（`'b','B','h','H','i','I','l','L','f','d'` 等） |
+| `collections` | `namedtuple/deque/OrderedDict/defaultdict` |
+| `heapq` | 堆操作（`heappush/heappop/heapify/nlargest/nsmallest`） |
+| `io` | `BytesIO/StringIO`（配合 `open()`） |
+| `time` | `ticks_ms/ticks_us/ticks_cpu/ticks_add/ticks_diff`、`sleep/sleep_ms/sleep_us`（**日历函数未实现**） |
+| `sys` | `print_exception`、`exit`、`maxsize`、`implementation`、`modules`、`path` |
+| `gc` | `collect/mem_free/mem_alloc/enable/disable` |
+| `micropython` | `mem_info/qstr_info/opt_level`、`ringio` |
+| `errno` | 常用 errno 常量 |
+
+### 6.4 文件与导入
+
+- `open(path, mode)`：读写 `/xcas/` 下文件（相对路径按 `/xcas/` 解析）；支持 `read/readline/readlines/write/seek/tell/flush/close` 与 `with`
+- `import 模块名`：查找 `/xcas/模块名.py`（子目录按 `/xcas/子目录/模块名.py` 解析）
+- 示例见 §7
+
+### 6.5 不支持 / 有限制
+
+| 项目 | 说明 |
+|------|------|
+| `async/await`、`_thread`、`asyncio` | 未编译（无多线程硬件支撑） |
+| `socket` / `network` / `ssl` / `bluetooth` / `machine`(GPIO/I2C/SPI) | 未编译（无硬件） |
+| `json` / `re` / `hashlib` / `binascii` / `deflate` / `uctypes` / `framebuf` | 未编译（可后续按需开启，见下） |
+| `input()` | 未接入 stdin 通道（读取会报错）；`select` 虽已编译但无可用对象 |
+| 负步长切片 | `s[::-1]` 报 `NotImplementedError`（用循环或 `reversed`） |
+| 多继承 | 不支持（单继承） |
+| `match` 语句 | 不支持 |
+| 大整数 | 整数为 **30 位机器整数**，超出报 `OverflowError`（无任意精度；`math.factorial(20)` 会溢出） |
+| 浮点 | 双精度但为**软件实现**（无 FPU），复杂浮点计算较慢 |
+| 递归深度 | 受任务栈限制（建议 < 100 层） |
+| `os` 模块 | 已编译但文件相关函数依赖 VFS（未启用），请用 `open()` |
+| 中文输出 | 终端为 ASCII 字体（界面菜单已汉化）；中文以占位符显示 |
+
+> 需要 `json`/`re`/`hashlib`/大整数等功能时可以开启（重新编译固件）：在 `Libs/src/micropython/ports/eoslib/mpconfigport.h` 把对应 `MICROPY_PY_*` 置 1，或把 `MICROPY_LONGINT_IMPL` 设为 `MICROPY_LONGINT_IMPL_MPZ`。
 
 ## 7. 文件与脚本
 
@@ -157,10 +213,10 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 
 ## 9. 限制与已知问题
 
-- 无网络/蓝牙/线程/GPIO（硬件不支持，不实现）
+- 语言/模块限制见 **§6.5**（无网络/线程/GPIO、无大整数、无负步长切片等）
 - 无中文输出（解释器输出为 ASCII；界面菜单已汉化）
-- 导入的模块必须位于 `/xcas/`（相对导入同目录）
 - 浮点运算为软件实现，复杂浮点计算较慢
+- 内存：GC 堆 96KB（不足时自动回退 64/32KB）；大脚本/大数据请开启 **MEM SWAP**（见 README）
 
 ## 10. FAQ
 
