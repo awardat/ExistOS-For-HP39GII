@@ -298,6 +298,7 @@ static void pyTask(void *_) {
                 if (shift && key == KEY_ON) { // Shift+ON 退出
                     pyRunning = 0;
                 } else if (shift && key == KEY_ALPHA) { // Shift+ALPHA：锁定小写（再按解除）
+                    shift = 0; // 先消费 shift，避免其后的"清理 shift"逻辑把锁定图标熄灭
                     if (alphaLock) { alphaLock = 0; alpha = 0; ll_disp_set_indicator(0, -1); }
                     else { alphaLock = 1; alpha = 2; ll_disp_set_indicator(INDICATE_a__z, -1); }
                 } else if (key == KEY_ON) {
