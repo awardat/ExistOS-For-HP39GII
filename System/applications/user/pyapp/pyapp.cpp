@@ -44,7 +44,9 @@ static int termLines = 0; // 已产生行数
 static int tCol = 0;      // 当前列
 static int termScroll = 0;
 static volatile int termDirty = 1;
+static int rowDirty = -1; // >=0：仅刷新该可见行
 static int cursorOn = 1;
+static int lineLen = 0;   // 当前输入行长度（用于退格边界）
 
 static int termCur() { return termLines ? (termLines - 1) % TERM_LINES : 0; }
 
@@ -54,6 +56,8 @@ static void termClearLineFrom(int idx, int col) {
 }
 
 static void termNewline() {
+    rowDirty = -1;
+    lineLen = 0;
     termLines++;
     memset(term[termLines % TERM_LINES], 0, TERM_COLS + 1);
     tCol = 0;
@@ -66,7 +70,7 @@ static void termEscFinal(char c) {
     int n = escHasN ? escN : 1;
     if (n < 1) n = 1;
     switch (c) {
-    case 'K': termClearLineFrom(termCur(), tCol); break; // 擦除行（0K）
+    case 'K': termClearLineFrom(termCur(), tCol); rowDirty = TERM_ROWS - 1; break; // 擦除行（0K）
     case 'D': tCol -= n; if (tCol < 0) tCol = 0; break;  // 左移
     case 'C': tCol += n; if (tCol > TERM_COLS) tCol = TERM_COLS; break;
     case 'A': break;                                     // 上移（忽略：行结构由 \n 管理）
@@ -95,13 +99,14 @@ static void termPutc(char c) {
     if (c == 0x1B) { escState = 1; return; }
     if (c == '\n') { termNewline(); return; }
     if (c == '\r') { tCol = 0; return; }
-    if (c == 0x08) { if (tCol > 0) { tCol--; term[termCur()][tCol] = 0; } return; }
+    if (c == 0x08) { if (tCol > 0) { tCol--; term[termCur()][tCol] = 0; rowDirty = TERM_ROWS - 1; } return; }
     if ((unsigned char)c < 0x20 && c != 0x09) return;
     char *l = term[termCur()];
     if (tCol >= TERM_COLS) { termNewline(); l = term[termCur()]; }
     if (tCol < TERM_COLS) {
         l[tCol++] = c;
         l[tCol] = 0;
+        rowDirty = TERM_ROWS - 1; // 当前行即最底可见行
     }
 }
 
@@ -212,18 +217,19 @@ static size_t pyHeapSize = 0;
 static int pyInited = 0;
 
 // ---- 绘制 ----
-// 光标：单元格右侧 2px 竖条（字形仅 6px 宽，不会压到字符；支持局部擦除）
+// 光标：当前单元格下划线（8x2px，紧贴上一字符，无空档）
 static void cursorCell(int *px, int *py) {
+    *px = -1;
     if (termScroll != 0 || termLines < 1) return;
-    *px = 1 + tCol * 8 + 6;
-    *py = ROW_Y0 + (TERM_ROWS - 1) * ROW_STEP;
+    *px = 1 + tCol * 8;
+    *py = ROW_Y0 + (TERM_ROWS - 1) * ROW_STEP + 10;
 }
 static void cursorPaint(int on) {
     int x, y;
     cursorCell(&x, &y);
     if (x < 0) return;
-    uidisp->draw_box(x, y, x + 1, y + 11, on ? 0 : 255, -1);
-    uidisp->flushRect(x, y, x + 1, y + 11);
+    uidisp->draw_box(x, y, x + 7, y + 1, on ? 0 : 255, -1);
+    uidisp->flushRect(x, y, x + 7, y + 1);
 }
 
 
@@ -236,12 +242,12 @@ static void draw() {
         if (ln < 0) continue;
         uidisp->draw_printf(1, ROW_Y0 + i * ROW_STEP, 12, 0, 255, "%s", term[ln % TERM_LINES]);
     }
-    if (cursorOn && termScroll == 0 && termLines >= 1) {
+    if (cursorOn) {
         int x, y;
         cursorCell(&x, &y);
-        if (x >= 0) uidisp->draw_box(x, y, x + 1, y + 11, 0, -1);
+        if (x >= 0) uidisp->draw_box(x, y, x + 7, y + 1, 0, -1);
     }
-    uidisp->draw_printf(2, HINT_Y, 12, 0, 255, "ON:-  sh+ON:exit  ALPHA:a-z  UP/DN:scroll");
+    uidisp->draw_printf(2, HINT_Y, 12, 0, 255, "ON:cls sh+ON:exit UP/DN:scr");
     uidisp->flush();
 }
 
@@ -300,6 +306,7 @@ static void pyTask(void *_) {
                     termLines = 0;
                     tCol = 0;
                     termScroll = 0;
+                    lineLen = 0;
                     termDirty = 1;
                 } else if (key == KEY_ALPHA) {
                     if (alphaLock) { alphaLock = 0; alpha = 0; ll_disp_set_indicator(0, -1); }
@@ -309,8 +316,12 @@ static void pyTask(void *_) {
                     }
                 } else if (key == KEY_ENTER) {
                     mpy_repl_feed_char('\r');
+                    lineLen = 0;
                 } else if (key == KEY_BACKSPACE) {
-                    mpy_repl_feed_char(0x08);
+                    if (lineLen > 0) { // 行首忽略：MP readline 在空行退格会重打提示符
+                        mpy_repl_feed_char(0x08);
+                        lineLen--;
+                    }
                 } else if (key == KEY_UP) {
                     if (termLines > TERM_ROWS) termScroll++;
                     if (termScroll > termLines - TERM_ROWS) termScroll = termLines - TERM_ROWS;
@@ -322,6 +333,7 @@ static void pyTask(void *_) {
                     int ch = keyToChar(key, shift, alpha);
                     if (ch) {
                         mpy_repl_feed_char(ch);
+                        lineLen++;
                         if (alpha && !alphaLock) { // 一次性 alpha
                             alpha = 0;
                             ll_disp_set_indicator(0, -1);
@@ -344,7 +356,23 @@ static void pyTask(void *_) {
             cursorOn = !cursorOn;
             if (!termDirty) cursorPaint(cursorOn);
         }
-        if (termDirty) { termDirty = 0; draw(); }
+        if (termDirty) {
+            termDirty = 0;
+            rowDirty = -1;
+            draw();
+        } else if (rowDirty >= 0) { // 仅重绘最底行（输入回显：避免整屏刷新）
+            int ln = termLines - 1;
+            int ly = ROW_Y0 + rowDirty * ROW_STEP;
+            uidisp->draw_box(1, ly, LCD_PIX_W - 2, ly + 11, 255, 255);
+            if (ln >= 0) uidisp->draw_printf(1, ly, 12, 0, 255, "%s", term[ln % TERM_LINES]);
+            if (cursorOn) {
+                int x, y;
+                cursorCell(&x, &y);
+                if (x >= 0) uidisp->draw_box(x, y, x + 7, y + 1, 0, -1);
+            }
+            uidisp->flushRect(0, ly, LCD_PIX_W - 1, ly + 11);
+            rowDirty = -1;
+        }
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 
