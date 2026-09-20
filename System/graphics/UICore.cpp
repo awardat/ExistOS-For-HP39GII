@@ -345,6 +345,61 @@ static void drawAppIcon(int idx, int ix, int iy) {
     }
 }
 
+// ==================== 文本查看器（2026-09-20）====================
+// 文件管理器中打开 .txt/.py：7 行 12px 小字体、只读、可滚动/翻页
+static bool viewerActive = false;
+static char viewerBuf[16 * 1024];
+static uint16_t viewerOff[800];
+static int viewerLineCount = 0, viewerTop = 0;
+static char viewerTitle[40];
+
+static void viewerOpen(const char *dir, const char *name) {
+    char path[80];
+    snprintf(path, sizeof(path), "%s%s", dir, name);
+    FIL f;
+    if (f_open(&f, path, FA_READ) != FR_OK) return;
+    FSIZE_t sz = f_size(&f);
+    if (sz > sizeof(viewerBuf) - 1) sz = sizeof(viewerBuf) - 1;
+    UINT br = 0;
+    f_read(&f, viewerBuf, (UINT)sz, &br);
+    f_close(&f);
+    viewerBuf[br] = 0;
+    viewerLineCount = 0;
+    viewerOff[viewerLineCount++] = 0;
+    for (UINT i = 0; i < br && viewerLineCount < 799; i++) {
+        if (viewerBuf[i] == '\n') {
+            viewerBuf[i] = 0;
+            if (i + 1 < br) viewerOff[viewerLineCount++] = (uint16_t)(i + 1);
+        } else if (viewerBuf[i] == '\r') {
+            viewerBuf[i] = 0;
+        }
+    }
+    viewerTop = 0;
+    strncpy(viewerTitle, name, sizeof(viewerTitle) - 1);
+    viewerTitle[sizeof(viewerTitle) - 1] = 0;
+    viewerActive = true;
+}
+
+static void viewerDraw(void) {
+    uidisp->draw_box(0, 0, 255, 126, 255, 255);
+    uidisp->draw_printf(2, 1, 12, 0, 255, "%s  %d/%d", viewerTitle, viewerTop + 1, viewerLineCount);
+    char line[40];
+    for (int i = 0; i < 7; i++) {
+        int ln = viewerTop + i;
+        if (ln >= viewerLineCount) break;
+        const char *t = viewerBuf + viewerOff[ln];
+        int n = 0;
+        while (t[n] && n < 31) { // 非 ASCII 以 . 占位（12px 字体无中文字形）
+            line[n] = ((unsigned char)t[n] < 0x80) ? t[n] : '.';
+            n++;
+        }
+        line[n] = 0;
+        uidisp->draw_printf(2, 15 + i * 12, 12, 0, 255, "%s", line);
+    }
+    uidisp->draw_printf(2, 112, 12, 0, 255, "UP/DN:scroll sh+UP/DN:page ON:back");
+    uidisp->flush();
+}
+
 void drawPage(int page) {
 
     uidisp->draw_box(mainw->content_x0,
@@ -368,6 +423,10 @@ void drawPage(int page) {
         break;
 
     case 2:
+        if (viewerActive) {
+            viewerDraw();
+            break;
+        }
         uidisp->draw_box(DISPX, DISPY + 16, 255, DISPY + 16, -1, 0);
         uidisp->draw_printf(DISPX, DISPY, 16, 0, 255, "%d item(s) [%s] (%d/%d)", *filesCount, pathNow, (*filesCount == 0 ? 0 : *pageNow), *pageAll);
         for (int i = 1; i <= 5 && ((*pageNow - 1) * 5 + i) <= *filesCount; i++) {
@@ -434,6 +493,24 @@ void refreshIndicator() {
 void keyMsg(uint32_t key, int state) {
 
     if ((state == KEY_TRIG) || (state == KEY_LONG_PRESS)) {
+        if (viewerActive) { // 文本查看器：只读滚动
+            if (key == KEY_UP) {
+                viewerTop -= shift ? 7 : 1;
+                if (viewerTop < 0) viewerTop = 0;
+            } else if (key == KEY_DOWN) {
+                viewerTop += shift ? 7 : 1;
+                if (viewerTop > viewerLineCount - 7) viewerTop = viewerLineCount - 7;
+                if (viewerTop < 0) viewerTop = 0;
+            } else if (key == KEY_ON) {
+                viewerActive = false;
+                drawPage(curPage);
+                return;
+            } else {
+                return; // 其余按键不处理
+            }
+            viewerDraw();
+            return;
+        }
         switch (key) {
 
         case KEY_4:
@@ -792,7 +869,19 @@ void keyMsg(uint32_t key, int state) {
                         refreshDir();
                         drawPage(curPage);
                     } else {
-                        // File selected - could add file type handling here
+                        // 文件：.txt/.py 用文本查看器打开（只读）
+                        const char *nm = dirItemNames[(*pageNow - 1) * 5 + *selectedItem - 1];
+                        int n = strlen(nm);
+                        if (n > 3) {
+                            const char *ext = nm + n - 3;
+                            if ((ext[0] == '.') && (ext[1] == 'p' || ext[1] == 'P') && (ext[2] == 'y' || ext[2] == 'Y')) {
+                                viewerOpen(pathNow, nm);
+                                drawPage(curPage);
+                            } else if ((ext[0] == '.') && (ext[1] == 't' || ext[1] == 'T') && (ext[2] == 'x' || ext[2] == 'X')) {
+                                viewerOpen(pathNow, nm);
+                                drawPage(curPage);
+                            }
+                        }
                     }
                 }
             }
