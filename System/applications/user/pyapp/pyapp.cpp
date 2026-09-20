@@ -38,10 +38,10 @@ void mpy_deinit(void);
 
 // ---- 终端缓冲（96 行环形回看）----
 #define TERM_COLS 31
-#define TERM_ROWS 8
+#define TERM_ROWS 6
 #define TERM_LINES 96
 #define ROW_Y0 13
-#define ROW_STEP 12
+#define ROW_STEP 16
 #define TITLE_Y 0
 #define HINT_Y 112 // 已由底栏取代（保留常量）
 
@@ -150,6 +150,51 @@ static void termPutc(char c) {
 }
 
 static void termPuts(const char *s) { while (*s) termPutc(*s++); }
+
+// ---- 错误信息中文化（显示时替换；终端缓冲保持原始内容）----
+typedef struct { const char *en; const char *zh; } errRule;
+static const errRule errRules[] = {
+    {"Traceback (most recent call last):", "\xbb\xd8\xcb\xdd\xa3\xa8\xd7\xee\xbd\xfc\xd2\xbb\xb4\xce\xb5\xf7\xd3\xc3\xa3\xa9:"},
+    {"  File \"<stdin>\", line ", "  \xce\xc4\xbc\xfe \"<stdin>\"\xa3\xac\xb5\xda "},
+    {"NameError: name '", "\xc3\xfb\xb3\xc6\xb4\xed\xce\xf3\xa3\xba\xc3\xfb\xb3\xc6 '"},
+    {"' isn't defined", "' \xce\xb4\xb6\xa8\xd2\xe5"},
+    {"SyntaxError: invalid syntax", "\xd3\xef\xb7\xa8\xb4\xed\xce\xf3\xa3\xba\xce\xde\xd0\xa7\xd3\xef\xb7\xa8"},
+    {"SyntaxError: ", "\xd3\xef\xb7\xa8\xb4\xed\xce\xf3\xa3\xba "},
+    {"IndentationError: ", "\xcb\xf5\xbd\xf8\xb4\xed\xce\xf3\xa3\xba "},
+    {"TypeError: ", "\xc0\xe0\xd0\xcd\xb4\xed\xce\xf3\xa3\xba "},
+    {"ValueError: ", "\xca\xfd\xd6\xb5\xb4\xed\xce\xf3\xa3\xba "},
+    {"ZeroDivisionError: division by zero", "\xb3\xfd\xc1\xe3\xb4\xed\xce\xf3\xa3\xba\xb3\xfd\xd2\xd4\xc1\xe3"},
+    {"ZeroDivisionError: ", "\xb3\xfd\xc1\xe3\xb4\xed\xce\xf3\xa3\xba "},
+    {"IndexError: list index out of range", "\xcb\xf7\xd2\xfd\xb4\xed\xce\xf3\xa3\xba\xc1\xd0\xb1\xed\xcf\xc2\xb1\xea\xd4\xbd\xbd\xe7"},
+    {"IndexError: ", "\xcb\xf7\xd2\xfd\xb4\xed\xce\xf3\xa3\xba "},
+    {"KeyError: ", "\xbc\xfc\xb4\xed\xce\xf3\xa3\xba "},
+    {"AttributeError: ", "\xca\xf4\xd0\xd4\xb4\xed\xce\xf3\xa3\xba "},
+    {"ImportError: no module named ", "\xb5\xbc\xc8\xeb\xb4\xed\xce\xf3\xa3\xba\xc3\xbb\xd3\xd0\xc4\xa3\xbf\xe9 "},
+    {"ImportError: ", "\xb5\xbc\xc8\xeb\xb4\xed\xce\xf3\xa3\xba "},
+    {"NotImplementedError: only slices with step=1 (aka None) are supported", "\xce\xb4\xca\xb5\xcf\xd6\xb4\xed\xce\xf3\xa3\xba\xbd\xf6\xd6\xa7\xb3\xd6\xb2\xbd\xb3\xa4\xce\xaa 1 \xb5\xc4\xc7\xd0\xc6\xac"},
+    {"NotImplementedError: ", "\xce\xb4\xca\xb5\xcf\xd6\xb4\xed\xce\xf3\xa3\xba "},
+    {"MemoryError: ", "\xc4\xda\xb4\xe6\xb4\xed\xce\xf3\xa3\xba "},
+    {"OverflowError: ", "\xd2\xe7\xb3\xf6\xb4\xed\xce\xf3\xa3\xba "},
+    {"RuntimeError: ", "\xd4\xcb\xd0\xd0\xca\xb1\xb4\xed\xce\xf3\xa3\xba "},
+    {"OSError: ", "\xcf\xb5\xcd\xb3\xb4\xed\xce\xf3\xa3\xba "},
+    {"KeyboardInterrupt", "\xbc\xfc\xc5\xcc\xd6\xd0\xb6\xcf"},
+    {"SystemExit", "\xcf\xb5\xcd\xb3\xcd\xcb\xb3\xf6"},
+};
+static char xlateBuf[160];
+static const char *xlateLine(const char *src) {
+    strncpy(xlateBuf, src, sizeof(xlateBuf) - 1);
+    xlateBuf[sizeof(xlateBuf) - 1] = 0;
+    for (unsigned r = 0; r < sizeof(errRules) / sizeof(errRules[0]); r++) {
+        char *pos = strstr(xlateBuf, errRules[r].en);
+        if (!pos) continue;
+        static char tmp[200];
+        int head = (int)(pos - xlateBuf);
+        snprintf(tmp, sizeof(tmp), "%.*s%s%s", head, xlateBuf, errRules[r].zh, pos + strlen(errRules[r].en));
+        strncpy(xlateBuf, tmp, sizeof(xlateBuf) - 1);
+        xlateBuf[sizeof(xlateBuf) - 1] = 0;
+    }
+    return xlateBuf;
+}
 
 // ---- MicroPython HAL ----
 extern "C" uint32_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
@@ -398,7 +443,7 @@ static void cursorCell(int *px, int *py) {
     *px = -1;
     if (termScroll != 0 || termLines < 1) return;
     *px = 1 + tCol * 8;
-    *py = ROW_Y0 + (TERM_ROWS - 1) * ROW_STEP + 10;
+    *py = ROW_Y0 + (TERM_ROWS - 1) * ROW_STEP + 14;
 }
 static void cursorPaint(int on) {
     int x, y;
@@ -416,7 +461,7 @@ static void draw() {
     for (int i = 0; i < TERM_ROWS; i++) {
         int ln = last - (TERM_ROWS - 1 - i);
         if (ln < 0) continue;
-        uidisp->draw_printf(1, ROW_Y0 + i * ROW_STEP, 12, 0, 255, "%s", term[ln % TERM_LINES]);
+        uidisp->draw_printf(1, ROW_Y0 + i * ROW_STEP, 16, 0, 255, "%s", xlateLine(term[ln % TERM_LINES]));
     }
     if (cursorOn) {
         int x, y;
@@ -665,14 +710,14 @@ static void pyTask(void *_) {
         } else if (rowDirty >= 0) { // 仅重绘最底行（输入回显：避免整屏刷新）
             int ln = termLines - 1;
             int ly = ROW_Y0 + rowDirty * ROW_STEP;
-            uidisp->draw_box(1, ly, LCD_PIX_W - 2, ly + 11, 255, 255);
-            if (ln >= 0) uidisp->draw_printf(1, ly, 12, 0, 255, "%s", term[ln % TERM_LINES]);
+            uidisp->draw_box(1, ly, LCD_PIX_W - 2, ly + 15, 255, 255);
+            if (ln >= 0) uidisp->draw_printf(1, ly, 16, 0, 255, "%s", xlateLine(term[ln % TERM_LINES]));
             if (cursorOn) {
                 int x, y;
                 cursorCell(&x, &y);
                 if (x >= 0) uidisp->draw_box(x, y, x + 7, y + 1, 0, -1);
             }
-            uidisp->flushRect(0, ly, LCD_PIX_W - 1, ly + 11);
+            uidisp->flushRect(0, ly, LCD_PIX_W - 1, ly + 15);
             rowDirty = -1;
         }
         vTaskDelay(pdMS_TO_TICKS(20));
