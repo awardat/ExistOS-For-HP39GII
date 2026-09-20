@@ -48,13 +48,29 @@ static int rowDirty = -1; // >=0：仅刷新该可见行
 static int cursorOn = 1;
 static int lineLen = 0;   // 当前输入行长度（用于退格边界）
 static int contMode = 0;  // REPL 续行态（尾部提示符为 "... "）
+static int inPs2Tail = 0; // 正处 "... " 之后（用于统计 auto-indent 空格数）
+static int ps2Spaces = 0; // PS2 后自动缩进的空格数（已写进 REPL 行缓冲）
 static char outTail[8];
 static int outTailLen = 0;
 
-static void trackPrompt(void) { // 尾部匹配 ">>> " / "... "
-    if (outTailLen >= 4) {
-        if (memcmp(outTail + outTailLen - 4, "... ", 4) == 0) contMode = 1;
-        else if (memcmp(outTail + outTailLen - 4, ">>> ", 4) == 0) contMode = 0;
+static void trackPrompt(void) { // 尾部匹配 ">>> " / "... "；并统计缩进空格
+    if (outTailLen >= 1) {
+        if (outTailLen >= 4 && memcmp(outTail + outTailLen - 4, "... ", 4) == 0) {
+            contMode = 1;
+            inPs2Tail = 1;
+            ps2Spaces = 0;
+            return;
+        }
+        if (outTailLen >= 4 && memcmp(outTail + outTailLen - 4, ">>> ", 4) == 0) {
+            contMode = 0;
+            inPs2Tail = 0;
+            ps2Spaces = 0;
+            return;
+        }
+        if (inPs2Tail) {
+            if (outTail[outTailLen - 1] == ' ') ps2Spaces++;
+            else inPs2Tail = 0;
+        }
     }
 }
 
@@ -332,8 +348,14 @@ static void pyTask(void *_) {
                         ll_disp_set_indicator(alpha == 1 ? INDICATE_A__Z : (alpha == 2 ? INDICATE_a__z : 0), -1);
                     }
                 } else if (key == KEY_ENTER) {
-                    if (lineLen == 0 && contMode) mpy_repl_feed_char(0x04); // 空行：Ctrl-D 结束块（否则 auto-indent 会反复续行）
-                    else mpy_repl_feed_char('\r');
+                    if (lineLen == 0 && contMode) {
+                        // 空行结束块：MP auto-indent 已把空格写进缓冲 → 先退格清掉，再回车（缓冲末尾成为 '\n' 才会执行）
+                        for (int i = 0; i < ps2Spaces; i++) mpy_repl_feed_char(0x08);
+                        ps2Spaces = 0;
+                        mpy_repl_feed_char('\r');
+                    } else {
+                        mpy_repl_feed_char('\r');
+                    }
                     lineLen = 0;
                 } else if (shift && key == KEY_BACKSPACE) { // Shift+退格 = Ctrl-C：取消当前输入（续行卡住的逃生口）
                     mpy_repl_feed_char(0x03);
@@ -356,6 +378,7 @@ static void pyTask(void *_) {
                     if (ch) {
                         mpy_repl_feed_char(ch);
                         lineLen++;
+                        inPs2Tail = 0;
                         if (alpha && !alphaLock) { // 一次性 alpha
                             alpha = 0;
                             ll_disp_set_indicator(0, -1);
