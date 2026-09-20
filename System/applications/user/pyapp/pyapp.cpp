@@ -28,6 +28,7 @@ int mpy_repl_init(void);
 int mpy_repl_feed_char(int c);
 int mpy_exec_str(const char *src);
 void mpy_gc_collect(void);
+void mpy_deinit(void);
 }
 
 // ---- 终端缓冲（96 行环形回看）----
@@ -37,7 +38,7 @@ void mpy_gc_collect(void);
 #define ROW_Y0 13
 #define ROW_STEP 12
 #define TITLE_Y 0
-#define HINT_Y 112
+#define HINT_Y 112 // 已由底栏取代（保留常量）
 
 static char term[TERM_LINES][TERM_COLS + 1];
 static int termLines = 0; // 已产生行数
@@ -248,6 +249,38 @@ static void *pyHeap = NULL;
 static size_t pyHeapSize = 0;
 static int pyInited = 0;
 
+// ---- 菜单系统（v4：F1 符号面板 / F5 帮助 / F6 文件）----
+#define UI_REPL 0
+#define UI_SYMB 1
+#define UI_HELP 2
+#define UI_FILE 3
+static int uiMode = UI_REPL;
+static int symPage = 0, symSel = 0, helpPage = 0, fileSel = 0;
+
+static const char *symItems[3][10] = {
+    {":", ",", ".", "=", "<", ">", "_", "#", "\"", "'"},
+    {"(", ")", "[", "]", "{", "}", "+", "-", "*", "/"},
+    {"if ", "elif ", "else:", "for ", "while ", "def ", "return ", "print(", "import ", "%"},
+};
+static const char *symTitles[3] = {"\xb7\xfb\xba\xc5", "\xd4\xcb\xcb\xe3\xb7\xfb", "\xbd\xe1\xb9\xb9"};
+static const char *helpText[4][6] = {
+    {"\xb0\xef\xd6\xfa 1/4 \xbb\xf9\xb1\xbe\xb2\xd9\xd7\xf7", "\xc6\xd5\xcd\xa8\xbc\xfc\xa3\xba\xca\xfd\xd7\xd6\xd3\xeb\xd4\xcb\xcb\xe3\xb7\xfb", "ALPHA\xa3\xba\xd7\xd6\xc4\xb8\xa3\xa8\xd2\xbb\xb4\xce\xb4\xf3\xd0\xb4\xa3\xac\xc1\xbd\xb4\xce\xd0\xa1\xd0\xb4\xa3\xa9", "Shift+ALPHA\xa3\xba\xcb\xf8\xb6\xa8\xd0\xa1\xd0\xb4", "ENT\xa3\xba\xd6\xb4\xd0\xd0\xa3\xbb\xbf\xe9\xce\xb4\xbd\xe1\xca\xf8\xd7\xd4\xb6\xaf\xd0\xf8\xd0\xd0", "Shift+ON\xa3\xba\xcd\xcb\xb3\xf6"},
+    {"\xb0\xef\xd6\xfa 2/4 \xb1\xe0\xbc\xad\xd3\xeb\xb9\xf6\xb6\xaf", "\xcd\xcb\xb8\xf1\xa3\xba\xc9\xbe\xb3\xfd\xd7\xd6\xb7\xfb", "Shift+\xcd\xcb\xb8\xf1\xa3\xba\xc8\xa1\xcf\xfb\xb5\xb1\xc7\xb0\xca\xe4\xc8\xeb", "UP/DOWN\xa3\xba\xd6\xf0\xd0\xd0\xb9\xf6\xb6\xaf", "Shift+UP/DOWN\xa3\xba\xb7\xad\xd2\xb3", "ON\xa3\xba\xc7\xe5\xc6\xc1"},
+    {"\xb0\xef\xd6\xfa 3/4 \xb6\xe0\xd0\xd0\xd3\xef\xbe\xe4", "\xc0\xfd\xa3\xba""for i in range(3):", "\xcf\xc2\xd2\xbb\xd0\xd0\xd6\xb1\xbd\xd3\xca\xe4\xc8\xeb\xa3\xa8\xd7\xd4\xb6\xaf\xcb\xf5\xbd\xf8\xa3\xa9", "\xcc\xe5\xd0\xd0\xca\xe4\xc8\xeb\xcd\xea\xba\xf3\xb0\xb4 ENT", "\xd4\xd9\xb0\xb4\xd2\xbb\xb4\xce ENT\xa3\xa8\xbf\xd5\xd0\xd0\xa3\xa9\xbf\xaa\xca\xbc\xd6\xb4\xd0\xd0", "F1\xa3\xba\xb7\xfb\xba\xc5\xc3\xe6\xb0\xe5"},
+    {"\xb0\xef\xd6\xfa 4/4 \xb9\xd8\xd3\xda", "MicroPython 1.29 \xb6\xc0\xc1\xa2\xd3\xa6\xd3\xc3", "\xcf\xd4\xca\xbe\xbf\xed\xb6\xc8 31 \xd7\xd6\xb7\xfb x 8 \xd0\xd0", "\xca\xe4\xb3\xf6\xb1\xa3\xc1\xf4\xd7\xee\xbd\xfc 96 \xd0\xd0", "\xbb\xe1\xbb\xb0\xb1\xe4\xc1\xbf\xd4\xda\xcd\xcb\xb3\xf6\xba\xf3\xb1\xa3\xc1\xf4", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7\xa3\xba""F6 \xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5"},
+};
+static const char *fileItems[4] = {"\xcd\xcb\xb3\xf6", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda"};
+static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "", "\xb0\xef\xd6\xfa", "\xce\xc4\xbc\xfe"};
+
+static void feedStr(const char *str) {
+    while (*str) {
+        mpy_repl_feed_char((unsigned char)*str);
+        lineLen++;
+        str++;
+    }
+    inPs2Tail = 0;
+}
+
 // ---- 绘制 ----
 // 光标：当前单元格下划线（8x2px，紧贴上一字符，无空档）
 static void cursorCell(int *px, int *py) {
@@ -279,7 +312,37 @@ static void draw() {
         cursorCell(&x, &y);
         if (x >= 0) uidisp->draw_box(x, y, x + 7, y + 1, 0, -1);
     }
-    uidisp->draw_printf(2, HINT_Y, 12, 0, 255, "ON:cls shON:exit AC:^C UP/DN");
+    // 菜单覆盖层
+    if (uiMode == UI_SYMB) {
+        uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
+        uidisp->draw_printf(2, 14, 16, 0, 255, "%s %d/3", symTitles[symPage], symPage + 1);
+        for (int i = 0; i < 10; i++) {
+            int col = i % 5, row = i / 5;
+            int x = 6 + col * 50, y = 42 + row * 24;
+            if (i == symSel) uidisp->draw_box(x - 4, y - 3, x + 42, y + 15, -1, 0);
+            uidisp->draw_printf(x, y, 12, (i == symSel) ? 255 : 0, (i == symSel) ? 0 : 255, "%s", symItems[symPage][i]);
+        }
+    } else if (uiMode == UI_HELP) {
+        uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
+        for (int i = 0; i < 6; i++)
+            if (helpText[helpPage][i][0]) uidisp->draw_printf(2, 15 + i * 16, 16, 0, 255, "%s", helpText[helpPage][i]);
+    } else if (uiMode == UI_FILE) {
+        uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
+        uidisp->draw_printf(2, 14, 16, 0, 255, "\xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5");
+        for (int i = 0; i < 4; i++) {
+            int y = 38 + i * 17;
+            if (i == fileSel) uidisp->draw_box(2, y - 2, LCD_PIX_W - 3, y + 14, -1, 0);
+            uidisp->draw_printf(6, y, 16, (i == fileSel) ? 255 : 0, (i == fileSel) ? 0 : 255, "%s", fileItems[i]);
+        }
+    }
+    // 底栏（6 段）
+    uidisp->draw_box(0, 110, LCD_PIX_W - 1, LCD_PIX_H - 1, -1, 0);
+    for (int i = 0; i < 6; i++) {
+        if (!barLabels[i][0]) continue;
+        uint8_t barFg = (uiMode == i + 1) ? 0 : 255;
+        uint8_t barBg = (uiMode == i + 1) ? 255 : 0;
+        uidisp->draw_printf(i * 42 + 5, 111, 16, barFg, barBg, "%s", barLabels[i]);
+    }
     uidisp->flush();
 }
 
@@ -327,7 +390,39 @@ static void pyTask(void *_) {
                 }
             } else if (key != (uint32_t)lastKey) {
                 lastKey = key;
-                if (shift && key == KEY_ON) { // Shift+ON 退出
+                if (uiMode == UI_SYMB) {
+                    if (key == KEY_F1 || key == KEY_ON) uiMode = UI_REPL;
+                    else if (key == KEY_LEFT) { symPage = (symPage + 2) % 3; symSel = 0; }
+                    else if (key == KEY_RIGHT) { symPage = (symPage + 1) % 3; symSel = 0; }
+                    else if (key == KEY_UP) { if (symSel >= 5) symSel -= 5; }
+                    else if (key == KEY_DOWN) { if (symSel < 5) symSel += 5; }
+                    else if (key == KEY_ENTER) { feedStr(symItems[symPage][symSel]); uiMode = UI_REPL; }
+                    termDirty = 1;
+                } else if (uiMode == UI_HELP) {
+                    if (key == KEY_F5 || key == KEY_ON || key == KEY_ENTER) uiMode = UI_REPL;
+                    else if (key == KEY_LEFT) helpPage = (helpPage + 3) % 4;
+                    else if (key == KEY_RIGHT) helpPage = (helpPage + 1) % 4;
+                    termDirty = 1;
+                } else if (uiMode == UI_FILE) {
+                    if (key == KEY_F6 || key == KEY_ON) uiMode = UI_REPL;
+                    else if (key == KEY_UP) { if (fileSel > 0) fileSel--; }
+                    else if (key == KEY_DOWN) { if (fileSel < 3) fileSel++; }
+                    else if (key == KEY_ENTER) {
+                        if (fileSel == 0) { pyRunning = 0; }
+                        else if (fileSel == 1) { for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0; termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; uiMode = UI_REPL; }
+                        else if (fileSel == 2) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); contMode = 0; uiMode = UI_REPL; }
+                        else { uiMode = UI_HELP; helpPage = 3; }
+                    }
+                    termDirty = 1;
+                } else if (key == KEY_F1) { uiMode = UI_SYMB; symSel = 0; termDirty = 1;
+                } else if (key == KEY_F5) { uiMode = UI_HELP; helpPage = 0; termDirty = 1;
+                } else if (key == KEY_F6) { uiMode = UI_FILE; fileSel = 0; termDirty = 1;
+                } else if (key == KEY_F2) { // 清屏
+                    for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0;
+                    termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; termDirty = 1;
+                } else if (key == KEY_F3) { // 取消输入
+                    mpy_repl_feed_char(0x03); contMode = 0; lineLen = 0;
+                } else if (shift && key == KEY_ON) { // Shift+ON 退出
                     pyRunning = 0;
                 } else if (shift && key == KEY_ALPHA) { // Shift+ALPHA：锁定小写（再按解除）
                     shift = 0; // 先消费 shift，避免其后的"清理 shift"逻辑把锁定图标熄灭
