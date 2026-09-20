@@ -1953,6 +1953,17 @@ static void snFmtIp(uint32_t v, char *b) {
     sprintf(b, "%u.%u.%u.%u", (unsigned)((v >> 24) & 255), (unsigned)((v >> 16) & 255), (unsigned)((v >> 8) & 255), (unsigned)(v & 255));
 }
 
+static void snFmtRange(uint32_t a, uint32_t b, char *out) { // 公共前缀压缩：192.168.1.1-254
+    char sa[20], sb[20];
+    snFmtIp(a, sa);
+    snFmtIp(b, sb);
+    int i = 0;
+    while (sa[i] && sb[i] && sa[i] == sb[i]) i++;
+    while (i > 0 && sa[i - 1] != '.') i--; // 回退到最后一个 '.'
+    if (i > 0) sprintf(out, "%s%s-%s", sa, sa + i, sb + i);
+    else sprintf(out, "%s-%s", sa, sb);
+}
+
 static void snAdj(int d) {
     if (snFoc < 4) {
         int v = snIp[snFoc] + d;
@@ -1984,7 +1995,7 @@ static void snDrawField(int idx, int x, int y, int w, const char *txt) {
 }
 
 static void drawSubnet(void) {
-    char tt[48], rb[20], b[40], line[64];
+    char tt[48], rb[20], b[40];
     sprintf(tt, "SUBNET %s", eeItems[9]);
     uint32_t ip = snAddr(), mask = snMask();
     uint32_t net = ip & mask, bc = net | ~mask;
@@ -2010,19 +2021,17 @@ static void drawSubnet(void) {
     uidisp->draw_printf(84, 38, 16, 0, 255, "%s", b);
 
     // 结果：网络 / 广播 / 可用范围
-    char n1[20], b1[20], f1[20], l1[20];
+    char n1[20], b1[20], r1[40];
     snFmtIp(net, n1);
     snFmtIp(bc, b1);
-    snFmtIp(net + (snPfx >= 31 ? 0 : 1), f1);
-    snFmtIp(bc - (snPfx >= 31 ? 0 : 1), l1);
+    snFmtRange(net + (snPfx >= 31 ? 0 : 1), bc - (snPfx >= 31 ? 0 : 1), r1);
 
     fDrawMix(4, 58, "\xCD\xF8\xC2\xE7", 0, 255);
     uidisp->draw_printf(44, 58, 16, 0, 255, "%s", n1);
     fDrawMix(4, 76, "\xB9\xE3\xB2\xA5", 0, 255);
     uidisp->draw_printf(44, 76, 16, 0, 255, "%s", b1);
-    sprintf(line, "%s-%s", f1, l1);
     fDrawMix(4, 94, "\xB7\xB6\xCE\xA7", 0, 255);
-    uidisp->draw_printf(44, 94, 16, 0, 255, "%s", line);
+    uidisp->draw_printf(44, 94, 16, 0, 255, "%s", r1);
 
     const char *menus[6] = { "CLR", "_", "_", "NEXT", "_", "BACK" };
     drawMenu(menus);
