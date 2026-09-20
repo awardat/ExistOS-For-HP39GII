@@ -64,8 +64,11 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 - [x] **KhiCAS `save_script` 0-byte write fix** (root cause: length not passed -> `Bfile_WriteFile_OS(len=0)` returned early); length fallback + post-write truncate; empty files can be created
 - [x] **FormCalc review P3 items**: AMORT Begin/End (INT=0 in BGN first period) + user PMT (from TVM register); DB200 straight-line crossover; 30/360 day rules (31st + Feb-end); bondPrice dead parameter and `config_set_charge_mode` dead code removed
 
-### build 140 (in development)
-- [ ] Standalone Python app (latest MicroPython, dedicated entry; N-Queens verification)
+### build 140 (2026-09-20 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-140))
+- [x] **Standalone Python app (MicroPython v1.29.0)**: 4th icon on the apps page; terminal-style REPL (6x31 chars, 96-line scrollback, row-level refresh); full key layout (Shift layer / ALPHA 26-letter table / Shift+ALPHA lowercase lock / arrow editing / paging); bottom F-key menu (F1 symbol panel 4 pages, F2 clear, F3 cancel, F4 run script, F5 Chinese help, F6 file menu); Chinese error mapping (25 cases); `open()` via FatFs + local `import` (`/xcas/`); script browser and runner; session kept + interpreter reset; "Save session" to `/xcas/session.txt`
+- [x] **Apps page 4x1 layout**; **text viewer** (open any file in the file manager: 7 lines 12px, scroll/page, read-only)
+- [x] **Python app manual and samples** (`docs/Python-app-manual.md`; `samples/py01_basics.py` / `py02_module.py` / `py07_nqueens.py` - N-Queens 8x8: 1221 ms standard / 703 ms boost)
+- [x] **Review remediation**: Python app exit/re-entry mutex, viewer exit restores window chrome, viewer buffer on demand, path truncation/negative-offset guards, diagnostics cleanup
 
 ### build 137 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
 - [x] **giac 2.0.0 limited port**: tier 1 sym2poly + risch (40 cases pass); tier 2 csturm real-root isolation rewrite (17 cases pass, benefits solve for polynomials/inequalities)

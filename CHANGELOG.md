@@ -4,7 +4,7 @@
 
 ---
 
-## [build 140] - 2026-09-20 (开发中)
+## [build 140] - 2026-09-20 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-140))
 
 ### 已完成
 - **独立 Python app（MicroPython v1.29.0）**：首页应用页第 4 个图标（原创图标）；终端式 REPL（6 行 × 31 字符、16px 中英混排、96 行回看、行级局部刷新）；完整键位（数字/运算符/Shift 层/ALPHA 26 字母表、Shift+ALPHA 小写锁定、←→ 行内编辑、UP/DOWN 滚动、Shift+UP/DOWN 翻页、ON 清屏、Shift+ON 退出）；底部 F 键菜单（符号面板 4 页 / 清屏 / 取消 / 运行 / 帮助 4 页 / 文件菜单 6 项）；中文报错映射（25 条常见异常）；MicroPython 文件对象（`open()` 走 FatFs）与本地 `import`（按 `/xcas/` 解析）；脚本浏览与运行（F4 或文件菜单，`/xcas/pyNN_*.py`）；会话变量保留 + 复位解释器；「保存会话」导出终端 96 行到 `/xcas/session.txt`

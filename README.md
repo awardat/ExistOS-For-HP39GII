@@ -63,8 +63,11 @@
 - [x] **KhiCAS `save_script` 写入 0 字节修复**（"另存为 0 字节"根因：未传长度 → `Bfile_WriteFile_OS(len=0)` 直接返回）；`write_file` 长度兜底 + 写后截断；空文件可建
 - [x] **FormCalc 审核 P3 四项**：AMORT 期初/期末（BGN 首期 INT=0）+ 用户 PMT（取 TVM 寄存器）；DB200 直线法交叉；30/360 日规则（31 日+2 月末）；bondPrice 死参与 `config_set_charge_mode` 死代码清理
 
-### build 140（开发中）
-- [ ] 独立 Python app（micropython 最新稳定版、独立入口；N-Queens 验证）
+### build 140（2026-09-20 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-140)）
+- [x] **独立 Python app（MicroPython v1.29.0）**：首页第 4 个图标；终端式 REPL（6 行 × 31 字符、96 行回看、行级局部刷新）；完整键位（Shift 层/ALPHA 26 字母表/Shift+ALPHA 小写锁定/←→ 行内编辑/翻页）；底部 F 键菜单（F1 符号面板 4 页、F2 清屏、F3 取消、F4 运行脚本、F5 中文帮助、F6 文件菜单 6 项）；中文报错映射（25 条）；`open()` 走 FatFs + 本地 `import`（`/xcas/`）；脚本浏览运行；会话保留 + 复位解释器；「保存会话」导出 `/xcas/session.txt`
+- [x] **应用页 4x1 布局**；**文本查看器**（文件管理器内打开任意文件：7 行 12px、滚动/翻页、只读）
+- [x] **Python app 手册与样本**（`docs/Python-app-manual.md`；`samples/py01_basics.py` / `py02_module.py` / `py07_nqueens.py`——N-Queens 8×8：标准 1221ms / 加速 703ms）
+- [x] **审核整改**：Python app 退出/重入互斥、查看器退出恢复窗口装饰、查看器缓冲按需分配、路径截断/负偏移防护、诊断输出清理
 
 ### build 137（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137)）
 - [x] **giac 2.0.0 有限移植**：一档 sym2poly + risch（40 用例通过）；二档 csturm 实根隔离重写（17 用例全通过，solve 多项式/不等式受益）
