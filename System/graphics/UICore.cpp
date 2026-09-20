@@ -355,6 +355,10 @@ static const char *viewerMsg = NULL; // 无缓冲时的短提示（静态字符�
 static uint16_t viewerOff[800];
 static int viewerLineCount = 0, viewerTop = 0;
 static char viewerTitle[40];
+static FSIZE_t f_size_bin = 0;    // 查看器：文件大小（二进制提示用）
+static bool viewerWide = false;   // 含非 ASCII → 16px 中英混排（6 行）
+static bool viewerBinary = false; // 控制字符过多 → 二进制文件提示
+static int viewerRows = 7;        // 可视行数（12px:7 / 16px:6）
 
 static void viewerClose(void) {
     viewerActive = false;
@@ -371,6 +375,10 @@ static bool viewerOpen(const char *dir, const char *name) {
     strncpy(viewerTitle, name, sizeof(viewerTitle) - 1);
     viewerTitle[sizeof(viewerTitle) - 1] = 0;
     viewerTop = 0;
+    viewerWide = false;
+    viewerBinary = false;
+    viewerRows = 7;
+    f_size_bin = 0;
     if (!viewerBuf) viewerBuf = (char *)malloc(VIEWER_MAX);
     if (!viewerBuf) { // 内存不足：仅提示
         viewerMsg = "\xc4\xda\xb4\xe6\xb2\xbb\xd7\xe3";
@@ -395,11 +403,24 @@ static bool viewerOpen(const char *dir, const char *name) {
         return false;
     }
     FSIZE_t sz = f_size(&f);
+    f_size_bin = sz;
     if (sz > VIEWER_MAX - 1) sz = VIEWER_MAX - 1;
     UINT br = 0;
     f_read(&f, viewerBuf, (UINT)sz, &br);
     f_close(&f);
     viewerBuf[br] = 0;
+    {   // 探测：非 ASCII → 宽字模式；控制字符比例高 → 二进制
+        bool hasHigh = false;
+        int ctrl = 0;
+        for (UINT i = 0; i < br; i++) {
+            unsigned char c = (unsigned char)viewerBuf[i];
+            if (c >= 0x80) hasHigh = true;
+            else if (c < 0x20 && c != '\r' && c != '\n' && c != '\t') ctrl++;
+        }
+        viewerWide = hasHigh;
+        viewerRows = hasHigh ? 6 : 7;
+        viewerBinary = (br > 0 && ctrl > (int)(br / 10));
+    }
     viewerLineCount = 0;
     viewerOff[viewerLineCount++] = 0;
     for (UINT i = 0; i < br && viewerLineCount < 799; i++) {
@@ -429,23 +450,43 @@ static void viewerDraw(void) {
         uidisp->flush();
         return;
     }
-    char line[40];
-    for (int i = 0; i < 7; i++) {
+    if (viewerBinary) {
+        uidisp->draw_printf(2, 16, 16, 0, 255, "%s", "\xa3\xa8\xb6\xfe\xbd\xf8\xd6\xc6\xce\xc4\xbc\xfe\xa3\xa9"); // （二进制文件）
+        uidisp->draw_printf(2, 36, 12, 0, 255, "size: %d bytes", (int)f_size_bin);
+        uidisp->flush();
+        return;
+    }
+    char line[72];
+    for (int i = 0; i < viewerRows; i++) {
         int ln = viewerTop + i;
         if (ln >= viewerLineCount) break;
         const char *t = viewerBuf + viewerOff[ln];
         int n = 0;
-        while (*t && n < 31) { // GBK 双字节算一个 '?'
-            unsigned char c = (unsigned char)*t++;
-            if (c < 0x80) {
-                line[n++] = c;
-            } else {
-                line[n++] = '?';
-                if ((unsigned char)*t >= 0x80) t++;
+        if (viewerWide) { // 16px 中英混排：ASCII 8px / GBK 16px，限 248px
+            int w = 0;
+            while (*t && n < 68) {
+                unsigned char c = (unsigned char)*t;
+                int cw = (c < 0x80) ? 8 : 16;
+                if (w + cw > 248) break;
+                if (c < 0x80) {
+                    line[n++] = *t++;
+                } else {
+                    line[n++] = *t++;
+                    if (*t) line[n++] = *t++; // GBK 双字节整体拷贝
+                }
+                w += cw;
             }
+            line[n] = 0;
+            uidisp->draw_printf(2, 16 + i * 16, 16, 0, 255, "%s", line);
+        } else {
+            while (*t && n < 31) { // 纯 ASCII：12px 小字体
+                unsigned char c = (unsigned char)*t++;
+                line[n++] = (c < 0x80) ? c : '?';
+                if (c >= 0x80 && (unsigned char)*t >= 0x80) t++;
+            }
+            line[n] = 0;
+            uidisp->draw_printf(2, 16 + i * 12, 12, 0, 255, "%s", line);
         }
-        line[n] = 0;
-        uidisp->draw_printf(2, 16 + i * 12, 12, 0, 255, "%s", line);
     }
     uidisp->draw_printf(2, 112, 12, 0, 255, "UP/DN:scroll sh+UP/DN:page ON:back");
     uidisp->flush();
@@ -546,11 +587,11 @@ void keyMsg(uint32_t key, int state) {
     if ((state == KEY_TRIG) || (state == KEY_LONG_PRESS)) {
         if (viewerActive && key != KEY_SHIFT) { // 文本查看器：只读滚动（Shift 交回常规处理以点亮指示灯）
             if (key == KEY_UP) {
-                viewerTop -= shift ? 7 : 1;
+                viewerTop -= shift ? viewerRows : 1;
                 if (viewerTop < 0) viewerTop = 0;
             } else if (key == KEY_DOWN) {
-                viewerTop += shift ? 7 : 1;
-                if (viewerTop > viewerLineCount - 7) viewerTop = viewerLineCount - 7;
+                viewerTop += shift ? viewerRows : 1;
+                if (viewerTop > viewerLineCount - viewerRows) viewerTop = viewerLineCount - viewerRows;
                 if (viewerTop < 0) viewerTop = 0;
             } else if (key == KEY_ON) {
                 viewerClose();                                   // 释放缓冲 + 关标志

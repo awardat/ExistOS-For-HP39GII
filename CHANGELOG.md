@@ -4,6 +4,12 @@
 
 ---
 
+## [build 141] - 2026-09-20 (开发中)
+
+### 已完成
+- **文本查看器自适应**：纯 ASCII 文件用 7 行 12px 小字体；含中文（非 ASCII）文件自动切 16px 中英混排 6 行（中文可读，不再显示 `?`）；二进制文件（控制字符 >10%）显示「（二进制文件）」+ 大小提示
+- **Python app 中文提示补全**：脚本打开失败/内存不足/未找到 .py 脚本 均显示中文
+
 ## [build 140] - 2026-09-20 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-140))
 
 ### 已完成

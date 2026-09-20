@@ -318,7 +318,7 @@ static void runPyFile(int idx) {
     snprintf(path, sizeof(path), "/xcas/%s", pyFiles[idx]);
     FIL f;
     if (f_open(&f, path, FA_READ) != FR_OK) {
-        termPuts("[open failed]");
+        termPuts("\xb4\xf2\xbf\xaa\xca\xa7"); // 打开失败
         termNewline();
         return;
     }
@@ -327,7 +327,7 @@ static void runPyFile(int idx) {
     char *buf = (char *)malloc((size_t)sz + 1);
     if (!buf) {
         f_close(&f);
-        termPuts("[no memory]");
+        termPuts("\xc4\xda\xb4\xe6\xb2\xbb\xd7\xe3"); // 内存不足
         termNewline();
         return;
     }
@@ -641,7 +641,18 @@ static void pyTask(void *_) {
                     else if (key == KEY_UP) { if (fileSel > 0) fileSel--; }
                     else if (key == KEY_DOWN) { if (fileSel < 5) fileSel++; }
                     else if (key == KEY_ENTER) {
-                        if (fileSel == 0) { scanPyFiles(); runSel = 0; runTop = 0; uiMode = (pyFileCount > 0) ? UI_RUN : UI_REPL; } // 打开并运行
+                        if (fileSel == 0) { // 打开并运行
+                            scanPyFiles();
+                            runSel = 0;
+                            runTop = 0;
+                            if (pyFileCount > 0) {
+                                uiMode = UI_RUN;
+                            } else {
+                                termPuts("\xc3\xbb\xd3\xd0\xd5\xd2\xb5\xbd .py \xbd\xc5\xb1\xbe"); // 没有找到 .py 脚本
+                                termNewline();
+                                uiMode = UI_REPL;
+                            }
+                        }
                         else if (fileSel == 1) { saveSession(); uiMode = UI_REPL; }                                                                                       // 保存会话
                         else if (fileSel == 2) { for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0; termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; uiMode = UI_REPL; } // 清屏
                         else if (fileSel == 3) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); contMode = 0; uiMode = UI_REPL; }                            // 复位解释器
@@ -668,7 +679,17 @@ static void pyTask(void *_) {
                     } else if (key == KEY_ENTER) { runPyFile(runSel); uiMode = UI_REPL; termDirty = 1; }
                     else termDirty = 1;
                 } else if (key == KEY_F1) { uiMode = UI_SYMB; symSel = 0; termDirty = 1;
-                } else if (key == KEY_F4) { scanPyFiles(); runSel = 0; runTop = 0; if (pyFileCount > 0) uiMode = UI_RUN; termDirty = 1;
+                } else if (key == KEY_F4) {
+                    scanPyFiles();
+                    runSel = 0;
+                    runTop = 0;
+                    if (pyFileCount > 0) {
+                        uiMode = UI_RUN;
+                    } else { // 无脚本提示
+                        termPuts("\xc3\xbb\xd3\xd0\xd5\xd2\xb5\xbd .py \xbd\xc5\xb1\xbe"); // 没有找到 .py 脚本
+                        termNewline();
+                    }
+                    termDirty = 1;
                 } else if (key == KEY_F5) { uiMode = UI_HELP; helpPage = 0; termDirty = 1;
                 } else if (key == KEY_F6) { uiMode = UI_FILE; fileSel = 0; termDirty = 1;
                 } else if (key == KEY_F2) { // 清屏
