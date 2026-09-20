@@ -139,6 +139,8 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 
 ### 6.3 内置模块
 
+> **使用前必须先 `import`**（如 `import math` 后 `math.factorial(30)`）；这与标准 Python 一致。`2**100`、字符串、列表等内建功能不需要 import。
+
 | 模块 | 可用内容 |
 |------|----------|
 | `math` | 常数 `pi/e/tau/inf/nan`；`sqrt/exp/log/log2/log10/pow`；三角与反三角、双曲；`floor/ceil/trunc/fabs/fmod/frexp/ldexp/modf/copysign`；`isnan/isinf/isclose`；`factorial/gamma/lgamma/erf/erfc` |
@@ -223,6 +225,7 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 | 问题 | 解决 |
 |------|------|
 | 一直显示 `...` 不执行 | 块未结束：体行后按一次 **空行 ENT**；卡住了用 **Shift+退格** 取消 |
+| `名称'xxx' isn't defined` | 漏了 `import`（如 `import math`）或拼写错误；也可能是变量未赋值 |
 | 提示 `NotImplementedError`（切片） | MicroPython 不支持负步长切片，改写法 |
 | 内存不足（not enough memory） | 设置里开启 **MEM SWAP** 后重启 |
 | 想清空所有变量 | F6 → 复位解释器 |
