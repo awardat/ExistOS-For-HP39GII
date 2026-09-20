@@ -59,6 +59,9 @@ bool isMsgBoxShow = false;
 
 static int curPage = 0;
 static int page3Subpage = 0;
+#ifndef APP_COUNT
+#define APP_COUNT 3 // 主界面应用数（新增应用时 +1，并在 drawAppIcon/KEY_ENTER 登记）
+#endif
 static int appPage_select = 0;
 
 static int alpha = 0, shift = 0;
@@ -293,6 +296,43 @@ void pageUpdate() {
         msgbox->refresh();
 }
 
+// 应用图标绘制（48x48 + 下方 16px 名称）——2026-09-20 网格布局，支持多应用
+static void drawAppIcon(int idx, int ix, int iy) {
+    const char *name = 0;
+    switch (idx) {
+    case 0:
+        uidisp->draw_bmp((char *)gImage_khicas_ico, ix, iy, 48, 48);
+        name = "KhiCAS";
+        break;
+    case 1: {
+        uidisp->draw_box(ix + 2, iy + 2, ix + 45, iy + 45, 45, -1);       // 机壳（深灰）
+        uidisp->draw_box(ix + 6, iy + 4, ix + 41, iy + 26, 235, -1);      // 屏幕（亮，加高）
+        uidisp->draw_printf(ix + 11, iy + 4, 16, 0, 255, "RPN");          // 屏字 16px（3 字符居中）
+        uidisp->draw_printf(ix + 1, iy + 20, 12, 0, 255, "4L-STK");       // 屏副字 12px
+        for (int r = 0; r < 3; r++)                                       // 键盘 3x4（紧凑下移）
+            for (int c = 0; c < 4; c++)
+                uidisp->draw_box(ix + 7 + c * 9, iy + 34 + r * 4, ix + 13 + c * 9, iy + 36 + r * 4, 190, -1);
+        name = "RPN39";
+        break;
+    }
+    case 2: {
+        for (int r = 0; r < 3; r++) {                                     // 3 行输入字段：左黑 label 块 + 值灰线
+            int y = iy + 6 + r * 8;
+            uidisp->draw_box(ix + 7, y, ix + 10, y + 5, 0, -1);
+            uidisp->draw_box(ix + 14, y + 1, ix + 40, y + 2, 190, -1);
+        }
+        uidisp->draw_printf(ix + 12, iy + 28, 16, 0, 255, "F+");          // F+（黑字）
+        name = "FormCalc";
+        break;
+    }
+    // case 3: Python（待独立 Python app 实现后补充）
+    default:
+        break;
+    }
+    if (name)
+        uidisp->draw_printf(ix, iy + 49, 16, 0, 0xFF, "%s", name);
+}
+
 void drawPage(int page) {
 
     uidisp->draw_box(mainw->content_x0,
@@ -302,49 +342,16 @@ void drawPage(int page) {
                      -1, 0xFF);
 
     switch (page) {
-    case 0:
-        uidisp->draw_bmp((char *)gImage_khicas_ico, mainw->content_x0 + 12, mainw->content_y0 + 12, 48, 48);
-
-        // 名称与图标/选择框对齐（16px 字 8px/字符：6 字符恰 48px，等同图标宽）
-        uidisp->draw_printf(mainw->content_x0 + 12,
-                            mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "KhiCAS");
-
-        // RPN39 图标（48x48：计算器机身+屏幕+键盘；无外框线——避免与选择框混淆）
-        {
-            int ix = mainw->content_x0 + 12 + 80, iy = mainw->content_y0 + 12;
-            uidisp->draw_box(ix + 2, iy + 2, ix + 45, iy + 45, 45, -1);       // 机壳（深灰）
-            uidisp->draw_box(ix + 6, iy + 4, ix + 41, iy + 26, 235, -1);      // 屏幕（亮，加高）
-            uidisp->draw_printf(ix + 11, iy + 4, 16, 0, 255, "RPN");          // 屏字 16px（3 字符居中）
-            // 屏副字 12px：48px 宽超出屏幕框线两端（居中，略微超框）
-            uidisp->draw_printf(ix + 1, iy + 20, 12, 0, 255, "4L-STK");
-            for (int r = 0; r < 3; r++) {                                     // 键盘 3x4（紧凑下移）
-                for (int c = 0; c < 4; c++)
-                    uidisp->draw_box(ix + 7 + c * 9, iy + 34 + r * 4, ix + 13 + c * 9, iy + 36 + r * 4, 190, -1);
-            }
+    case 0: { // 应用页：2 列网格（每页 4 个图标；APP_COUNT 控制数量）
+        for (int i = 0; i < APP_COUNT; i++) {
+            int col = i % 2, row = i / 2;
+            drawAppIcon(i, mainw->content_x0 + 12 + col * 80, mainw->content_y0 + 12 + row * 72);
         }
-        uidisp->draw_printf(mainw->content_x0 + 12 + 80,
-                            mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "RPN39");
-
-        // FormCalc 图标（48x48：无衬底无框线——仅表单内容：3 输入行（黑 label + 灰值线）+ F+ 黑字）
-        {
-            int ix = mainw->content_x0 + 12 + 160, iy = mainw->content_y0 + 12;
-            for (int r = 0; r < 3; r++) {                                     // 3 行输入字段：左黑 label 块 + 值灰线（直接浮于白底）
-                int y = iy + 6 + r * 8;
-                uidisp->draw_box(ix + 7, y, ix + 10, y + 5, 0, -1);
-                uidisp->draw_box(ix + 14, y + 1, ix + 40, y + 2, 190, -1);
-            }
-            uidisp->draw_printf(ix + 12, iy + 28, 16, 0, 255, "F+");          // F+（24px 黑字）
-        }
-        uidisp->draw_printf(mainw->content_x0 + 12 + 160,
-                            mainw->content_y0 + 12 + 48 + 1, 16, 0, 0xFF, "FormCalc");
-
-        uidisp->draw_box((mainw->content_x0 + 12) + appPage_select * 80,
-                         mainw->content_y0 + 12,
-                         (mainw->content_x0 + 12) + 48 + appPage_select * 80,
-                         mainw->content_y0 + 12 + 48,
-                         0,
-                         -1);
+        int col = appPage_select % 2, row = appPage_select / 2;
+        int sx = mainw->content_x0 + 12 + col * 80, sy = mainw->content_y0 + 12 + row * 72;
+        uidisp->draw_box(sx, sy, sx + 48, sy + 48, 0, -1);
         break;
+    }
 
     case 1:
         refreshConsole();
@@ -690,7 +697,7 @@ void keyMsg(uint32_t key, int state) {
                 goto CONSOLE_KEY_EVENT;
             }
             if (curPage == 0) {
-                if (appPage_select < 2) {
+                if (appPage_select < APP_COUNT - 1) {
                     appPage_select++;
                     drawPage(curPage);
                 }
@@ -700,6 +707,12 @@ void keyMsg(uint32_t key, int state) {
         case KEY_UP:
             if (curPage == 1) {
                 goto CONSOLE_KEY_EVENT;
+            }
+            if (curPage == 0) { // 网格第二行 → 第一行（2026-09-20）
+                if (appPage_select >= 2) {
+                    appPage_select -= 2;
+                    drawPage(curPage);
+                }
             }
             if (curPage == 2) {
                 if (*selectedItem != 1) {
@@ -718,6 +731,12 @@ void keyMsg(uint32_t key, int state) {
         case KEY_DOWN:
             if (curPage == 1) {
                 goto CONSOLE_KEY_EVENT;
+            }
+            if (curPage == 0) { // 网格第一行 → 第二行（2026-09-20）
+                if (appPage_select + 2 < APP_COUNT) {
+                    appPage_select += 2;
+                    drawPage(curPage);
+                }
             }
             if (curPage == 2) {
                 if (*selectedItem != 5 && (*pageNow - 1) * 5 + *selectedItem != *filesCount) {
@@ -748,6 +767,7 @@ void keyMsg(uint32_t key, int state) {
                     void StartFormCalc();
                     StartFormCalc();
                 }
+                // else if (appPage_select == 3) { void StartPython(); StartPython(); } // 独立 Python app 接入点
             } else if (curPage == 1) {
                 goto CONSOLE_KEY_EVENT;
             } else if (curPage == 2) {
