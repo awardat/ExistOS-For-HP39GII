@@ -55,7 +55,7 @@ print("keys:", list(d.keys()))
 
 # strings
 s = "MicroPython"
-print(s.upper(), s[0:5], s[::-1])
+print(s.upper(), s[0:5], s[5:])  # note: MicroPython does not support negative slice steps
 
 # timing
 import time

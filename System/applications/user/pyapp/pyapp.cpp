@@ -593,6 +593,16 @@ static void pyTask(void *_) {
                     termScroll -= TERM_ROWS;
                     if (termScroll < 0) termScroll = 0;
                     termDirty = 1;
+                } else if (key == KEY_LEFT) { // 光标左移（REPL 行内编辑）
+                    if (lineLen > 0) {
+                        mpy_repl_feed_char(0x1B);
+                        mpy_repl_feed_char('[');
+                        mpy_repl_feed_char('D');
+                    }
+                } else if (key == KEY_RIGHT) { // 光标右移
+                    mpy_repl_feed_char(0x1B);
+                    mpy_repl_feed_char('[');
+                    mpy_repl_feed_char('C');
                 } else if (key == KEY_UP) {
                     if (termLines > TERM_ROWS) termScroll++;
                     if (termScroll > termLines - TERM_ROWS) termScroll = termLines - TERM_ROWS;
