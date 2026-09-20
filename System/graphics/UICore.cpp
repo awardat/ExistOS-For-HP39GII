@@ -322,15 +322,15 @@ static void drawAppIcon(int idx, int ix, int iy) {
             uidisp->draw_box(ix + 14, y + 1, ix + 40, y + 2, 190, -1);
         }
         uidisp->draw_printf(ix + 12, iy + 28, 16, 0, 255, "F+");          // F+（黑字）
-        name = "FormCalc";
+        name = "FCalc"; // 桌面短名（应用内标题仍为 FormCalc，2026-09-20）
         break;
     }
     // case 3: Python（待独立 Python app 实现后补充）
     default:
         break;
     }
-    if (name) { // 名称 12px 居中（16px 时 FormCalc 8 字符 = 64px 会压到相邻图标）
-        int lx = ix + (48 - 6 * (int)strlen(name)) / 2;
+    if (name) { // 名称 12px 居中（draw_char_ascii 12px 步进=8px/字符，2026-09-20 修正 6→8）
+        int lx = ix + (48 - 8 * (int)strlen(name)) / 2;
         uidisp->draw_printf(lx, iy + 49, 12, 0, 0xFF, "%s", name);
     }
 }
