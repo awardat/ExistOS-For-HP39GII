@@ -130,17 +130,22 @@ namespace giac {
   extern volatile bool ctrl_c,interrupted;
 }
 
+extern "C" unsigned long ll_get_free_heap(void);
+
 void* operator new(std::size_t size){
   void * p =  std::malloc(size);
-  if ((size_t) p > (size_t) _stack_end)
+  if (p == NULL || (size_t) p > (size_t) _stack_end)
+    giac::ctrl_c=giac::interrupted=true;
+  else if (ll_get_free_heap() < (unsigned long)size + 8192) // 余量不足：提前置中断，避免分配失败后野指针
     giac::ctrl_c=giac::interrupted=true;
   return p;
 }
   
 void* operator new[](std::size_t size){
-  // if ( (0x20038000-(size_t)sbrk(0))<2*size) giac::ctrl_c=giac::interrupted=true;
   void * p =  std::malloc(size);  
-  if ((size_t) p > (size_t) _stack_end)
+  if (p == NULL || (size_t) p > (size_t) _stack_end)
+    giac::ctrl_c=giac::interrupted=true;
+  else if (ll_get_free_heap() < (unsigned long)size + 8192)
     giac::ctrl_c=giac::interrupted=true;
   return p;
 }

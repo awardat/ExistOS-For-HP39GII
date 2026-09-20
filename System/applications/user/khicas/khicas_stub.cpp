@@ -47,6 +47,14 @@ int showCatalog(char* insertText,int preselect,int menupos)
 extern "C" {
 bool khicasRunning = false;
 
+// 供 giac 分配器查询剩余堆（OOM 提前中断；2026-09-20）
+extern size_t getHeapAllocateSize(void);
+extern uint32_t TotalAllocatableSize;
+unsigned long ll_get_free_heap(void) {
+    size_t used = getHeapAllocateSize();
+    return (used >= TotalAllocatableSize) ? 0 : (unsigned long)(TotalAllocatableSize - used);
+}
+
 char keyStatus = 0;
 int intBit = 0;
 int rshift = 0;
