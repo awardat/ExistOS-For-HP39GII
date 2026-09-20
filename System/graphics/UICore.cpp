@@ -353,11 +353,22 @@ static uint16_t viewerOff[800];
 static int viewerLineCount = 0, viewerTop = 0;
 static char viewerTitle[40];
 
-static void viewerOpen(const char *dir, const char *name) {
+static bool viewerOpen(const char *dir, const char *name) {
     char path[80];
     snprintf(path, sizeof(path), "%s%s", dir, name);
     FIL f;
-    if (f_open(&f, path, FA_READ) != FR_OK) return;
+    if (f_open(&f, path, FA_READ) != FR_OK) {
+        // 打开失败也进入查看器显示原因（路径），便于排查
+        strncpy(viewerBuf, path, sizeof(viewerBuf) - 1);
+        viewerBuf[sizeof(viewerBuf) - 1] = 0;
+        viewerOff[0] = 0;
+        viewerLineCount = 1;
+        viewerTop = 0;
+        strncpy(viewerTitle, "\xb4\xf2\xbf\xaa\xca\xa7\xb0\xdc", sizeof(viewerTitle) - 1);
+        viewerTitle[sizeof(viewerTitle) - 1] = 0;
+        viewerActive = true;
+        return false;
+    }
     FSIZE_t sz = f_size(&f);
     if (sz > sizeof(viewerBuf) - 1) sz = sizeof(viewerBuf) - 1;
     UINT br = 0;
@@ -374,10 +385,16 @@ static void viewerOpen(const char *dir, const char *name) {
             viewerBuf[i] = 0;
         }
     }
+    if (br == 0) { // 空文件提示
+        strncpy(viewerBuf, "\xa3\xa8\xbf\xd5\xce\xc4\xbc\xfe\xa3\xa9", sizeof(viewerBuf) - 1);
+        viewerOff[0] = 0;
+        viewerLineCount = 1;
+    }
     viewerTop = 0;
     strncpy(viewerTitle, name, sizeof(viewerTitle) - 1);
     viewerTitle[sizeof(viewerTitle) - 1] = 0;
     viewerActive = true;
+    return true;
 }
 
 static void viewerDraw(void) {
@@ -394,7 +411,7 @@ static void viewerDraw(void) {
             n++;
         }
         line[n] = 0;
-        uidisp->draw_printf(2, 15 + i * 12, 12, 0, 255, "%s", line);
+        uidisp->draw_printf(2, 16 + i * 12, 12, 0, 255, "%s", line);
     }
     uidisp->draw_printf(2, 112, 12, 0, 255, "UP/DN:scroll sh+UP/DN:page ON:back");
     uidisp->flush();
@@ -493,7 +510,7 @@ void refreshIndicator() {
 void keyMsg(uint32_t key, int state) {
 
     if ((state == KEY_TRIG) || (state == KEY_LONG_PRESS)) {
-        if (viewerActive) { // 文本查看器：只读滚动
+        if (viewerActive && key != KEY_SHIFT) { // 文本查看器：只读滚动（Shift 交回常规处理以点亮指示灯）
             if (key == KEY_UP) {
                 viewerTop -= shift ? 7 : 1;
                 if (viewerTop < 0) viewerTop = 0;
