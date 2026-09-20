@@ -201,8 +201,24 @@ extern "C" uint32_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
     for (size_t i = 0; i < len; i++) termPutc(str[i]); // 细粒度标记：普通字符→行刷新，换行→整屏
     return len;
 }
-// ---- FatFs 钩子（MicroPython open() 后端；M3）----
+// ---- FatFs 钩子（MicroPython open()/import 后端；M3）----
+static void fsPath(const char *in, char *out, int n) { // 相对路径按 /xcas/ 解析
+    if (in[0] == '/') snprintf(out, n, "%s", in);
+    else snprintf(out, n, "/xcas/%s", in);
+}
+
+extern "C" int mpy_fs_stat(const char *path, int *isdir) {
+    char p[64];
+    fsPath(path, p, sizeof(p));
+    FILINFO fno;
+    if (f_stat(p, &fno) != FR_OK) return 0;
+    *isdir = (fno.fattrib & AM_DIR) ? 1 : 0;
+    return 1;
+}
+
 extern "C" void *mpy_fs_fopen(const char *path, const char *mode) {
+    char p[64];
+    fsPath(path, p, sizeof(p));
     BYTE flags = FA_READ;
     bool plus = strchr(mode, '+') != 0;
     switch (mode[0]) {
@@ -213,7 +229,7 @@ extern "C" void *mpy_fs_fopen(const char *path, const char *mode) {
     }
     FIL *f = (FIL *)malloc(sizeof(FIL));
     if (!f) return NULL;
-    if (f_open(f, path, flags) != FR_OK) { free(f); return NULL; }
+    if (f_open(f, p, flags) != FR_OK) { free(f); return NULL; }
     return f;
 }
 extern "C" size_t mpy_fs_fread(void *h, void *buf, size_t n) {
@@ -300,6 +316,28 @@ static void runPyFile(int idx) {
     termNewline();
     mpy_exec_str(buf);
     free(buf);
+    termNewline();
+}
+
+// 保存终端会话到 /xcas/session.txt
+static void saveSession(void) {
+    FIL f;
+    if (f_open(&f, "/xcas/session.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+        termPuts("\xb1\xa3\xb4\xe6\xca\xa7\xb0\xdc: session.txt");
+        termNewline();
+        return;
+    }
+    int first = termLines - TERM_LINES;
+    if (first < 0) first = 0;
+    for (int ln = first; ln < termLines; ln++) {
+        const char *t = term[ln % TERM_LINES];
+        if (!t[0]) continue;
+        UINT bw = 0;
+        f_write(&f, t, strlen(t), &bw);
+        f_write(&f, "\r\n", 2, &bw);
+    }
+    f_close(&f);
+    termPuts("\xd2\xd1\xb1\xa3\xb4\xe6 /xcas/session.txt");
     termNewline();
 }
 
@@ -424,7 +462,7 @@ static const char *helpText[4][6] = {
     {"\xb0\xef\xd6\xfa 3/4 \xb6\xe0\xd0\xd0\xd3\xef\xbe\xe4", "\xc0\xfd\xa3\xba""for i in range(3):", "\xcf\xc2\xd2\xbb\xd0\xd0\xd6\xb1\xbd\xd3\xca\xe4\xc8\xeb\xa3\xa8\xd7\xd4\xb6\xaf\xcb\xf5\xbd\xf8\xa3\xa9", "\xcc\xe5\xd0\xd0\xca\xe4\xc8\xeb\xcd\xea\xba\xf3\xb0\xb4 ENT", "\xd4\xd9\xb0\xb4\xd2\xbb\xb4\xce ENT\xa3\xa8\xbf\xd5\xd0\xd0\xa3\xa9\xbf\xaa\xca\xbc\xd6\xb4\xd0\xd0", "F1\xa3\xba\xb7\xfb\xba\xc5\xc3\xe6\xb0\xe5"},
     {"\xb0\xef\xd6\xfa 4/4 \xb9\xd8\xd3\xda", "MicroPython 1.29 \xb6\xc0\xc1\xa2\xd3\xa6\xd3\xc3", "\xcf\xd4\xca\xbe\xbf\xed\xb6\xc8 31 \xd7\xd6\xb7\xfb x 8 \xd0\xd0", "\xca\xe4\xb3\xf6\xb1\xa3\xc1\xf4\xd7\xee\xbd\xfc 96 \xd0\xd0", "\xbb\xe1\xbb\xb0\xb1\xe4\xc1\xbf\xd4\xda\xcd\xcb\xb3\xf6\xba\xf3\xb1\xa3\xc1\xf4", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7\xa3\xba""F6 \xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5"},
 };
-static const char *fileItems[5] = {"\xb4\xf2\xbf\xaa\xb2\xa2\xd4\xcb\xd0\xd0", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
+static const char *fileItems[6] = {"\xb4\xf2\xbf\xaa\xb2\xa2\xd4\xcb\xd0\xd0", "\xb1\xa3\xb4\xe6\xbb\xe1\xbb\xb0", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
 static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "\xd4\xcb\xd0\xd0", "\xb0\xef\xd6\xfa", "\xce\xc4\xbc\xfe"};
 static const char *barLabelsSymb[6] = {"\xd1\xa1\xd4\xf1", "\xc8\xa1\xcf\xfb", "\xc9\xcf\xb7\xad", "\xcf\xc2\xb7\xad", "", ""};
 
@@ -495,8 +533,8 @@ static void draw() {
     } else if (uiMode == UI_FILE) {
         uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
         uidisp->draw_printf(2, 14, 16, 0, 255, "\xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5");
-        for (int i = 0; i < 5; i++) {
-            int y = 34 + i * 15;
+        for (int i = 0; i < 6; i++) {
+            int y = 22 + i * 14;
             if (i == fileSel) uidisp->draw_box(2, y - 2, LCD_PIX_W - 3, y + 14, -1, 0);
             uidisp->draw_printf(6, y, 16, (i == fileSel) ? 255 : 0, (i == fileSel) ? 0 : 255, "%s", fileItems[i]);
         }
@@ -575,12 +613,13 @@ static void pyTask(void *_) {
                 } else if (uiMode == UI_FILE) {
                     if (key == KEY_F6 || key == KEY_ON) uiMode = UI_REPL;
                     else if (key == KEY_UP) { if (fileSel > 0) fileSel--; }
-                    else if (key == KEY_DOWN) { if (fileSel < 4) fileSel++; }
+                    else if (key == KEY_DOWN) { if (fileSel < 5) fileSel++; }
                     else if (key == KEY_ENTER) {
                         if (fileSel == 0) { scanPyFiles(); runSel = 0; runTop = 0; uiMode = (pyFileCount > 0) ? UI_RUN : UI_REPL; } // 打开并运行
-                        else if (fileSel == 1) { for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0; termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; uiMode = UI_REPL; } // 清屏
-                        else if (fileSel == 2) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); contMode = 0; uiMode = UI_REPL; }                            // 复位解释器
-                        else if (fileSel == 3) { uiMode = UI_HELP; helpPage = 3; }                                                                                        // 关于 → 帮助
+                        else if (fileSel == 1) { saveSession(); uiMode = UI_REPL; }                                                                                       // 保存会话
+                        else if (fileSel == 2) { for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0; termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; uiMode = UI_REPL; } // 清屏
+                        else if (fileSel == 3) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); contMode = 0; uiMode = UI_REPL; }                            // 复位解释器
+                        else if (fileSel == 4) { uiMode = UI_HELP; helpPage = 3; }                                                                                        // 关于 → 帮助
                         else { pyRunning = 0; }                                                                                                                           // 退出
                     }
                     termDirty = 1;

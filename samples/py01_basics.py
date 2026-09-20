@@ -66,4 +66,11 @@ for i in range(1000):
 t1 = time.ticks_ms()
 print("loop 1000 took", time.ticks_diff(t1, t0), "ms")
 
+# import a local module (copy py02_module.py to /xcas/ too)
+try:
+    import py02_module
+    print("import ok:", py02_module.add(2, 3), py02_module.square(7))
+except ImportError:
+    print("(py02_module.py not found - copy it to /xcas/ to test import)")
+
 print("Done.")

@@ -128,15 +128,45 @@ MP_WEAK void mp_hal_set_interrupt_char(int c) {
     (void)c;
 }
 
-/* ---- 文件系统接口（v1 关闭外部导入；文件 IO 在 M2 接入 FatFs）---- */
-mp_import_stat_t mp_import_stat(const char *path) {
+/* ---- 文件系统接口（App 侧实现 mpy_fs_* 钩子）---- */
+MP_WEAK void *mpy_fs_fopen(const char *path, const char *mode);
+MP_WEAK size_t mpy_fs_fread(void *h, void *buf, size_t n);
+MP_WEAK size_t mpy_fs_fwrite(void *h, const void *buf, size_t n);
+MP_WEAK int mpy_fs_fclose(void *h);
+MP_WEAK long mpy_fs_fseek(void *h, long off, int whence);
+MP_WEAK long mpy_fs_ftell(void *h);
+MP_WEAK int mpy_fs_stat(const char *path, int *isdir);
+
+MP_WEAK int mpy_fs_stat(const char *path, int *isdir) {
     (void)path;
+    (void)isdir;
+    return 0;
+}
+
+mp_import_stat_t mp_import_stat(const char *path) {
+    int isdir = 0;
+    if (mpy_fs_stat(path, &isdir)) {
+        return isdir ? MP_IMPORT_STAT_DIR : MP_IMPORT_STAT_FILE;
+    }
     return MP_IMPORT_STAT_NO_EXIST;
 }
 
 mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
-    (void)filename;
-    mp_raise_OSError(MP_ENOENT);
+    const char *path = qstr_str(filename);
+    void *h = mpy_fs_fopen(path, "r");
+    if (h == NULL) {
+        mp_raise_OSError(MP_ENOENT);
+    }
+    long sz = mpy_fs_fseek(h, 0, 2); // 文件大小
+    if (sz < 0) {
+        sz = 0;
+    }
+    mpy_fs_fseek(h, 0, 0);
+    char *buf = m_new(char, (size_t)sz + 1);
+    size_t n = mpy_fs_fread(h, buf, (size_t)sz);
+    mpy_fs_fclose(h);
+    buf[n] = 0;
+    return mp_lexer_new_from_str_len(filename, buf, n, (size_t)sz + 1);
 }
 
 /* ---- 文件对象（M3：FatFs 垫片，App 侧实现下列钩子）---- */

@@ -61,14 +61,15 @@ print(caseval("bench_ms"))
 
 | 文件 | 内容 |
 |------|------|
-| `py01_basics.py` | 语言基础：算术/字符串/列表/循环/条件/函数/字典 + 计时 |
+| `py01_basics.py` | 语言基础：算术/字符串/列表/循环/条件/函数/字典 + 计时 + 本地导入 |
+| `py02_module.py` | 供 py01 测试 `import` 的小模块（放同目录） |
 | `py07_nqueens.py` | N-Queens 8x8 基准（92 解 / 2057 节点 + 计时） |
 
 **运行方式**：把文件复制到设备 `/xcas/` → Python app 内按 **F4（运行）** 选择文件，或 **F6 文件 → 打开并运行**。
 
 **完整说明**：[docs/Python-app-manual.md](../docs/Python-app-manual.md)（按键表/菜单/语法差异/性能基准/FAQ）。
 
-与 KhiCAS 样本的差异：MicroPython 无 giac 兼容层限制（`i`/`sign` 等可自由使用）；支持 `open()` 文件读写（`/xcas/`）；暂不支持 `import` 本地文件。
+与 KhiCAS 样本的差异：MicroPython 无 giac 兼容层限制（`i`/`sign` 等可自由使用）；支持 `open()` 文件读写与 `import` 本地模块（均按 `/xcas/` 解析）。
 
 ## 备注
 

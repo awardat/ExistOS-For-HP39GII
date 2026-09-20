@@ -13,7 +13,7 @@
 #define MICROPY_ENABLE_GC (1)
 #define MICROPY_HELPER_REPL (1)
 #define MICROPY_REPL_EVENT_DRIVEN (1) // App 侧逐字符喂入（终端式 REPL）
-#define MICROPY_ENABLE_EXTERNAL_IMPORT (0) // v1：外部 .py 导入后续由 App 层提供
+#define MICROPY_ENABLE_EXTERNAL_IMPORT (1) // 本地 .py 导入（App 侧 mpy_fs_stat/mp_lexer_new_from_file 支持）
 #define MICROPY_ALLOC_PATH_MAX (256)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
 
