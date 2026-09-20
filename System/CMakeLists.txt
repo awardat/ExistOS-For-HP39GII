@@ -26,6 +26,7 @@ include_directories(${CMAKE_SOURCE_DIR}/Libs/src/gmp/include/)
 
 aux_source_directory(./applications/user/rpn39                                    SYS_SRCS)
 aux_source_directory(./applications/user/formcalc                                 SYS_SRCS)
+aux_source_directory(./applications/user/pyapp                                    SYS_SRCS)
 aux_source_directory(./core                                          SYS_SRCS)
 aux_source_directory(./drivers                                       SYS_SRCS)
 aux_source_directory(./graphics                                      SYS_SRCS)
@@ -90,6 +91,7 @@ ${CMAKE_SOURCE_DIR}/Libs/libcas.libcpp
 #${CMAKE_SOURCE_DIR}/Libs/libgiac1.2.0.libcpp
 ${CMAKE_SOURCE_DIR}/Libs/libtommath.libcpp
 ${CMAKE_SOURCE_DIR}/Libs/libgmp.libcpp   
+${CMAKE_SOURCE_DIR}/Libs/libmpy.a
 khicas_lib
 )
 

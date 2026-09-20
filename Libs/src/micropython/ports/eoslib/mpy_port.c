@@ -27,6 +27,7 @@
 #include "py/gc.h"
 #include "py/repl.h"
 #include "py/mphal.h"
+#include "py/mperrno.h"
 #include "shared/runtime/pyexec.h"
 #include "mpconfigport.h"
 
@@ -49,7 +50,7 @@ void mpy_init(void *heap, size_t heap_size) {
     mpy_stack_top = (char *)&stack_dummy;
     mpy_heap_ptr = heap;
     mp_stack_ctrl_init();
-    mp_stack_set_limit(24 * 1024); // Python 递归上限（任务栈 ~8KB 内）
+    mp_stack_set_limit(6 * 1024); // Python 递归上限（任务栈 16KB 内，留足 C 调用余量）
     gc_init(heap, (uint8_t *)heap + heap_size);
     mp_init();
 }
@@ -114,15 +115,37 @@ MP_WEAK void mp_hal_delay_us(mp_uint_t us) {
     (void)us;
 }
 
+MP_WEAK void mp_hal_delay_ms(mp_uint_t ms) {
+    (void)ms;
+}
+
+MP_WEAK mp_uint_t mp_hal_ticks_cpu(void) {
+    return 0;
+}
+
 MP_WEAK void mp_hal_set_interrupt_char(int c) {
     (void)c;
 }
 
-/* ---- 文件系统接口（v1 关闭外部导入，保留符号）---- */
+/* ---- 文件系统接口（v1 关闭外部导入；文件 IO 在 M2 接入 FatFs）---- */
 mp_import_stat_t mp_import_stat(const char *path) {
     (void)path;
     return MP_IMPORT_STAT_NO_EXIST;
 }
+
+mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
+    (void)filename;
+    mp_raise_OSError(MP_ENOENT);
+}
+
+// open()：M2 接入 FatFs 前先抛错（modio/modbuiltins 要求端口提供）
+mp_obj_t mp_builtin_open_obj_stub(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+    (void)n_args;
+    (void)args;
+    (void)kwargs;
+    mp_raise_OSError(MP_ENOENT);
+}
+MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open_obj_stub);
 
 void nlr_jump_fail(void *val) {
     (void)val;

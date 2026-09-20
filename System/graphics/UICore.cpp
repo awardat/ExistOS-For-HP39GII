@@ -60,7 +60,7 @@ bool isMsgBoxShow = false;
 static int curPage = 0;
 static int page3Subpage = 0;
 #ifndef APP_COUNT
-#define APP_COUNT 3 // 主界面应用数（4x1 单行；新增应用时 +1，并在 drawAppIcon/KEY_ENTER 登记）
+#define APP_COUNT 4 // 主界面应用数（4x1 单行；新增应用时 +1，并在 drawAppIcon/KEY_ENTER 登记）
 #endif
 static int appPage_select = 0;
 
@@ -325,7 +325,17 @@ static void drawAppIcon(int idx, int ix, int iy) {
         name = "FCalc"; // 桌面短名（应用内标题仍为 FormCalc，2026-09-20）
         break;
     }
-    // case 3: Python（待独立 Python app 实现后补充）
+    case 3: { // Python（原创图标：双蛇简化——两条交错粗线 + 蛇头点，2026-09-20）
+        uidisp->draw_box(ix + 6, iy + 10, ix + 42, iy + 20, 60, -1);   // 上蛇身
+        uidisp->draw_box(ix + 30, iy + 10, ix + 42, iy + 30, 60, -1);  // 上蛇头（下垂）
+        uidisp->draw_box(ix + 6, iy + 20, ix + 18, iy + 40, 190, -1);  // 下蛇身
+        uidisp->draw_box(ix + 6, iy + 18, ix + 42, iy + 28, 190, -1);  // 下蛇身横段
+        uidisp->draw_box(ix + 6, iy + 30, ix + 18, iy + 40, 190, -1);  // 下蛇尾
+        uidisp->draw_box(ix + 33, iy + 13, ix + 36, iy + 16, 0, -1);   // 上蛇眼
+        uidisp->draw_box(ix + 9, iy + 23, ix + 12, iy + 26, 255, -1);  // 下蛇眼
+        name = "Python";
+        break;
+    }
     default:
         break;
     }
@@ -754,8 +764,11 @@ void keyMsg(uint32_t key, int state) {
 
                     void StartFormCalc();
                     StartFormCalc();
+                } else if (appPage_select == 3) {
+
+                    void StartPython();
+                    StartPython();
                 }
-                // else if (appPage_select == 3) { void StartPython(); StartPython(); } // 独立 Python app 接入点
             } else if (curPage == 1) {
                 goto CONSOLE_KEY_EVENT;
             } else if (curPage == 2) {

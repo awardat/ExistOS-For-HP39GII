@@ -16,6 +16,9 @@ MICROPY_ROM_TEXT_COMPRESSION ?= 0
 # 包含 py 核心构建定义
 include $(TOP)/py/py.mk
 
+# extmod 模块源码（须在 OBJ 组装前 include；各文件按 mpconfig 内的开关自动裁剪）
+include $(TOP)/extmod/extmod.mk
+
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
@@ -42,7 +45,7 @@ SRC_C = \
 
 SRC_QSTR += shared/runtime/pyexec.c shared/readline/readline.c
 
-OBJ += $(PY_CORE_O)
+OBJ += $(PY_O)  # PY_O = py 核心 + extmod（py.mk 约定）
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_CXX:.cpp=.o))
 
