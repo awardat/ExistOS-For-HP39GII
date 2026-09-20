@@ -66,6 +66,8 @@ print(caseval("bench_ms"))
 
 **运行方式**：把文件复制到设备 `/xcas/` → Python app 内按 **F4（运行）** 选择文件，或 **F6 文件 → 打开并运行**。
 
+**完整说明**：[docs/Python-app-manual.md](../docs/Python-app-manual.md)（按键表/菜单/语法差异/性能基准/FAQ）。
+
 与 KhiCAS 样本的差异：MicroPython 无 giac 兼容层限制（`i`/`sign` 等可自由使用）；支持 `open()` 文件读写（`/xcas/`）；暂不支持 `import` 本地文件。
 
 ## 备注

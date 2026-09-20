@@ -202,6 +202,13 @@ KhiCAS 内置函数参考（355 条命令，按 22 个分类列出用途/参数/
 
 RPN39 用户手册（功能/用法/示例）：[docs/RPN39-manual.md](./docs/RPN39-manual.md)。
 
+## Python 应用
+
+内置独立 **MicroPython 1.29** 应用（首页第 4 个图标）：完整 Python 语言（类/生成器/异常/推导式）、脚本运行（`/xcas/pyNN_*.py`）、文件读写、中文菜单与帮助。
+
+- **用户手册**（启动/按键表/菜单/语法差异/样本/性能基准/FAQ）：[docs/Python-app-manual.md](./docs/Python-app-manual.md)
+- **样本**：`samples/py01_basics.py`（语言基础）、`samples/py07_nqueens.py`（N-Queens 8×8：普通模式 1221ms / 加速模式 703ms）
+
 ## 编译和安装
 
 ### 准备环境

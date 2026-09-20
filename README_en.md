@@ -337,6 +337,13 @@ KhiCAS user manual (startup / keys / menus / scripts / Python compat mode / FAQ)
 
 KhiCAS built-in function reference (355 commands in 22 categories with purpose/parameters/examples, Chinese): [docs/KhiCAS-functions.md](./docs/KhiCAS-functions.md).
 
+## Python App
+
+Built-in standalone **MicroPython 1.29** app (4th icon on the apps page): full Python language (classes/generators/exceptions/comprehensions), script runner (`/xcas/pyNN_*.py`), file I/O, Chinese menus and help.
+
+- **User manual** (startup / key tables / menus / syntax differences / samples / benchmarks / FAQ): [docs/Python-app-manual.md](./docs/Python-app-manual.md)
+- **Samples**: `samples/py01_basics.py`, `samples/py07_nqueens.py` (N-Queens 8x8: 1221 ms standard / 703 ms boost)
+
 ## Basic Usage of the Firmware
 
 ### Booting for the first time
