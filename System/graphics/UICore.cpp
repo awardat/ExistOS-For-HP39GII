@@ -357,7 +357,9 @@ static bool viewerOpen(const char *dir, const char *name) {
     char path[80];
     snprintf(path, sizeof(path), "%s%s", dir, name);
     FIL f;
-    if (f_open(&f, path, FA_READ) != FR_OK) {
+    FRESULT vres = f_open(&f, path, FA_READ);
+    printf("VIEW open [%s] res=%d\n", path, (int)vres);
+    if (vres != FR_OK) {
         // 打开失败也进入查看器显示原因（路径），便于排查
         strncpy(viewerBuf, path, sizeof(viewerBuf) - 1);
         viewerBuf[sizeof(viewerBuf) - 1] = 0;
@@ -886,19 +888,10 @@ void keyMsg(uint32_t key, int state) {
                         refreshDir();
                         drawPage(curPage);
                     } else {
-                        // 文件：.txt/.py 用文本查看器打开（只读）
+                        // 文件：文本查看器打开（只读；不限扩展名，便于查看任意文本文件）
                         const char *nm = dirItemNames[(*pageNow - 1) * 5 + *selectedItem - 1];
-                        int n = strlen(nm);
-                        if (n > 3) {
-                            const char *ext = nm + n - 3;
-                            if ((ext[0] == '.') && (ext[1] == 'p' || ext[1] == 'P') && (ext[2] == 'y' || ext[2] == 'Y')) {
-                                viewerOpen(pathNow, nm);
-                                drawPage(curPage);
-                            } else if ((ext[0] == '.') && (ext[1] == 't' || ext[1] == 'T') && (ext[2] == 'x' || ext[2] == 'X')) {
-                                viewerOpen(pathNow, nm);
-                                drawPage(curPage);
-                            }
-                        }
+                        viewerOpen(pathNow, nm);
+                        drawPage(curPage);
                     }
                 }
             }
