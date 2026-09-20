@@ -104,6 +104,11 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 ### build 127 / 126 (2026-08-30 released)
 - [x] Installation fixes; 25 bug fixes + documentation
 
+### build 141 (2026-09-20 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141))
+- [x] **FormCalc subnet mask calculator** (Engineering item 10): IP + prefix computes mask/network/broadcast/host range/host count in real time (/31, /32 special cases)
+- [x] **Python app enhancements**: arbitrary-precision integers (MPZ), adaptive Chinese rendering in the text viewer, Chinese messages/error mapping
+- [x] **KhiCAS out-of-memory hardening** (abort early instead of wild-pointer panic) + manual figure 13 / serial encoding notes
+
 ## Memory and MEM SWAP (important)
 
 On-chip RAM is limited (malloc heap ~160KB). Enabling **Settings -> MEM SWAP** merges the 3MB FTL swap area into the malloc heap (about **3.16MB** total); KhiCAS heavy computations and the Python app need it.

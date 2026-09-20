@@ -103,6 +103,11 @@
 ### build 127 / 126（2026-08-30 已发布）
 - [x] 安装修复；25 项 Bug 修复 + 文档
 
+### build 141（2026-09-20 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141)）
+- [x] **FormCalc 子网掩码计算器**（电子工程第 10 项）：IP 四段 + 前缀实时计算掩码/网络/广播/可用主机范围/主机数（/31、/32 特例）
+- [x] **Python app 增强**：任意精度整数（MPZ）、文本查看器中文自适应渲染、中文提示与错误映射补全
+- [x] **KhiCAS 内存不足加固**（OOM 提前中断，不再野指针 panic）+ 手册配图 13 / 串口编码说明
+
 ## 内存与 MEM SWAP（重要）
 
 设备片上 RAM 有限（可用 malloc 堆约 160KB）。**设置 → MEM SWAP** 开启后，3MB 的 FTL 交换区并入 malloc 堆（合计约 **3.16MB**），KhiCAS 大型运算与 Python app 需要它。

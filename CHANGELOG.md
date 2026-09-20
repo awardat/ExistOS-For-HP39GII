@@ -4,7 +4,7 @@
 
 ---
 
-## [build 141] - 2026-09-20 (开发中)
+## [build 141] - 2026-09-20 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141))
 
 ### 已完成
 - **文本查看器自适应**：纯 ASCII 文件用 7 行 12px 小字体；含中文（非 ASCII）文件自动切 16px 中英混排 6 行（中文可读，不再显示 `?`）；二进制文件（控制字符 >10%）显示「（二进制文件）」+ 大小提示
