@@ -57,12 +57,12 @@
 
 ## 内存与 MEM SWAP（重要）
 
-设备片上 RAM 有限（可用 malloc 堆约 160KB）。**设置 → MEM SWAP** 开启后，6MB 的 FTL 交换区并入 malloc 堆（合计约 **6.16MB**），KhiCAS 大型运算与 Python app 需要它。
+设备片上 RAM 有限（可用 malloc 堆约 160KB）。**设置 → MEM SWAP** 开启后，3MB 的 FTL 交换区并入 malloc 堆（合计约 **3.16MB**），KhiCAS 大型运算与 Python app 需要它。
 
 - **每次刷机后 MEM SWAP 默认关闭**（配置重置）：请进 **设置** 开启 MEM SWAP 并重启
 - 关闭时：KhiCAS 长会话可能耗尽片上堆，串口出现 `EXT HEAP NOMEM !`（build 141 起会**提前中断运算**而不是崩溃）
 - 代价：swap 通过 NAND 页面交换实现，频繁换页有**磨损**；轻量日常使用可不开启
-- 查看用量：设置页显示 `已用/总量`（开启后总量约 6.16MB）
+- 查看用量：设置页显示 `已用/总量`（开启后总量约 3.16MB）
 
 ## 仅安装
 

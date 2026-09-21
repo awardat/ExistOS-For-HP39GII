@@ -99,7 +99,7 @@
 #define VM_ROM_NUM_SEG          (VM_ROM_SIZE / SEG_SIZE)
 
 #define VM_RAM_BASE             (0x02000000)
-#define VM_RAM_SIZE             (1048576 * 6) // swap 3MB → 6MB（2026-09-21：使用 FTL 前段空闲空间，堆上限 3.16MB → 6.16MB）
+#define VM_RAM_SIZE             (1048576 * 3) // 回滚：6MB 尝试导致 OSLoader 白屏（RAM 预算不足），2026-09-21
 #define VM_RAM_SEG              (VM_ROM_BASE >> 20)
 #define VM_RAM_NUM_SEG          (VM_RAM_SIZE / SEG_SIZE)
 
