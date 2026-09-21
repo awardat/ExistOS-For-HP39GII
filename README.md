@@ -50,10 +50,11 @@
 
 ## 目前工作进展（仅最新版本，历史见 CHANGELOG.md）
 
-### build 141（2026-09-20 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141)）
-- [x] **FormCalc 子网掩码计算器**（电子工程第 10 项）：IP 四段 + 前缀实时计算掩码/网络/广播/可用主机范围/主机数（/31、/32 特例）
-- [x] **Python app 增强**：任意精度整数（MPZ）、文本查看器中文自适应渲染、中文提示与错误映射补全
-- [x] **KhiCAS 内存不足加固**（OOM 提前中断，不再野指针 panic）+ 手册配图 13 / 串口编码说明
+### build 142（2026-09-21 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-142)）
+- [x] **Python app 单元格执行模型**：ENT 只换行（自动缩进）、**F5=run** 执行输入内容；单行表达式回显结果值、缩进块整体执行；数学键直通（sin/cos/tan/log/x²/xʸ + Shift 反三角/exp/sqrt/pow/abs）、符号面板 6 页
+- [x] **移除媒体解码代码**（lvgl ffmpeg/gif/png/sjpg/bmp/rlottie）
+- [x] **MEM SWAP 6MB 尝试已回滚**（OSLoader RAM 512KB/堆 34KB 硬约束）+ README 记录存储空间分布
+- [x] **flash.sh fresh 修复**（补写 OSLoader，DFU 恢复一步到位）
 
 ## 内存与 MEM SWAP（重要）
 

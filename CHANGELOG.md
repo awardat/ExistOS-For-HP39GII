@@ -4,10 +4,20 @@
 
 ---
 
+## [build 142] - 2026-09-21 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-142))
+
+### 已完成
+- **Python app 执行模型改为「单元格」**：ENT 只换行（行尾 `:` 自动缩进 4 空格、空行 ENT 回行首结束块），**F5=run** 执行自上次运行以来输入的全部内容；逐条语句执行（单行用 MicroPython single 模式**回显结果值**，带缩进块整体 exec）；编辑（←→ 行内光标/退格/Shift+退格清空/ON 清屏）
+- **Python app 数学键直通 + 符号面板扩容**：SIN/COS/TAN/LN/LOG/x²/xʸ 直出 `sin(/cos(/tan(/log(/log10(/**2/**`（Shift 层给 `asin(/acos(/atan(/exp(/log2(/sqrt(/pow(`，`(` 的 Shift 为 `abs(`）；F1 面板增至 6 页（符号/运算符/括号与赋值/结构/函数/常量）；应用内帮助 5 页
+- **移除媒体解码代码**：删除 lvgl `extra/libs` 下 ffmpeg/gif/png/sjpg/bmp/rlottie（含 `LV_USE_GIF` 1→0 与构建清单），保留 freetype/fsdrv/qrcode
+- **MEM SWAP 扩容尝试（6MB）已回滚**：OSLoader 的 `VM_RAM_SIZE` 3MB→6MB 多占 12KB 页表（每 1MB VM 空间 4KB L2 表）→ 堆 34KB→22KB → 启动期 OOM（`!!!!OOM!!!` + 复位循环）白屏。恢复 3MB；OSLoader RAM 512KB/堆 34KB 是硬约束
+- **README 新增「存储空间分布（128MB NAND）」与「为什么 MEM SWAP 固定为 3MB」**（中英双版）；进展章节只保留最新版本；删除「KhiCAS 基本使用」章节，目录改指 KhiCAS 用户手册与内置函数参考
+- **flash.sh fresh 增加 OSLoader 写入**（页 1408）：修复 DFU 恢复流程只写 System、下次冷启动仍白屏的问题
+
 ## [build 141] - 2026-09-20 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141))
 
 ### 已完成
-- **MEM SWAP 扩容尝试（6MB）已回滚**：OSLoader 的 `VM_RAM_SIZE` 3MB→6MB 会多占 12KB 页表（每 1MB VM 空间 4KB L2 表），OSLoader 堆从 34KB 降到 22KB → 启动期 OOM（`!!!!OOM!!!` + 复位循环）→ 白屏。已恢复 3MB；OSLoader 的 RAM 预算（512KB，堆 34KB）是硬约束，扩容不可行
+- **应用页改为 4×1 单行**（4 个图标等距，名称 12px 居中；FormCalc 标签改 `FCalc`，为第 4 个内置应用 Python 留位）
 - **文本查看器自适应**：纯 ASCII 文件用 7 行 12px 小字体；含中文（非 ASCII）文件自动切 16px 中英混排 6 行（中文可读，不再显示 `?`）；二进制文件（控制字符 >10%）显示「（二进制文件）」+ 大小提示
 - **Python app 中文提示补全**：脚本打开失败/内存不足/未找到 .py 脚本 均显示中文
 - **Python app 开启任意精度整数**（MicroPython MPZ，固件 +11KB）：`2**100`、`math.factorial(50)` 等大整数运算可用；`SSIZE_MAX` 工具链缺失由端口定义补齐
