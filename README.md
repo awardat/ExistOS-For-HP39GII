@@ -54,7 +54,7 @@
 - [x] **Python app 单元格执行模型**：ENT 只换行（自动缩进）、**F5=run** 执行输入内容；单行表达式回显结果值、缩进块整体执行；数学键直通（sin/cos/tan/log/x²/xʸ + Shift 反三角/exp/sqrt/pow/abs）、符号面板 6 页
 - [x] **移除媒体解码代码**（lvgl ffmpeg/gif/png/sjpg/bmp/rlottie）
 - [x] **MEM SWAP 6MB 尝试已回滚**（OSLoader RAM 512KB/堆 34KB 硬约束）+ README 记录存储空间分布
-- [x] **flash.sh fresh 修复**（补写 OSLoader，DFU 恢复一步到位）
+- [x] **DFU 恢复流程修复**（同时写入 OSLoader 与 System，恢复一步到位）
 
 ## 内存与 MEM SWAP（重要）
 

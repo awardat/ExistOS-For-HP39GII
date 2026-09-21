@@ -55,7 +55,7 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 - [x] **Python app cell execution model**: ENT inserts a newline (auto-indent), **F5 = run** executes the input; single-line expressions echo their value, indented blocks run as a unit; math keys (sin/cos/tan/log/x²/xʸ plus Shift asin/acos/atan/exp/sqrt/pow/abs), 6-page symbol panel
 - [x] **Removed media decoder code** (lvgl ffmpeg/gif/png/sjpg/bmp/rlottie)
 - [x] **MEM SWAP 6MB attempt reverted** (OSLoader RAM 512KB / 34KB heap hard constraint) + README flash layout section
-- [x] **flash.sh fresh fix** (also writes OSLoader, one-step DFU recovery)
+- [x] **DFU recovery fix** (writes both OSLoader and System, one-step recovery)
 
 ## Memory and MEM SWAP (important)
 

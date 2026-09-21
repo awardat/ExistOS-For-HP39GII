@@ -12,7 +12,7 @@
 - **移除媒体解码代码**：删除 lvgl `extra/libs` 下 ffmpeg/gif/png/sjpg/bmp/rlottie（含 `LV_USE_GIF` 1→0 与构建清单），保留 freetype/fsdrv/qrcode
 - **MEM SWAP 扩容尝试（6MB）已回滚**：OSLoader 的 `VM_RAM_SIZE` 3MB→6MB 多占 12KB 页表（每 1MB VM 空间 4KB L2 表）→ 堆 34KB→22KB → 启动期 OOM（`!!!!OOM!!!` + 复位循环）白屏。恢复 3MB；OSLoader RAM 512KB/堆 34KB 是硬约束
 - **README 新增「存储空间分布（128MB NAND）」与「为什么 MEM SWAP 固定为 3MB」**（中英双版）；进展章节只保留最新版本；删除「KhiCAS 基本使用」章节，目录改指 KhiCAS 用户手册与内置函数参考
-- **flash.sh fresh 增加 OSLoader 写入**（页 1408）：修复 DFU 恢复流程只写 System、下次冷启动仍白屏的问题
+- **DFU 恢复流程修复**：恢复时同时写入 OSLoader 与 System（原先只写 System，恢复后下次冷启动仍白屏）
 
 ## [build 141] - 2026-09-20 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141))
 
