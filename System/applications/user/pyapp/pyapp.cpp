@@ -553,18 +553,26 @@ static int pyInited = 0;
 static int uiMode = UI_REPL;
 static int symPage = 0, symSel = 0, helpPage = 0, fileSel = 0;
 
-#define SYM_PAGES 4
+#define SYM_PAGES 6
 static const char *symItems[SYM_PAGES][10] = {
     {":", ",", ".", "=", "<", ">", "_", "#", "\"", "'"},
     {"==", "!=", "<=", ">=", "+", "-", "*", "/", "%", "**"},
     {"(", ")", "[", "]", "{", "}", "//", "+=", "-=", "="},
     {"if ", "elif ", "else:", "for ", "while ", "def ", "return ", "print(", "import ", "in "},
+    {"sqrt(", "sin(", "cos(", "tan(", "asin(", "acos(", "atan(", "log(", "exp(", "abs("},
+    {"pi", "e", "inf", "nan", "True", "False", "None", "math.", "random", "import"},
 };
-static const char *symTitles[SYM_PAGES] = {"\xb7\xfb\xba\xc5", "\xd4\xcb\xcb\xe3\xb7\xfb", "\xc0\xa8\xba\xc5\xd3\xeb\xb8\xb3\xd6\xb5", "\xbd\xe1\xb9\xb9"};
-static const char *helpText[4][6] = {
+static const char *symTitles[SYM_PAGES] = {"\xb7\xfb\xba\xc5", "\xd4\xcb\xcb\xe3\xb7\xfb", "\xc0\xa8\xba\xc5\xd3\xeb\xb8\xb3\xd6\xb5", "\xbd\xe1\xb9\xb9", "\xba\xaf\xca\xfd", "\xb3\xa3\xc1\xbf"};
+static const char *helpText[5][6] = {
     {"\xb0\xef\xd6\xfa 1/4 \xbb\xf9\xb1\xbe\xb2\xd9\xd7\xf7", "\xc6\xd5\xcd\xa8\xbc\xfc\xa3\xba\xca\xfd\xd7\xd6\xd3\xeb\xd4\xcb\xcb\xe3\xb7\xfb", "ALPHA\xa3\xba\xd7\xd6\xc4\xb8\xa3\xa8\xd2\xbb\xb4\xce\xb4\xf3\xd0\xb4\xa3\xac\xc1\xbd\xb4\xce\xd0\xa1\xd0\xb4\xa3\xa9", "Shift+ALPHA\xa3\xba\xcb\xf8\xb6\xa8\xd0\xa1\xd0\xb4", "ENT\xa3\xba\xbb\xbb\xd0\xd0\xa3\xa8\xd6\xb4\xd0\xd0\xb0\xb4 F5 run\xa3\xa9", "Shift+ON\xa3\xba\xcd\xcb\xb3\xf6"},
     {"\xb0\xef\xd6\xfa 2/4 \xb1\xe0\xbc\xad\xd3\xeb\xb9\xf6\xb6\xaf", "\xcd\xcb\xb8\xf1\xa3\xba\xc9\xbe\xb3\xfd\xd7\xd6\xb7\xfb", "Shift+\xcd\xcb\xb8\xf1\xa3\xba\xc7\xe5\xbf\xd5\xb5\xb1\xc7\xb0\xca\xe4\xc8\xeb", "UP/DOWN\xa3\xba\xd6\xf0\xd0\xd0\xb9\xf6\xb6\xaf", "Shift+UP/DOWN\xa3\xba\xb7\xad\xd2\xb3", "ON\xa3\xba\xc7\xe5\xc6\xc1"},
     {"\xb0\xef\xd6\xfa 3/4 \xb6\xe0\xd0\xd0\xd3\xeb\xd4\xcb\xd0\xd0", "\xc0\xfd\xa3\xba""for i in range(3):", "\xcf\xc2\xd2\xbb\xd0\xd0\xd7\xd4\xb6\xaf\xcb\xf5\xbd\xf8\xa3\xa8""\xa3\xba\xbd\xe1\xce\xb2 +4\xa3\xa9", "\xb6\xe0\xd0\xd0\xca\xe4\xc8\xeb\xba\xf3\xb0\xb4 F5 run \xd6\xb4\xd0\xd0", "\xb5\xa5\xd0\xd0\xb1\xed\xb4\xef\xca\xbd\xcf\xd4\xca\xbe\xbd\xe1\xb9\xfb\xd6\xb5", "F1\xa3\xba\xb7\xfb\xba\xc5\xc3\xe6\xb0\xe5"},
+    {"\xb0\xef\xd6\xfa 5/5 \xca\xfd\xd1\xa7\xbc\xfc", // 帮助 5/5 数学键
+     "SIN/COS/TAN\xa3\xba""sin(/cos(/tan(\xa3\xa8Shift\xa3\xba\xb7\xb4\xc8\xfd\xbd\xc7\xa3\xa9",
+     "LN/LOG\xa3\xba""log(/log10(\xa3\xa8Shift\xa3\xba""exp(/log2(\xa3\xa9",
+     "x2 \xbc\xfc\xa3\xba""**2\xa3\xa8Shift\xa3\xba""sqrt(\xa3\xa9",
+     "xy \xbc\xfc\xa3\xba""**\xa3\xa8Shift\xa3\xba""pow(\xa3\xa9",
+     "F1\xa3\xba\xb7\xfb\xba\xc5/\xba\xaf\xca\xfd\xc3\xe6\xb0\xe5\xa3\xa8""6 \xd2\xb3\xa3\xa9"},
     {"\xb0\xef\xd6\xfa 4/4 \xb9\xd8\xd3\xda", "MicroPython 1.29 \xb6\xc0\xc1\xa2\xd3\xa6\xd3\xc3", "\xcf\xd4\xca\xbe\xbf\xed\xb6\xc8 31 \xd7\xd6\xb7\xfb x 6 \xd0\xd0", "\xca\xe4\xb3\xf6\xb1\xa3\xc1\xf4\xd7\xee\xbd\xfc 96 \xd0\xd0", "\xbb\xe1\xbb\xb0\xb1\xe4\xc1\xbf\xd4\xda\xcd\xcb\xb3\xf6\xba\xf3\xb1\xa3\xc1\xf4", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7\xa3\xba""F6 \xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5"},
 };
 static const char *fileItems[6] = {"\xb4\xf2\xbf\xaa\xb2\xa2\xd4\xcb\xd0\xd0", "\xb1\xa3\xb4\xe6\xbb\xe1\xbb\xb0", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
@@ -713,8 +721,8 @@ static void pyTask(void *_) {
                     termDirty = 1;
                 } else if (uiMode == UI_HELP) {
                     if (key == KEY_F5 || key == KEY_ON || key == KEY_ENTER) uiMode = UI_REPL;
-                    else if (key == KEY_LEFT) helpPage = (helpPage + 3) % 4;
-                    else if (key == KEY_RIGHT) helpPage = (helpPage + 1) % 4;
+                    else if (key == KEY_LEFT) helpPage = (helpPage + 4) % 5;
+                    else if (key == KEY_RIGHT) helpPage = (helpPage + 1) % 5;
                     termDirty = 1;
                 } else if (uiMode == UI_FILE) {
                     if (key == KEY_F6 || key == KEY_ON) uiMode = UI_REPL;
@@ -818,12 +826,34 @@ static void pyTask(void *_) {
                     if (termScroll > 0) termScroll--;
                     termDirty = 1;
                 } else {
-                    int ch = keyToChar(key, shift, alpha);
-                    if (ch) {
-                        pendInsert((char)ch);
-                        if (alpha && !alphaLock) { // 一次性 alpha
-                            alpha = 0;
+                    const char *ms = NULL;
+                    if (!alpha) { // 数学键直通（普通/Shift 两档；多字符插入）
+                        switch (key) {
+                        case KEY_SIN: ms = shift ? "asin(" : "sin("; break;
+                        case KEY_COS: ms = shift ? "acos(" : "cos("; break;
+                        case KEY_TAN: ms = shift ? "atan(" : "tan("; break;
+                        case KEY_LN: ms = shift ? "exp(" : "log("; break;
+                        case KEY_LOG: ms = shift ? "log2(" : "log10("; break;
+                        case KEY_X2: ms = shift ? "sqrt(" : "**2"; break;
+                        case KEY_XY: ms = shift ? "pow(" : "**"; break;
+                        case KEY_LEFTBRACKET: if (shift) ms = "abs("; break;
+                        default: break;
+                        }
+                    }
+                    if (ms) {
+                        feedStr(ms);
+                        if (shift) {
+                            shift = 0;
                             ll_disp_set_indicator(0, -1);
+                        }
+                    } else {
+                        int ch = keyToChar(key, shift, alpha);
+                        if (ch) {
+                            pendInsert((char)ch);
+                            if (alpha && !alphaLock) { // 一次性 alpha
+                                alpha = 0;
+                                ll_disp_set_indicator(0, -1);
+                            }
                         }
                     }
                 }

@@ -89,15 +89,15 @@ int mpy_exec_str(const char *src) {
     return -1;
 }
 
-// 执行一个"单元格"：单语句/表达式用 single 模式（回显结果值），多行代码用 exec 模式
-int mpy_run_cell(const char *src) {
+// 执行一段源码：single_first=true 时先用 single 模式（单语句/表达式回显结果值）
+static int mpy_exec_portion(const char *src, size_t len, bool single_first) {
     nlr_buf_t nlr;
     if (nlr_push(&nlr) == 0) {
         bool done = false;
-        {   // 先试 single 模式（解析失败则静默回退到 exec）
+        if (single_first) {
             nlr_buf_t nlr2;
             if (nlr_push(&nlr2) == 0) {
-                mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
+                mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, len, 0);
                 if (lex != NULL) {
                     qstr sn = lex->source_name;
                     mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_SINGLE_INPUT);
@@ -109,11 +109,11 @@ int mpy_run_cell(const char *src) {
                     nlr_pop();
                 }
             } else {
-                MP_STATE_THREAD(mp_pending_exception) = MP_OBJ_NULL; // 清除解析异常，改用 exec
+                MP_STATE_THREAD(mp_pending_exception) = MP_OBJ_NULL; // 解析失败：清除并回退 exec
             }
         }
         if (!done) {
-            mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
+            mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, len, 0);
             if (lex == NULL) {
                 nlr_pop();
                 return -1;
@@ -128,6 +128,53 @@ int mpy_run_cell(const char *src) {
     }
     mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
     return -1;
+}
+
+// 执行一个"单元格"：逐条语句执行（单行语句用 single 模式回显结果值；带缩进块整体用 exec）
+int mpy_run_cell(const char *src) {
+    const char *p = src;
+    while (*p) {
+        const char *ls = p;
+        const char *le = strchr(ls, '\n');
+        size_t len = le ? (size_t)(le - ls) : strlen(ls);
+        size_t i;
+        bool blank = true;
+        for (i = 0; i < len; i++)
+            if (ls[i] != ' ' && ls[i] != '\t' && ls[i] != '\r') { blank = false; break; }
+        if (blank) { p = le ? le + 1 : ls + len; continue; } // 空行跳过
+        size_t ind = 0;
+        while (ind < len && (ls[ind] == ' ' || ls[ind] == '\t')) ind++;
+        size_t e = len;
+        while (e > 0 && (ls[e - 1] == ' ' || ls[e - 1] == '\t' || ls[e - 1] == '\r')) e--;
+        bool header = (e > 0 && ls[e - 1] == ':'); // 块头：行尾 ':'
+        const char *ue = le ? le + 1 : ls + len;   // 单元结束（不含）
+        if (header) { // 收集缩进块
+            const char *q = ue;
+            while (*q) {
+                const char *qls = q;
+                const char *qle = strchr(qls, '\n');
+                size_t qlen = qle ? (size_t)(qle - qls) : strlen(qls);
+                size_t qi;
+                bool qblank = true;
+                for (qi = 0; qi < qlen; qi++)
+                    if (qls[qi] != ' ' && qls[qi] != '\t' && qls[qi] != '\r') { qblank = false; break; }
+                if (qblank) { q = qle ? qle + 1 : qls + qlen; ue = q; continue; } // 块内空行
+                size_t qind = 0;
+                while (qind < qlen && (qls[qind] == ' ' || qls[qind] == '\t')) qind++;
+                if (qind <= ind) break; // 同级或更浅 → 块结束
+                q = qle ? qle + 1 : qls + qlen;
+                ue = q;
+            }
+        }
+        size_t ulen = (size_t)(ue - ls);
+        while (ulen > 0 && (ls[ulen - 1] == '\n' || ls[ulen - 1] == '\r' || ls[ulen - 1] == ' ' || ls[ulen - 1] == '\t')) ulen--;
+        if (ulen > 0) {
+            bool one_line = (memchr(ls, '\n', ulen) == NULL);
+            if (mpy_exec_portion(ls, ulen, one_line) != 0) return -1; // 出错即停
+        }
+        p = ue;
+    }
+    return 0;
 }
 
 void mpy_gc_collect(void) {
