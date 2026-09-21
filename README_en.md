@@ -37,9 +37,7 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 | Win/Linux | [OS Loader & EDB](#for-windows--linux) | |
 | | **[Usage](#basic-usage-of-the-firmware)** | |
 | [Setup](#booting-for-the-first-time) | [Shortcuts](#shortcuts) | [Accessing Internal Storage](#accessing-internal-storage) |
-| **[Basic Usage of KhiCAS](#basic-usage-of-khicas)** | [Basic Calculations](#basic-calculations) | [Example 1: Plotting](#example-1-plotting) |
-| | [Example 2: Indefinite Integrals](#example-2-indefinite-integrals) | [Example 3: Definite Integrals](#example-3-definite-integrals) | 
-| | [Example 4: Programming to draw Feigenbaum bifurcation diagrams mapped with Logistic equations](#example-4-programming-to-draw-feigenbaum-bifurcation-diagrams-mapped-with-logistic-equations) | |
+| **[KhiCAS user manual](docs/KhiCAS-manual.md)** | [Keys and menus](docs/KhiCAS-manual.md) | [Function reference](docs/KhiCAS-functions.md) |
 | **[Uninstalling and Flashing Back](#uninstalling-existos-and-flashing-back-to-the-hp-firmware)** | **[Contributors](#contributors)** | **[License](#license)** |
 
 | | Developer Guide | |
@@ -51,58 +49,7 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 | Documents (To do) | [Code submission standard](#code-submission-standard) |
 | **[Uninstalling and Flashing Back](#uninstalling-existos-and-flashing-back-to-the-hp-firmware)** | **[Contributors](#contributors)** | **[License](#license)** |
 
-## Current Development Status (major feature releases only, see CHANGELOG.md)
-
-### build 140 (2026-09-20 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-140))
-- [x] **Standalone Python app (MicroPython v1.29.0)**: 4th icon on the apps page; terminal-style REPL (6x31 chars, 96-line scrollback, row-level refresh); full key layout (Shift layer / ALPHA 26-letter table / Shift+ALPHA lowercase lock / arrow editing / paging); bottom F-key menu (F1 symbol panel 4 pages, F2 clear, F3 cancel, F4 run script, F5 Chinese help, F6 file menu); Chinese error mapping (25 cases); `open()` via FatFs + local `import` (`/xcas/`); script browser and runner; session kept + interpreter reset; "Save session" to `/xcas/session.txt`
-- [x] **Apps page 4x1 layout**; **text viewer** (open any file in the file manager: 7 lines 12px, scroll/page, read-only)
-- [x] **Python app manual and samples** (`docs/Python-app-manual.md`; `samples/py01_basics.py` / `py02_module.py` / `py07_nqueens.py` - N-Queens 8x8: 1221 ms standard / 703 ms boost)
-- [x] **Review remediation**: Python app exit/re-entry mutex, viewer exit restores window chrome, viewer buffer on demand, path truncation/negative-offset guards, diagnostics cleanup
-
-### build 139 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139))
-- [x] **KhiCAS user manual** (`docs/KhiCAS-manual.md`: keys/menus/scripts/Python compat constraints/FAQ) + 14 device photos; linked from READMEs and samples/README
-- [x] **KhiCAS `save_script` 0-byte write fix** (root cause: length not passed -> `Bfile_WriteFile_OS(len=0)` returned early); length fallback + post-write truncate; empty files can be created
-- [x] **FormCalc review P3 items**: AMORT Begin/End (INT=0 in BGN first period) + user PMT (from TVM register); DB200 straight-line crossover; 30/360 day rules (31st + Feb-end); bondPrice dead parameter and `config_set_charge_mode` dead code removed
-
-### build 138 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138))
-- [x] **KhiCAS input autocompletion** (Shift+0): 355 catalog commands (Chinese names) + 1552 built-in function names; exact-match priority; unique -> `command(`; multiple -> menu; XCAS_ONLY filtered in Python mode
-- [x] **giac 2.0.0 limited port tier 3 (solve.cc)**: equation/inequality/system solving replaced (9893->11712 lines, RUR/gbasis struct evolution + 7 adaptation symbols)
-- [x] **Console F1 quick-insert menu** (editor test segment) + **syntax switch restored and persisted** (Shift+Symb -> config menu; stored in `khi_lang.dat`)
-- [x] **pi rendering fix** (math typeset + Console); Shift+(-) enters `abs(`; README speed note added
-
-### build 137 (2026-09-19 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137))
-- [x] **giac 2.0.0 limited port**: tier 1 sym2poly + risch (40 cases pass); tier 2 csturm real-root isolation rewrite (17 cases pass, benefits solve for polynomials/inequalities)
-- [x] **KhiCAS**: key remap batch (Symb/Plot/Num/Apps, matrix/list menus, 2-page char table); graph view keys (ON/View/Plot/Home); script execution pipeline (line-by-line, comment skip, editor F5 run, 6 samples); pi math-typeset and Console rendering fixes; Chinese warning mapping fix; `(-)` key fix; Console log export
-- [x] **File browser fixes**: ENTER menu selection (since build 119), directory detection, enumeration pattern; `screen_1bpp` heap allocation fixes occasional all-black screen
-- [x] **Review remediation**: File menu array overflow/Quit restored, graph softkey shadowing fix, diagnostic output cleanup, empty task removal
-
-### build 135 (2026-09-11 released)
-- [x] **Charging system fully fixed** (driven by per-second on-device logs): true charge cut-off during measurement (PWD), auto-resume no longer interrupts measurement or re-opens a completed charge, 5V re-plug auto-resume; triple stop criteria (1.5V x2 / 1.4V+2h / 24h) verified, final 1.416V
-- [x] **Power consumption updated** (1.5V supply): shutdown <0.01mA; standard idle 58mA / KhiCAS 118mA; boost 68mA / 260mA; charging 160-210mA (~180mA avg)
-- [x] FormCalc feedback iteration; Round 5 review fixes; clock shows HH:MM + page refresh lowered to 10s
-
-### build 134 (2026-09-06 released)
-- [x] **FormCalc complete**: full 12C financial set (TVM/CashFlow/Amort/Bond/Deprec/Date/ICONV/Margin) + Electronic Engineering (9 forms) + Unit Converter (10 categories, no FX); form UI with row-level refresh / wrap menus / Shift+BKSP clear
-- [x] **Session directory** (/rpn39/, /formcalc/, legacy files auto-migrated); charge stop on 5V loss
-- [x] **Round 5 review fixes** (persistence empty-branch P0, solver hardening, title snowflake fix)
-
-### build 133 (2026-09-05 released)
-- [x] **KhiCAS help fully localized** (260 GBK descriptions + root-cause fix of glyph overlap; ON=back unified; catalog category translations)
-- [x] **NiMH-only charging** (lithium failed on hardware) + triple stop-charge + hardware status; UI idle CPU 28%→1%
-- [x] **Round 4 audit fixes**: Welford stable variance/stat session reset, matrix cursor clamp & F6 slot-to-page, complex overflow guards
-- [x] RPN39 Phase 3 on-device tests complete
-
-### build 130 (2026-09-02 released)
-- [x] **RPN39 RPN calculator** (HP-42S baseline): 4-level stack + four operations + registers (STO/RCL/VARS) + power-loss persistence + auto stack lift
-- [x] KhiCAS help / ON/C semantics, E-group fixes (15 items)
-- [x] Build hygiene (-Wall/-Wextra, zero warnings), CI supply-chain hardening
-
-### build 129 (2026-09-02 released)
-- [x] Three-mode variable-frequency power (standard / power save / boost)
-- [x] Security hardening (CDC parameter validation / VM sandbox), FTL_Sync, unified GBK decoding
-
-### build 127 / 126 (2026-08-30 released)
-- [x] Installation fixes; 25 bug fixes + documentation
+## Current Development Status (latest only, see CHANGELOG.md)
 
 ### build 141 (2026-09-20 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141))
 - [x] **FormCalc subnet mask calculator** (Engineering item 10): IP + prefix computes mask/network/broadcast/host range/host count in real time (/31, /32 special cases)
@@ -393,145 +340,6 @@ An 80 MB USB drive, the data section of the onboard flash, will show up on your 
 ![Sys1](Image/39.png)
 
 ![Sys1](Image/40.png)
-
-### Basic usage of KhiCAS
-
-Press `↓` to select the KhiCAS app under the Application tab in the main menu, and press `ENTER` to launch it. A dialog will show up on the first launch, which is for you to choose between Xcas mode `F1` and Python mode `F6`.
-
-![Sys1](Image/6.png)
-
-After the configurations, the current status is shown on the status bar below. The first item is the current time, the second is the mode (Xcas or Python), the third is the filename of the current session.
-
-Use `time(hh, mm)` to set the time.
-
-![Sys1](Image/7.png)
-
-Calculations can be performed after initialization.
-
-Long press the `ON/C` key to clear the history.
-
-Press `SHIFT` + `ON/C` to save the session and quit KhiCAS.
-
-#### Basic calculations
-
-General expressions can be entered in KhiCAS to perform calculations. Calculation of large integers is supported. However for floating point calculation, only single-percision floating point numbers calculation is supported.
-
-![Sys1](Image/8.png)
-
-For an expression entered in linear mode, select View (`F3`) to edit it in the natural textbook editor.
-
-![Sys1](Image/9.png)
-
-![Sys1](Image/10.png)
-
-Press `F1` and `F2` to bring up *could-be* commonly-used commands menu.
-
-![Sys1](Image/11.png)
-
-![Sys1](Image/12.png)
-
-The `cmds` menu (`F4`) lists all available commands in KhiCAS as nested entries, including algebraic, complex, polynominal, probability, plotting, etc., where you can search commands needed. After selecting the command, press `Input` to copy them to the main menu, `ex1` `ex2` to copy built-in examples or `help` to show built-in help.
-
-![Sys1](Image/13.png)
-
-![Sys1](Image/14.png)
-
-#### Example 1: Plotting
-
-Use `plot` command to plot functions. In the plot interface: Press `↑` `↓` `←` `→` to move the canvas, `+``-` to zoom, `*` to auto-zoom and fill the screen, `/` to auto-zoom and keep the scale of the axes equal.
-
-```
-  plot(expression, x)
-  plot(expression, x=[start...end], xstep=step)
-```
-
-![Sys1](Image/15.png)
-![Sys1](Image/16.png)
-
-`plotpolar` command plots in polar coordinate system.
-
-![Sys1](Image/17.png)
-
-![Sys1](Image/18.png)
-
-`plotfield` command draws vector fields.
-
-![Sys1](Image/19.png)
-
-![Sys1](Image/22.png)
-
-![Sys1](Image/20.png)
-
-![Sys1](Image/21.png)
-
-#### Example 2: Indefinite integrals
-
-![Sys1](Image/23.png)
-
-![Sys1](Image/24.png)
-
-![Sys1](Image/25.png)
-
-![Sys1](Image/26.png)
-
-#### Example 3: Definite integrals
-
-![Sys1](Image/36.png)
-
-![Sys1](Image/37.png)
-
-#### Example 4: Programming to draw Feigenbaum bifurcation diagrams mapped with Logistic equations
-
-Two input syntax modes are present in KhiCAS, namely Xcas and Python. With the ability to execute scripts, new functions can be defined via programming. Here we use Python syntax to implement the following bifurcation diagram.
-
-![Sys1](Image/27.png)
-
-Press `File` (F6) in the main menu and select the 6th item to open the script editor.
-
-![Sys1](Image/28.png)
-
-In the editor, the top left corner shows current time, syntax mode, filename and current line/total lines. `F1`~`F3` stores shortcut commands such as symbolic conditionals, loop bodies, function definitions, etc.
-
-![Sys1](Image/29.png)
-
-The script we are using is as follows. First we define two global vectors `r` and `p`, where the result of function `f` iteration will be stored. Then we can plot by calling KhiCAS command `point(r,p)` externally.
-
-```python
-r = []
-p = []
-def f():
-  for u in range(0, 40):
-    x = 0.132456
-    for n in range(1,50):
-      x1 = (u/10)*x*(1-x)
-      x = x1
-      if n > 25:
-        r.append(u/100)
-        p.append(x)
-  return
-```
-
-After editing, the script can be checked and compiled using the Check syntax option in the File menu, and the result will be output to the console.
-
-![Sys1](Image/30.png)
-
-The following figure shows the result of compiling a script with a symbolic error, with a specific indication of the line number. (Compiling Python scripts in Xcas mode also causes error.)
-
-![Sys1](Image/31.png)
-
-The result of a successful compilation is shown below.
-
-![Sys1](Image/32.png)
-
-The function name in the script is called to execute the function written above, and the `point` command is then called to draw the scattered data to the canvas.
-
-![Sys1](Image/33.png)
-
-Final output:
-
-![Sys1](Image/34.png)
-
-![Sys1](Image/35.png)
 
 ## Uninstalling ExistOS and Flashing Back to the HP Firmware
 

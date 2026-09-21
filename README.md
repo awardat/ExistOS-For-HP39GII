@@ -36,9 +36,7 @@
 | | **[使用教程](#固件基本使用)** | |
 | [初始化](#初次使用) | [系统快捷键](#系统快捷键) | [访问内部存储](#内部存储的访问) |
 | **[RPN39 RPN 计算器](#rpn39-计算器)** | [用户手册（功能/用法/示例）](#rpn39-用户手册) | [键位](#键位映射) |
-| **[KhiCAS 基本使用](#khicas-的基本使用)** | [基本计算](#基本计算) | [示例 1: 绘图](#示例1-绘图) |
-| | [示例 2: 不定积分](#示例2-不定积分) | [示例 3: 定积分](#示例3-定积分) |
-| | [示例 4: 编程绘制 Logistic 方程映射 Feigenbaum 分岔图](#示例4-编程绘制-logistic-方程映射-feigenbaum-分岔图) | |
+| **[KhiCAS 用户手册](docs/KhiCAS-manual.md)** | [按键与菜单](docs/KhiCAS-manual.md) | [内置函数参考](docs/KhiCAS-functions.md) |
 | **[如何卸载并刷回原生系统](#系统卸载并刷回原生系统)** | **[本项目贡献者](#贡献者)** | **[开源许可证](#许可协议)** |
 
 | | 开发者指引 | |
@@ -50,58 +48,7 @@
 | 文档 (待补) | [代码提交规范](#代码提交规范) |
 | **[如何卸载并刷回原生系统](#系统卸载并刷回原生系统)** | **[本项目贡献者](#贡献者)** | **[开源许可证](#许可协议)** |
 
-## 目前工作进展（仅列大功能发布，详见 CHANGELOG.md）
-
-### build 140（2026-09-20 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-140)）
-- [x] **独立 Python app（MicroPython v1.29.0）**：首页第 4 个图标；终端式 REPL（6 行 × 31 字符、96 行回看、行级局部刷新）；完整键位（Shift 层/ALPHA 26 字母表/Shift+ALPHA 小写锁定/←→ 行内编辑/翻页）；底部 F 键菜单（F1 符号面板 4 页、F2 清屏、F3 取消、F4 运行脚本、F5 中文帮助、F6 文件菜单 6 项）；中文报错映射（25 条）；`open()` 走 FatFs + 本地 `import`（`/xcas/`）；脚本浏览运行；会话保留 + 复位解释器；「保存会话」导出 `/xcas/session.txt`
-- [x] **应用页 4x1 布局**；**文本查看器**（文件管理器内打开任意文件：7 行 12px、滚动/翻页、只读）
-- [x] **Python app 手册与样本**（`docs/Python-app-manual.md`；`samples/py01_basics.py` / `py02_module.py` / `py07_nqueens.py`——N-Queens 8×8：标准 1221ms / 加速 703ms）
-- [x] **审核整改**：Python app 退出/重入互斥、查看器退出恢复窗口装饰、查看器缓冲按需分配、路径截断/负偏移防护、诊断输出清理
-
-### build 139（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-139)）
-- [x] **KhiCAS 用户手册**（`docs/KhiCAS-manual.md`：按键/菜单/脚本/Python 兼容约束/FAQ）+ **14 张实机配图**；README 中英双版、samples/README 已加链接
-- [x] **KhiCAS `save_script` 写入 0 字节修复**（"另存为 0 字节"根因：未传长度 → `Bfile_WriteFile_OS(len=0)` 直接返回）；`write_file` 长度兜底 + 写后截断；空文件可建
-- [x] **FormCalc 审核 P3 四项**：AMORT 期初/期末（BGN 首期 INT=0）+ 用户 PMT（取 TVM 寄存器）；DB200 直线法交叉；30/360 日规则（31 日+2 月末）；bondPrice 死参与 `config_set_charge_mode` 死代码清理
-
-### build 138（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-138)）
-- [x] **KhiCAS 输入自动补全**（Shift+0）：355 条命令目录（中文名）+ 1552 条内置函数名；完整命令名精确匹配优先；唯一→`命令(`；多匹配→菜单；Python 模式过滤 XCAS_ONLY
-- [x] **giac 2.0.0 有限移植三档（solve.cc）**：方程/不等式/方程组求解整体替换（9893→11712 行，RUR/gbasis 结构演进 + 7 个适配符号）
-- [x] **Console F1 快速插入菜单**（编辑器 test 段）+ **语法切换恢复与持久化**（Shift+Symb → 配置菜单；写入 `khi_lang.dat`，重启保持）
-- [x] **π 渲染修复**（数学排版 + Console 双通道）；Shift+(-) 输入 `abs(`；README 新增运算速度说明
-
-### build 137（2026-09-19 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-137)）
-- [x] **giac 2.0.0 有限移植**：一档 sym2poly + risch（40 用例通过）；二档 csturm 实根隔离重写（17 用例全通过，solve 多项式/不等式受益）
-- [x] **KhiCAS**：键位批次调整（Symb/Plot/Num/Apps、矩阵/列表菜单、字符表两页）；图形界面键位（ON/View/Plot/Home）；脚本执行链路（逐行执行/注释跳过/编辑器 F5 运行/samples 6 例）；π 数学排版与 Console 渲染修复；中文告警映射修正；`(-)` 键修复；Console 日志导出
-- [x] **文件浏览器修复**：ENTER 菜单选中（build 119 遗留）、目录识别、枚举模式；`screen_1bpp` 堆化修复偶发全黑
-- [x] **审核整改**：File 菜单数组越界/退出项恢复、图形软键遮蔽修复、诊断输出清理、空任务删除
-
-### build 135（2026-09-11 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-135)）
-- [x] **充电系统完整修复**（真机每秒日志驱动）：断充测量真断充（PWD）、恢复块不再打断测量/重开充满停充、重插 USB 自动恢复；三重停充判据（1.5V×2 / 1.4V+2h / 24h）验收通过，充满终压 1.416V
-- [x] **耗电实测更新**（1.5V 可调电源）：关机 <0.01mA；标准待机 58mA / KhiCAS 118mA；加速 68mA / 260mA；充电 160-210mA（平均约 180mA）
-- [x] FormCalc 实测反馈迭代；Round 5 审核整改收尾；时间显示时:分 + 页面刷新降频 10s
-
-### build 134（2026-09-06 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-134)）
-- [x] **FormCalc 表单计算完整实现**：金融 12C 全集 8 项（TVM/现金流/摊销/债券/折旧/日期/利率换算/利润）+ 电子工程 9 项 + 单位换算 10 类（无汇率）；表单交互（行级局部刷新/循环菜单/Shift+BKSP 清空）
-- [x] **session 目录化**（/rpn39/、/formcalc/，旧文件自动迁移）；充电拔电立即停充
-- [x] **Round 5 审核整改**（持久化空分支 P0、求解器健壮性、雪花根治）
-
-### build 133（2026-09-05 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-133)）
-- [x] **KhiCAS 帮助全面中文化**（260 条描述 GBK + 乱码根治——渲染宽度与 GBK 双字节对齐；ON 返回统一；命令目录分类补译）
-- [x] **充电固定镍氢**（锂电实测失败）+ 三重停充 + 状态显示硬件化；UI 空闲 CPU 28%→1%
-- [x] **Round 4 审核整改**：统计 Welford 稳定方差/会话重置、矩阵光标钳制与 F6 槽直达、复数溢出保护
-- [x] RPN39 阶段 3 真机测试完成（[docs/RPN39-phase3-test.md](../RPN39-phase3-test.md) 在本地工作区）
-
-### build 130（2026-09-02 已发布）
-- [x] **RPN39 RPN 计算器**（42S 基准）：4 层栈 + 四则 + 寄存器（STO/RCL/VARS）+ 掉电持久化 + 自动栈提升
-- [x] KhiCAS 帮助/ON/C 语义、E 组整改 15 项
-- [x] 构建卫生（-Wall/-Wextra 0 警告）、CI 供应链加固
-
-### build 129（2026-09-02 已发布）
-- [x] 电源三档变频（标准/省电/加速）
-- [x] 安全加固（CDC 参数校验/VM 沙箱）、FTL_Sync、GBK 统一
-
-### build 127 / 126（2026-08-30 已发布）
-- [x] 安装修复；25 项 Bug 修复 + 文档
+## 目前工作进展（仅最新版本，历史见 CHANGELOG.md）
 
 ### build 141（2026-09-20 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141)）
 - [x] **FormCalc 子网掩码计算器**（电子工程第 10 项）：IP 四段 + 前缀实时计算掩码/网络/广播/可用主机范围/主机数（/31、/32 特例）
@@ -410,146 +357,6 @@ Status 选项卡用于显示当前系统状态，以及相关的参数设定。
 ![Sys1](Image/39.png)
 
 ![Sys1](Image/40.png)
-
-### KhiCAS 的基本使用
-
-主界面 Application 选项卡中按下 `↓` 键选中 `KhiCAS` 应用，按下 `Enter` 键启动应用。第一次启动时会弹出提示选择使用 Xcas 语法模式 `F1` 还是 Python 语法模式 `F6`。
-
-![Sys1](Image/6.png)
-
-设定完成后当前状态会显示在下边的状态栏，其中第一项为当前时间，第二项为语法模式（Xcas 或 Python），第三项弧度或角度制，第四项为当前会话文件名。
-
-使用 time(hh,mm) 命令设置时间(24 时计时)，例如 time(11,45) 表示设置时间为 11:45
-
-![Sys1](Image/7.png)
-
-初始化完成后便可以进行一些相关的计算。
-
-[ON/C]清除历史记录。
-
-[SHIFT]+[ON/C]保存会话并退出。
-
-#### 基本计算
-
-在 KhiCAS 中可以输入一般的表达式进行计算，支持大整数计算，但对于小数仅支持单精度浮点。
-
-![Sys1](Image/8.png)
-
-对于输入的表达式（或 `↑` `↓` 键选择的历史记录）可以按下 View 键 `F3` 后将其转化为自然输入模式进行编辑。
-
-![Sys1](Image/9.png)
-
-![Sys1](Image/10.png)
-
-使用 `F1` 和 `F2` 键可以调出可能常用的指令菜单。
-
-![Sys1](Image/11.png)
-
-![Sys1](Image/12.png)
-
-`cmds` 菜单 (`F4`) 里用二级目录的方式列出了 KhiCAS 中的全部命令（包括代数、复数、多项式、概率、绘图等命令），可以在其中搜寻需要的指令，选中对应的指令后 `input` 键输入到主界面，或按下 `help` 查看指令帮助，`ex1`、`ex2` 键输入自带的示例。
-
-![Sys1](Image/13.png)
-
-![Sys1](Image/14.png)
-
-#### 示例 1: 绘图
-
-使用 `plot` 命令可以对基本函数进行绘图，绘图界面 `↑` `↓` `←` `→` 键移动画布，`+` `-` 键缩放，`*` 键自动缩放铺满屏幕，`/` 键自动缩放让 x y 坐标刻度等距。
-
-```
-  plot(表达式, x)
-  plot(表达式, x=[起点...终点], xstep=步进)
-```
-
-![Sys1](Image/15.png)
-![Sys1](Image/16.png)
-
-`plotpolar` 命令则在极坐标系下绘图
-
-![Sys1](Image/17.png)
-
-![Sys1](Image/18.png)
-
-`plotfield` 绘制矢量场
-
-![Sys1](Image/19.png)
-
-![Sys1](Image/22.png)
-
-![Sys1](Image/20.png)
-
-![Sys1](Image/21.png)
-
-#### 示例 2: 不定积分
-
-![Sys1](Image/23.png)
-
-![Sys1](Image/24.png)
-
-![Sys1](Image/25.png)
-
-![Sys1](Image/26.png)
-
-#### 示例 3: 定积分
-
-![Sys1](Image/36.png)
-
-![Sys1](Image/37.png)
-
-#### 示例 4: 编程绘制 Logistic 方程映射 Feigenbaum 分岔图
-
-在 KhiCAS 中有两种语法工作模式 Xcas 和 Python，并提供了脚本执行功能，因此可以通过编程的方式定义新函数，这里使用 Python 语法来实现绘制如下的分岔图。
-
-![Sys1](Image/27.png)
-
-在主界面中按下 File 键 (`F6`)，选择第六项打开脚本编辑器。
-
-![Sys1](Image/28.png)
-
-脚本编辑器中，左上角显示当前时间，语法模式，文件名，当前编辑行号/总行数。
-`F1`~`F3`中存储了一些如符号判断、循环体、函数定义等的快捷命令
-
-![Sys1](Image/29.png)
-
-这里使用的脚本如下，首先先定义了两个全局向量 `r` 和 `p` ，函数 `f` 迭代的结果会存储在这两个向量中，最后在外部能够调用 KhiCAS 的 `point(r,p)` 命令进行绘图。
-
-```python
-r = []
-p = []
-def f():
-  for u in range(0, 40):
-    x = 0.132456
-    for n in range(1,50):
-      x1 = (u/10)*x*(1-x)
-      x = x1
-      if n > 25:
-        r.append(u/100)
-        p.append(x)
-  return
-```
-
-编辑完成后使用 File 菜单里的 Check syntax 选项可以对脚本进行检查和编译，结果会输出到主控制台上。
-
-![Sys1](Image/30.png)
-
-如下图为脚本有符号错误时编译的结果，会具体提示所在行号（或者是在 Xcas 模式下编译 Python 脚本也会出现错误）
-
-![Sys1](Image/31.png)
-
-编译成功的结果如下图。
-
-![Sys1](Image/32.png)
-
-随后调用脚本中的函数名执行上面所写的函数，执行完后再调用 point 指令将迭代输出的散点绘制到画布上。
-
-![Sys1](Image/33.png)
-
-最终输出：
-
-![Sys1](Image/34.png)
-
-![Sys1](Image/35.png)
 
 ## 硬件实测记录（2026-09）
 
