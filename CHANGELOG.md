@@ -7,6 +7,7 @@
 ## [build 141] - 2026-09-20 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-141))
 
 ### 已完成
+- **MEM SWAP 扩容 3MB → 6MB**（OSLoader `VM_RAM_SIZE`）：使用 FTL 前段空闲区（用户区不受影响，仍从扇区 4096 开始），malloc 堆上限 3.16MB → **6.16MB**，KhiCAS 大型运算与 Python app 直接受益；需重刷 OSLoader（`./flash.sh osloader` 或 fresh）
 - **文本查看器自适应**：纯 ASCII 文件用 7 行 12px 小字体；含中文（非 ASCII）文件自动切 16px 中英混排 6 行（中文可读，不再显示 `?`）；二进制文件（控制字符 >10%）显示「（二进制文件）」+ 大小提示
 - **Python app 中文提示补全**：脚本打开失败/内存不足/未找到 .py 脚本 均显示中文
 - **Python app 开启任意精度整数**（MicroPython MPZ，固件 +11KB）：`2**100`、`math.factorial(50)` 等大整数运算可用；`SSIZE_MAX` 工具链缺失由端口定义补齐

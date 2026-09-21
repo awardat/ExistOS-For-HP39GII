@@ -58,12 +58,12 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Memory and MEM SWAP (important)
 
-On-chip RAM is limited (malloc heap ~160KB). Enabling **Settings -> MEM SWAP** merges the 3MB FTL swap area into the malloc heap (about **3.16MB** total); KhiCAS heavy computations and the Python app need it.
+On-chip RAM is limited (malloc heap ~160KB). Enabling **Settings -> MEM SWAP** merges the 6MB FTL swap area into the malloc heap (about **6.16MB** total); KhiCAS heavy computations and the Python app need it.
 
 - **MEM SWAP defaults to OFF after every firmware flash** (config reset): enable it in **Settings** and reboot
 - With it off: a long KhiCAS session can exhaust the on-chip heap and the serial port prints `EXT HEAP NOMEM !` (since build 141 the computation aborts early instead of crashing)
 - Cost: swap uses NAND page swapping, so heavy paging causes **wear**; light everyday use may keep it off
-- Usage: the Settings page shows `used/total` (about 3.16MB when enabled)
+- Usage: the Settings page shows `used/total` (about 6.16MB when enabled)
 
 ## Only Installing
 
