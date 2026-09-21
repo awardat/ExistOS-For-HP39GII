@@ -7,7 +7,8 @@
  *   void mpy_deinit(void);                        // 反初始化（mp_deinit）
  *   int  mpy_repl_init(void);                     // 初始化事件 REPL
  *   int  mpy_repl_feed_char(int c);               // 喂入一个字符；返回非 0 = 本次输入已执行完
- *   int  mpy_exec_str(const char *src);           // 直接执行源码（文件运行/F5）；返回 0 成功
+ *   int  mpy_exec_str(const char *src);           // 直接执行源码（文件运行）；返回 0 成功
+ *   int  mpy_run_cell(const char *src);           // 执行单元格（单语句回显值 / 多行 exec）；返回 0 成功
  *   void mpy_gc_collect(void);                    // 主动 GC
  *
  * HAL（弱符号，System 侧可覆盖）：
@@ -81,6 +82,47 @@ int mpy_exec_str(const char *src) {
         mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
         mp_obj_t module_fun = mp_compile(&parse_tree, source_name, false);
         mp_call_function_0(module_fun);
+        nlr_pop();
+        return 0;
+    }
+    mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
+    return -1;
+}
+
+// 执行一个"单元格"：单语句/表达式用 single 模式（回显结果值），多行代码用 exec 模式
+int mpy_run_cell(const char *src) {
+    nlr_buf_t nlr;
+    if (nlr_push(&nlr) == 0) {
+        bool done = false;
+        {   // 先试 single 模式（解析失败则静默回退到 exec）
+            nlr_buf_t nlr2;
+            if (nlr_push(&nlr2) == 0) {
+                mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
+                if (lex != NULL) {
+                    qstr sn = lex->source_name;
+                    mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_SINGLE_INPUT);
+                    mp_obj_t f = mp_compile(&pt, sn, true);
+                    nlr_pop();
+                    mp_call_function_0(f); // 运行异常由外层 nlr 捕获并打印
+                    done = true;
+                } else {
+                    nlr_pop();
+                }
+            } else {
+                MP_STATE_THREAD(mp_pending_exception) = MP_OBJ_NULL; // 清除解析异常，改用 exec
+            }
+        }
+        if (!done) {
+            mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
+            if (lex == NULL) {
+                nlr_pop();
+                return -1;
+            }
+            qstr sn = lex->source_name;
+            mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_FILE_INPUT);
+            mp_obj_t f = mp_compile(&pt, sn, false);
+            mp_call_function_0(f);
+        }
         nlr_pop();
         return 0;
     }

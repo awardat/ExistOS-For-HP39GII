@@ -30,7 +30,7 @@ void ll_disp_set_indicator(int indicateBit, int BatInt);
 uint32_t ll_get_time_ms();
 void mpy_init(void *heap, size_t heap_size);
 int mpy_repl_init(void);
-int mpy_repl_feed_char(int c);
+int mpy_run_cell(const char *src);
 int mpy_exec_str(const char *src);
 void mpy_gc_collect(void);
 void mpy_deinit(void);
@@ -52,32 +52,109 @@ static int termScroll = 0;
 static volatile int termDirty = 1;
 static int rowDirty = -1; // >=0：仅刷新该可见行
 static int cursorOn = 1;
-static int lineLen = 0;   // 当前输入行长度（用于退格边界）
-static int contMode = 0;  // REPL 续行态（尾部提示符为 "... "）
-static int inPs2Tail = 0; // 正处 "... " 之后（用于统计 auto-indent 空格数）
-static int ps2Spaces = 0; // PS2 后自动缩进的空格数（已写进 REPL 行缓冲）
-static char outTail[8];
-static int outTailLen = 0;
+// ---- 输入单元格（2026-09-21：ENT 只换行，F5 run 执行）----
+#define PEND_MAX 2048
+static char pend[PEND_MAX + 1];
+static int pendLen = 0;
+static int pendCur = 0; // 编辑光标（绝对偏移，仅在本行内移动）
 
-static void trackPrompt(void) { // 尾部匹配 ">>> " / "... "；并统计缩进空格
-    if (outTailLen >= 1) {
-        if (outTailLen >= 4 && memcmp(outTail + outTailLen - 4, "... ", 4) == 0) {
-            contMode = 1;
-            inPs2Tail = 1;
-            ps2Spaces = 0;
-            return;
-        }
-        if (outTailLen >= 4 && memcmp(outTail + outTailLen - 4, ">>> ", 4) == 0) {
-            contMode = 0;
-            inPs2Tail = 0;
-            ps2Spaces = 0;
-            return;
-        }
-        if (inPs2Tail) {
-            if (outTail[outTailLen - 1] == ' ') ps2Spaces++;
-            else inPs2Tail = 0;
-        }
+static int termCur();
+static void termPutc(char c);
+static void termNewline();
+static void termPuts(const char *s);
+
+static int pendLineStart(void) { // 当前编辑行的起始偏移
+    int i = pendCur;
+    while (i > 0 && pend[i - 1] != '\n') i--;
+    return i;
+}
+
+static void pendRenderLine(void) { // 重绘当前编辑行（长行显示光标附近的窗口）
+    int ls = pendLineStart();
+    int start = ls;
+    if (pendCur - start > TERM_COLS - 1) start = pendCur - (TERM_COLS - 1);
+    char *l = term[termCur()];
+    memset(l, 0, TERM_COLS + 1);
+    tCol = 0;
+    for (int i = start; i < pendLen && pend[i] != '\n' && tCol < TERM_COLS; i++) {
+        l[tCol++] = pend[i];
+        l[tCol] = 0;
     }
+    tCol = pendCur - start;
+    if (tCol > TERM_COLS) tCol = TERM_COLS;
+    rowDirty = TERM_ROWS - 1;
+}
+
+static void pendClear(void) {
+    pendLen = 0;
+    pendCur = 0;
+    pend[0] = 0;
+}
+
+static void pendInsert(char c) {
+    if (pendLen >= PEND_MAX) return;
+    if (pendCur < pendLen) memmove(pend + pendCur + 1, pend + pendCur, pendLen - pendCur);
+    pend[pendCur++] = c;
+    pendLen++;
+    pend[pendLen] = 0;
+    if (c == '\n') termPutc('\n'); // 换行：回显并开新行
+    else pendRenderLine();           // 行内：重绘本行
+}
+
+static void pendBackspace(void) {
+    if (pendCur <= pendLineStart()) return; // 行首忽略
+    memmove(pend + pendCur - 1, pend + pendCur, pendLen - pendCur);
+    pendCur--;
+    pendLen--;
+    pend[pendLen] = 0;
+    pendRenderLine();
+}
+
+static void pendLeft(void) {
+    if (pendCur > pendLineStart()) {
+        pendCur--;
+        pendRenderLine();
+    }
+}
+
+static void pendRight(void) {
+    if (pendCur < pendLen && pend[pendCur] != '\n') {
+        pendCur++;
+        pendRenderLine();
+    }
+}
+
+static void termClearAll(void) { // 清屏 + 清空单元格
+    for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0;
+    termLines = 0;
+    tCol = 0;
+    termScroll = 0;
+    pendClear();
+    termDirty = 1;
+}
+
+static void runCell(void) { // F5：执行自上次运行以来输入的内容
+    int a = 0, b = pendLen;
+    while (a < b && (pend[a] == '\n' || pend[a] == '\r')) a++;
+    while (b > a && (pend[b - 1] == '\n' || pend[b - 1] == '\r')) b--;
+    if (a >= b) {
+        pendClear();
+        return;
+    }
+    char *cell = (char *)malloc(b - a + 1);
+    if (!cell) {
+        termPuts("\xc4\xda\xb4\xe6\xb2\xbb\xd7\xe3"); // 内存不足
+        termNewline();
+        return;
+    }
+    memcpy(cell, pend + a, b - a);
+    cell[b - a] = 0;
+    termNewline();
+    mpy_run_cell(cell);
+    free(cell);
+    termNewline();
+    pendClear();
+    termPuts(">>> ");
 }
 
 static int termCur() { return termLines ? (termLines - 1) % TERM_LINES : 0; }
@@ -89,7 +166,6 @@ static void termClearLineFrom(int idx, int col) {
 
 static void termNewline() {
     rowDirty = -1;
-    lineLen = 0;
     termDirty = 1; // 换行使可见行整体上移 → 需整屏重绘（普通按键不触发）
     termLines++;
     memset(term[termLines % TERM_LINES], 0, TERM_COLS + 1);
@@ -140,12 +216,6 @@ static void termPutc(char c) {
         l[tCol++] = c;
         l[tCol] = 0;
         rowDirty = TERM_ROWS - 1; // 当前行即最底可见行
-        if (outTailLen < (int)sizeof(outTail)) outTail[outTailLen++] = c;
-        else {
-            memmove(outTail, outTail + 1, sizeof(outTail) - 1);
-            outTail[sizeof(outTail) - 1] = c;
-        }
-        trackPrompt();
     }
 }
 
@@ -480,22 +550,20 @@ static const char *symItems[SYM_PAGES][10] = {
 };
 static const char *symTitles[SYM_PAGES] = {"\xb7\xfb\xba\xc5", "\xd4\xcb\xcb\xe3\xb7\xfb", "\xc0\xa8\xba\xc5\xd3\xeb\xb8\xb3\xd6\xb5", "\xbd\xe1\xb9\xb9"};
 static const char *helpText[4][6] = {
-    {"\xb0\xef\xd6\xfa 1/4 \xbb\xf9\xb1\xbe\xb2\xd9\xd7\xf7", "\xc6\xd5\xcd\xa8\xbc\xfc\xa3\xba\xca\xfd\xd7\xd6\xd3\xeb\xd4\xcb\xcb\xe3\xb7\xfb", "ALPHA\xa3\xba\xd7\xd6\xc4\xb8\xa3\xa8\xd2\xbb\xb4\xce\xb4\xf3\xd0\xb4\xa3\xac\xc1\xbd\xb4\xce\xd0\xa1\xd0\xb4\xa3\xa9", "Shift+ALPHA\xa3\xba\xcb\xf8\xb6\xa8\xd0\xa1\xd0\xb4", "ENT\xa3\xba\xd6\xb4\xd0\xd0\xa3\xbb\xbf\xe9\xce\xb4\xbd\xe1\xca\xf8\xd7\xd4\xb6\xaf\xd0\xf8\xd0\xd0", "Shift+ON\xa3\xba\xcd\xcb\xb3\xf6"},
-    {"\xb0\xef\xd6\xfa 2/4 \xb1\xe0\xbc\xad\xd3\xeb\xb9\xf6\xb6\xaf", "\xcd\xcb\xb8\xf1\xa3\xba\xc9\xbe\xb3\xfd\xd7\xd6\xb7\xfb", "Shift+\xcd\xcb\xb8\xf1\xa3\xba\xc8\xa1\xcf\xfb\xb5\xb1\xc7\xb0\xca\xe4\xc8\xeb", "UP/DOWN\xa3\xba\xd6\xf0\xd0\xd0\xb9\xf6\xb6\xaf", "Shift+UP/DOWN\xa3\xba\xb7\xad\xd2\xb3", "ON\xa3\xba\xc7\xe5\xc6\xc1"},
-    {"\xb0\xef\xd6\xfa 3/4 \xb6\xe0\xd0\xd0\xd3\xef\xbe\xe4", "\xc0\xfd\xa3\xba""for i in range(3):", "\xcf\xc2\xd2\xbb\xd0\xd0\xd6\xb1\xbd\xd3\xca\xe4\xc8\xeb\xa3\xa8\xd7\xd4\xb6\xaf\xcb\xf5\xbd\xf8\xa3\xa9", "\xcc\xe5\xd0\xd0\xca\xe4\xc8\xeb\xcd\xea\xba\xf3\xb0\xb4 ENT", "\xd4\xd9\xb0\xb4\xd2\xbb\xb4\xce ENT\xa3\xa8\xbf\xd5\xd0\xd0\xa3\xa9\xbf\xaa\xca\xbc\xd6\xb4\xd0\xd0", "F1\xa3\xba\xb7\xfb\xba\xc5\xc3\xe6\xb0\xe5"},
+    {"\xb0\xef\xd6\xfa 1/4 \xbb\xf9\xb1\xbe\xb2\xd9\xd7\xf7", "\xc6\xd5\xcd\xa8\xbc\xfc\xa3\xba\xca\xfd\xd7\xd6\xd3\xeb\xd4\xcb\xcb\xe3\xb7\xfb", "ALPHA\xa3\xba\xd7\xd6\xc4\xb8\xa3\xa8\xd2\xbb\xb4\xce\xb4\xf3\xd0\xb4\xa3\xac\xc1\xbd\xb4\xce\xd0\xa1\xd0\xb4\xa3\xa9", "Shift+ALPHA\xa3\xba\xcb\xf8\xb6\xa8\xd0\xa1\xd0\xb4", "ENT\xa3\xba\xbb\xbb\xd0\xd0\xa3\xa8\xd6\xb4\xd0\xd0\xb0\xb4 F5 run\xa3\xa9", "Shift+ON\xa3\xba\xcd\xcb\xb3\xf6"},
+    {"\xb0\xef\xd6\xfa 2/4 \xb1\xe0\xbc\xad\xd3\xeb\xb9\xf6\xb6\xaf", "\xcd\xcb\xb8\xf1\xa3\xba\xc9\xbe\xb3\xfd\xd7\xd6\xb7\xfb", "Shift+\xcd\xcb\xb8\xf1\xa3\xba\xc7\xe5\xbf\xd5\xb5\xb1\xc7\xb0\xca\xe4\xc8\xeb", "UP/DOWN\xa3\xba\xd6\xf0\xd0\xd0\xb9\xf6\xb6\xaf", "Shift+UP/DOWN\xa3\xba\xb7\xad\xd2\xb3", "ON\xa3\xba\xc7\xe5\xc6\xc1"},
+    {"\xb0\xef\xd6\xfa 3/4 \xb6\xe0\xd0\xd0\xd3\xeb\xd4\xcb\xd0\xd0", "\xc0\xfd\xa3\xba""for i in range(3):", "\xcf\xc2\xd2\xbb\xd0\xd0\xd6\xb1\xbd\xd3\xca\xe4\xc8\xeb", "\xb6\xe0\xd0\xd0\xca\xe4\xc8\xeb\xba\xf3\xb0\xb4 F5 run \xd6\xb4\xd0\xd0", "\xb5\xa5\xd0\xd0\xb1\xed\xb4\xef\xca\xbd\xcf\xd4\xca\xbe\xbd\xe1\xb9\xfb\xd6\xb5", "F1\xa3\xba\xb7\xfb\xba\xc5\xc3\xe6\xb0\xe5"},
     {"\xb0\xef\xd6\xfa 4/4 \xb9\xd8\xd3\xda", "MicroPython 1.29 \xb6\xc0\xc1\xa2\xd3\xa6\xd3\xc3", "\xcf\xd4\xca\xbe\xbf\xed\xb6\xc8 31 \xd7\xd6\xb7\xfb x 6 \xd0\xd0", "\xca\xe4\xb3\xf6\xb1\xa3\xc1\xf4\xd7\xee\xbd\xfc 96 \xd0\xd0", "\xbb\xe1\xbb\xb0\xb1\xe4\xc1\xbf\xd4\xda\xcd\xcb\xb3\xf6\xba\xf3\xb1\xa3\xc1\xf4", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7\xa3\xba""F6 \xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5"},
 };
 static const char *fileItems[6] = {"\xb4\xf2\xbf\xaa\xb2\xa2\xd4\xcb\xd0\xd0", "\xb1\xa3\xb4\xe6\xbb\xe1\xbb\xb0", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
-static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "\xd4\xcb\xd0\xd0", "\xb0\xef\xd6\xfa", "\xce\xc4\xbc\xfe"};
+static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "\xd4\xcb\xd0\xd0", "run", "\xce\xc4\xbc\xfe"};
 static const char *barLabelsSymb[6] = {"\xd1\xa1\xd4\xf1", "\xc8\xa1\xcf\xfb", "\xc9\xcf\xb7\xad", "\xcf\xc2\xb7\xad", "", ""};
 
 static void feedStr(const char *str) {
     while (*str) {
-        mpy_repl_feed_char((unsigned char)*str);
-        lineLen++;
+        pendInsert(*str);
         str++;
     }
-    inPs2Tail = 0;
 }
 
 // ---- 绘制 ----
@@ -654,8 +722,8 @@ static void pyTask(void *_) {
                             }
                         }
                         else if (fileSel == 1) { saveSession(); uiMode = UI_REPL; }                                                                                       // 保存会话
-                        else if (fileSel == 2) { for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0; termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; uiMode = UI_REPL; } // 清屏
-                        else if (fileSel == 3) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); contMode = 0; uiMode = UI_REPL; }                            // 复位解释器
+                        else if (fileSel == 2) { termClearAll(); uiMode = UI_REPL; } // 清屏
+                        else if (fileSel == 3) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); termClearAll(); uiMode = UI_REPL; } // 复位解释器
                         else if (fileSel == 4) { uiMode = UI_HELP; helpPage = 3; }                                                                                        // 关于 → 帮助
                         else { pyRunning = 0; }                                                                                                                           // 退出
                     }
@@ -690,13 +758,12 @@ static void pyTask(void *_) {
                         termNewline();
                     }
                     termDirty = 1;
-                } else if (key == KEY_F5) { uiMode = UI_HELP; helpPage = 0; termDirty = 1;
+                } else if (key == KEY_F5) { runCell(); // F5 = run：执行本次输入的代码
                 } else if (key == KEY_F6) { uiMode = UI_FILE; fileSel = 0; termDirty = 1;
                 } else if (key == KEY_F2) { // 清屏
-                    for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0;
-                    termLines = 0; tCol = 0; termScroll = 0; lineLen = 0; termDirty = 1;
-                } else if (key == KEY_F3) { // 取消输入
-                    mpy_repl_feed_char(0x03); contMode = 0; lineLen = 0;
+                    termClearAll();
+                } else if (key == KEY_F3) { // 取消输入（清空单元格）
+                    termClearAll();
                 } else if (shift && key == KEY_ON) { // Shift+ON 退出
                     pyRunning = 0;
                 } else if (shift && key == KEY_ALPHA) { // Shift+ALPHA：锁定小写（再按解除）
@@ -705,12 +772,7 @@ static void pyTask(void *_) {
                     else { alphaLock = 1; alpha = 2; ll_disp_set_indicator(INDICATE_a__z, -1); }
                 } else if (key == KEY_ON) {
                     // 单独 ON：清屏（终端清屏，不退出）
-                    for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0;
-                    termLines = 0;
-                    tCol = 0;
-                    termScroll = 0;
-                    lineLen = 0;
-                    termDirty = 1;
+                    termClearAll();
                 } else if (key == KEY_ALPHA) {
                     if (alphaLock) { alphaLock = 0; alpha = 0; ll_disp_set_indicator(0, -1); }
                     else {
@@ -718,24 +780,11 @@ static void pyTask(void *_) {
                         ll_disp_set_indicator(alpha == 1 ? INDICATE_A__Z : (alpha == 2 ? INDICATE_a__z : 0), -1);
                     }
                 } else if (key == KEY_ENTER) {
-                    if (lineLen == 0 && contMode) {
-                        // 空行结束块：MP auto-indent 已把空格写进缓冲 → 先退格清掉，再回车（缓冲末尾成为 '\n' 才会执行）
-                        for (int i = 0; i < ps2Spaces; i++) mpy_repl_feed_char(0x08);
-                        ps2Spaces = 0;
-                        mpy_repl_feed_char('\r');
-                    } else {
-                        mpy_repl_feed_char('\r');
-                    }
-                    lineLen = 0;
-                } else if (shift && key == KEY_BACKSPACE) { // Shift+退格 = Ctrl-C：取消当前输入（续行卡住的逃生口）
-                    mpy_repl_feed_char(0x03);
-                    contMode = 0;
-                    lineLen = 0;
+                    pendInsert('\n'); // ENT 只换行（执行请按 F5 run）
+                } else if (shift && key == KEY_BACKSPACE) { // Shift+退格 = 清空当前输入
+                    termClearAll();
                 } else if (key == KEY_BACKSPACE) {
-                    if (lineLen > 0) { // 行首忽略：MP readline 在空行退格会重打提示符
-                        mpy_repl_feed_char(0x08);
-                        lineLen--;
-                    }
+                    pendBackspace();
                 } else if (shift && key == KEY_UP) { // Shift+UP = PageUp（整页回看）
                     termScroll += TERM_ROWS;
                     if (termScroll > termLines - TERM_ROWS) termScroll = termLines - TERM_ROWS;
@@ -745,16 +794,10 @@ static void pyTask(void *_) {
                     termScroll -= TERM_ROWS;
                     if (termScroll < 0) termScroll = 0;
                     termDirty = 1;
-                } else if (key == KEY_LEFT) { // 光标左移（REPL 行内编辑）
-                    if (lineLen > 0) {
-                        mpy_repl_feed_char(0x1B);
-                        mpy_repl_feed_char('[');
-                        mpy_repl_feed_char('D');
-                    }
+                } else if (key == KEY_LEFT) { // 光标左移（本行内编辑）
+                    pendLeft();
                 } else if (key == KEY_RIGHT) { // 光标右移
-                    mpy_repl_feed_char(0x1B);
-                    mpy_repl_feed_char('[');
-                    mpy_repl_feed_char('C');
+                    pendRight();
                 } else if (key == KEY_UP) {
                     if (termLines > TERM_ROWS) termScroll++;
                     if (termScroll > termLines - TERM_ROWS) termScroll = termLines - TERM_ROWS;
@@ -765,9 +808,7 @@ static void pyTask(void *_) {
                 } else {
                     int ch = keyToChar(key, shift, alpha);
                     if (ch) {
-                        mpy_repl_feed_char(ch);
-                        lineLen++;
-                        inPs2Tail = 0;
+                        pendInsert((char)ch);
                         if (alpha && !alphaLock) { // 一次性 alpha
                             alpha = 0;
                             ll_disp_set_indicator(0, -1);
