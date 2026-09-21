@@ -65,6 +65,25 @@ On-chip RAM is limited (malloc heap ~160KB). Enabling **Settings -> MEM SWAP** m
 - Cost: swap uses NAND page swapping, so heavy paging causes **wear**; light everyday use may keep it off
 - Usage: the Settings page shows `used/total` (about 3.16MB when enabled)
 
+### Flash storage layout (128MB NAND)
+
+| Area | Location | Size | Notes |
+|------|----------|------|-------|
+| Stock firmware/boot | blocks 0-21 | 2.75 MB | Reserved (stock system/recovery) |
+| OSLoader | block 22 | 128 KB | Bootloader |
+| Config/reserved | blocks 23-30 | ~1 MB | System configuration |
+| ExistOS firmware partition | blocks 31-159 | 16.5 MB | `ExistOS.sys` is ~5.6MB, plenty of headroom |
+| FTL volume | blocks 160-1023 | 108 MB | dhara flash translation layer |
+| - FTL front | sectors 0-4095 | 8 MB | **MEM SWAP 3MB** + unused headroom |
+| - User data (USB drive) | sectors 4096+ | ~80 MB | Visible over USB |
+| - dhara reserve/bad blocks | | ~20 MB | GC/checkpoints/bad-block management (do not touch) |
+
+### Why MEM SWAP is fixed at 3MB
+
+The OSLoader has 512KB of RAM (34KB heap), and **every 1MB of virtual address space costs 4KB of L2 page tables**. Growing the swap from 3MB to 6MB adds 12KB of page tables, shrinking the heap from 34KB to 22KB, which makes the OSLoader run out of memory at boot (`!!!!OOM!!!` + reset loop) and shows a **white screen** (measured 2026-09-21, reverted).
+
+So the swap stays at 3MB (heap limit ~3.16MB); the OSLoader RAM budget (512KB / 34KB heap) is a hard constraint.
+
 ## Only Installing
 
 ### For Windows 10 / 11: ExistOS Updater
