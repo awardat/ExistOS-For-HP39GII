@@ -61,6 +61,8 @@ static int pendCur = 0; // 编辑光标（绝对偏移，仅在本行内移动�
 static int termCur();
 static void termPutc(char c);
 static void drawBar(void);
+static void drawFileRow(int i);
+static void drawHelpPage(void);
 static void termNewline();
 static void termPuts(const char *s);
 
@@ -144,9 +146,9 @@ static void pendRight(void) {
     }
 }
 
-static void termClearAll(void) { // 清屏 + 清空单元格
+static void termClearAll(void) { // 清屏 + 清空单元格（保留 1 行作为当前输入行，保证可见）
     for (int i = 0; i < TERM_LINES; i++) term[i][0] = 0;
-    termLines = 0;
+    termLines = 1;
     tCol = 0;
     termScroll = 0;
     pendClear();
@@ -674,6 +676,21 @@ static void drawBar(void) {
     uidisp->flushRect(0, 110, LCD_PIX_W - 1, LCD_PIX_H - 1);
 }
 
+// 文件菜单行 / 帮助页局部重绘（避免方向键整屏重绘导致 console 闪现）
+static void drawFileRow(int i) {
+    int y = 22 + i * 14;
+    uidisp->draw_box(2, y - 2, LCD_PIX_W - 3, y + 14, -1, 255);
+    uidisp->draw_printf(6, y, 16, (i == fileSel) ? 255 : 0, (i == fileSel) ? 0 : 255, "%s", fileItems[i]);
+    uidisp->flushRect(2, y - 2, LCD_PIX_W - 3, y + 14);
+}
+
+static void drawHelpPage(void) {
+    uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
+    for (int i = 0; i < 6; i++)
+        if (helpText[helpPage][i][0]) uidisp->draw_printf(2, 15 + i * 16, 16, 0, 255, "%s", helpText[helpPage][i]);
+    uidisp->flushRect(0, 13, LCD_PIX_W - 1, 109);
+}
+
 // ---- 符号面板局部刷新（避免方向键全屏重绘导致 console 闪现）----
 static void drawSymCell(int i) {
     int col = i % 5, row = i / 5;
@@ -872,11 +889,13 @@ static void pyTask(void *_) {
                         drawSymRowBand(symSel / 5);
                     }
                 } else if (uiMode == UI_HELP) {
-                    if (key == KEY_F5 || key == KEY_ON || key == KEY_ENTER) uiMode = UI_REPL;
+                    int oldPage = helpPage;
+                    if (key == KEY_F5 || key == KEY_ON || key == KEY_ENTER) { uiMode = UI_REPL; termDirty = 1; }
                     else if (key == KEY_LEFT) helpPage = (helpPage + 4) % 5;
                     else if (key == KEY_RIGHT) helpPage = (helpPage + 1) % 5;
-                    termDirty = 1;
+                    if (uiMode == UI_HELP && helpPage != oldPage) drawHelpPage();
                 } else if (uiMode == UI_FILE) {
+                    int oldSel = fileSel;
                     if (key == KEY_F6 || key == KEY_ON) uiMode = UI_REPL;
                     else if (key == KEY_UP) { if (fileSel > 0) fileSel--; }
                     else if (key == KEY_DOWN) { if (fileSel < 5) fileSel++; }
@@ -895,11 +914,15 @@ static void pyTask(void *_) {
                         }
                         else if (fileSel == 1) { saveSession(); uiMode = UI_REPL; }                                                                                       // 保存会话
                         else if (fileSel == 2) { termClearAll(); uiMode = UI_REPL; } // 清屏
-                        else if (fileSel == 3) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); termClearAll(); uiMode = UI_REPL; } // 复位解释器
+                        else if (fileSel == 3) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); termClearAll(); termPuts(">>> "); uiMode = UI_REPL; } // 复位解释器
                         else if (fileSel == 4) { uiMode = UI_HELP; helpPage = 3; }                                                                                        // 关于 → 帮助
                         else { pyRunning = 0; }                                                                                                                           // 退出
+                        termDirty = 1; // 菜单动作（切模式/输出）→ 整屏重绘一次
+                    } else if (fileSel != oldSel) {
+                        drawFileRow(oldSel);
+                        drawFileRow(fileSel);
                     }
-                    termDirty = 1;
+                    if (uiMode != UI_FILE) termDirty = 1;
                 } else if (uiMode == UI_RUN) {
                     if (key == KEY_F4 || key == KEY_ON) uiMode = UI_REPL;
                     else if (key == KEY_UP) {
