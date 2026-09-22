@@ -679,7 +679,8 @@ static void drawBar(void) {
 // 文件菜单行 / 帮助页局部重绘（避免方向键整屏重绘导致 console 闪现）
 static void drawFileRow(int i) {
     int y = 22 + i * 14;
-    uidisp->draw_box(2, y - 2, LCD_PIX_W - 3, y + 14, -1, 255);
+    if (i == fileSel) uidisp->draw_box(2, y - 2, LCD_PIX_W - 3, y + 14, -1, 0); // 选择条（黑底）
+    else uidisp->draw_box(2, y - 2, LCD_PIX_W - 3, y + 14, -1, 255);            // 普通行清底
     uidisp->draw_printf(6, y, 16, (i == fileSel) ? 255 : 0, (i == fileSel) ? 0 : 255, "%s", fileItems[i]);
     uidisp->flushRect(2, y - 2, LCD_PIX_W - 3, y + 14);
 }
@@ -712,6 +713,22 @@ static void drawSymFull(void) { // 打开/翻页：只重绘面板区域 + 底�
     for (int i = 0; i < 10; i++) drawSymCell(i);
     uidisp->flushRect(0, 13, LCD_PIX_W - 1, 109);
     drawBar(); // 面板底栏（选择/取消/上翻/下翻）
+}
+
+// 启动/复位后打印：版本信息 → heap 行 → >>>（在版本信息与 >>> 之间插入 heap 行）
+static void printStartupInfo(void) {
+    extern uint32_t OnChipMemorySize;
+    mpy_repl_init(); // 打印版本信息，并在当前行留下 ">>> "
+    termClearLineFrom(termCur(), 0);
+    tCol = 0;
+    {
+        char line[48];
+        int swap = ((uintptr_t)pyHeap >= (uintptr_t)(RAM_BASE + OnChipMemorySize));
+        snprintf(line, sizeof(line), "heap %uKB %s", (unsigned)(pyHeapSize / 1024), swap ? "swap" : "onchip");
+        termPuts(line);
+    }
+    termNewline();
+    termPuts(">>> ");
 }
 
 // ---- 主任务 ----
@@ -840,18 +857,7 @@ static void pyTask(void *_) {
     }
     if (!pyInited) {
         mpy_init(pyHeap, pyHeapSize);
-        mpy_repl_init(); // 打印版本信息，并在当前行留下 ">>> "
-        // 在版本信息与 >>> 之间插入一行 heap 信息（清掉 MP 的 ">>> "，打印 heap 行，再补 >>>）
-        termClearLineFrom(termCur(), 0);
-        tCol = 0;
-        {
-            char line[48];
-            int swap = ((uintptr_t)pyHeap >= (uintptr_t)(RAM_BASE + OnChipMemorySize));
-            snprintf(line, sizeof(line), "heap %uKB %s", (unsigned)(pyHeapSize / 1024), swap ? "swap" : "onchip");
-            termPuts(line);
-        }
-        termNewline();
-        termPuts(">>> ");
+        printStartupInfo();
         pyInited = 1;
     }
     termDirty = 1;
@@ -914,7 +920,7 @@ static void pyTask(void *_) {
                         }
                         else if (fileSel == 1) { saveSession(); uiMode = UI_REPL; }                                                                                       // 保存会话
                         else if (fileSel == 2) { termClearAll(); uiMode = UI_REPL; } // 清屏
-                        else if (fileSel == 3) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); mpy_repl_init(); termClearAll(); termPuts(">>> "); uiMode = UI_REPL; } // 复位解释器
+                        else if (fileSel == 3) { mpy_deinit(); mpy_init(pyHeap, pyHeapSize); termClearAll(); printStartupInfo(); uiMode = UI_REPL; } // 复位解释器（清屏后重新打印启动信息）
                         else if (fileSel == 4) { uiMode = UI_HELP; helpPage = 3; }                                                                                        // 关于 → 帮助
                         else { pyRunning = 0; }                                                                                                                           // 退出
                         termDirty = 1; // 菜单动作（切模式/输出）→ 整屏重绘一次
