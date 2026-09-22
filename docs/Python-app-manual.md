@@ -87,7 +87,7 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 | F1 | **符号面板**（4 页，见下） |
 | F2 | 清屏 |
 | F3 | 取消当前输入（同 Shift+退格） |
-| F4 | **运行脚本**（列出 `/xcas/*.py`） |
+| F4 | **运行脚本**（列出 `/python/*.py`） |
 | F5 | **run：执行本次输入**（单行表达式会显示结果值） |
 | F6 | **文件菜单**（见下） |
 
@@ -123,8 +123,8 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 
 | 项 | 功能 |
 |----|------|
-| 打开并运行 | 列出 `/xcas/*.py`，ENT 运行 |
-| 保存会话 | 把终端最近 96 行写入 `/xcas/session.txt` |
+| 打开并运行 | 列出 `/python/*.py`，ENT 运行 |
+| 保存会话 | 把终端最近 96 行写入 `/python/session.txt` |
 | 清屏 | 同 F2 |
 | 复位解释器 | 清空所有变量、重开会话（相当于重启解释器） |
 | 关于 | 打开帮助的"关于"页 |
@@ -146,7 +146,7 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 | 生成器 | `yield`、生成器表达式 |
 | 异常 | `try/except/else/finally`、`raise`、自定义异常类 |
 | 上下文管理 | `with`（`__enter__`/`__exit__`） |
-| 模块 | `import`（内置模块 + `/xcas/` 下的本地 `.py`） |
+| 模块 | `import`（内置模块 + `/python/` 下的本地 `.py`） |
 
 ### 6.2 内置函数与类型（常用）
 
@@ -174,8 +174,8 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 
 ### 6.4 文件与导入
 
-- `open(path, mode)`：读写 `/xcas/` 下文件（相对路径按 `/xcas/` 解析）；支持 `read/readline/readlines/write/seek/tell/flush/close` 与 `with`
-- `import 模块名`：查找 `/xcas/模块名.py`（子目录按 `/xcas/子目录/模块名.py` 解析）
+- `open(path, mode)`：读写 `/python/` 下文件（相对路径按 `/python/` 解析）；支持 `read/readline/readlines/write/seek/tell/flush/close` 与 `with`
+- `import 模块名`：查找 `/python/模块名.py`（子目录按 `/python/子目录/模块名.py` 解析）
 - 示例见 §7
 
 ### 6.5 不支持 / 有限制
@@ -209,15 +209,15 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 - **Shift+退格**清空当前输入；**ON** 清屏
 
 
-- 脚本目录：**`/xcas/`**（与 KhiCAS 脚本同目录；Python app 样本用 `pyNN_` 前缀区分）
+- 脚本目录：**`/python/`**（独立于 KhiCAS 的 `/xcas/`；首次启动自动创建并迁移旧的 `/xcas/py*.py`、`session.txt`、`pyheap.cfg`）
 - 读写示例：
   ```python
-  f = open("/xcas/t.txt", "w")
+  f = open("/python/t.txt", "w")
   f.write("hello")
   f.close()
-  print(open("/xcas/t.txt").read())
+  print(open("/python/t.txt").read())
   ```
-- 运行脚本：把 `.py` 复制到 `/xcas/` → **F4** 选择运行（或 F6 → 打开并运行）
+- 运行脚本：把 `.py` 复制到 `/python/` → **F4** 选择运行（或 F6 → 打开并运行）
 - 随仓库样本（`samples/`）：
 
 | 文件 | 内容 |

@@ -4,7 +4,7 @@
 
 ## 运行方式
 
-1. 把 `.py` 文件复制到设备 `/xcas/` 目录（KhiCAS 的"根"目录，`\\fls0\` 映射于此）
+1. 把 `.py` 文件复制到设备 **`/python/`** 目录（Python app 首页第 4 个图标）
 2. **运行**：KhiCAS → 文件(Fich) 菜单 → **运行脚本** → 选择文件
 3. **编辑**：文件菜单 → **打开脚本**（编辑器内 **F5 = 保存并运行**）
 4. **查看输出**：运行结果输出到主界面 Console；需要导出时用 **文件(Fich) 菜单 → 保存日志**（Console 历史输出到串口，配串口工具捕获）
@@ -65,11 +65,11 @@ print(caseval("bench_ms"))
 | `py02_module.py` | 供 py01 测试 `import` 的小模块（放同目录） |
 | `py07_nqueens.py` | N-Queens 8x8 基准（92 解 / 2057 节点 + 计时） |
 
-**运行方式**：把文件复制到设备 `/xcas/` → Python app 内按 **F4（运行）** 选择文件，或 **F6 文件 → 打开并运行**。
+**运行方式**：把文件复制到设备 `/python/` → Python app 内按 **F4（运行）** 选择文件，或 **F6 文件 → 打开并运行**。
 
 **完整说明**：[docs/Python-app-manual.md](../docs/Python-app-manual.md)（按键表/菜单/语法差异/性能基准/FAQ）。
 
-与 KhiCAS 样本的差异：MicroPython 无 giac 兼容层限制（`i`/`sign` 等可自由使用）；支持 `open()` 文件读写与 `import` 本地模块（均按 `/xcas/` 解析）。
+与 KhiCAS 样本的差异：MicroPython 无 giac 兼容层限制（`i`/`sign` 等可自由使用）；支持 `open()` 文件读写与 `import` 本地模块（均按 `/python/` 解析）。
 
 ## 备注
 

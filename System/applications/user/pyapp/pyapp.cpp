@@ -284,8 +284,8 @@ extern "C" uint32_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
     return len;
 }
 // ---- FatFs 钩子（MicroPython open()/import 后端；M3）----
-static bool fsPath(const char *in, char *out, int n) { // 相对路径按 /xcas/ 解析；超长返回 false
-    int r = (in[0] == '/') ? snprintf(out, n, "%s", in) : snprintf(out, n, "/xcas/%s", in);
+static bool fsPath(const char *in, char *out, int n) { // 相对路径按 /python/ 解析；超长返回 false
+    int r = (in[0] == '/') ? snprintf(out, n, "%s", in) : snprintf(out, n, "/python/%s", in);
     return (r >= 0 && r < n);
 }
 
@@ -350,7 +350,7 @@ extern "C" long mpy_fs_fseek(void *h, long off, int whence) {
 }
 extern "C" long mpy_fs_ftell(void *h) { return (long)f_tell((FIL *)h); }
 
-// ---- 脚本列表与运行（/xcas/*.py）----
+// ---- 脚本列表与运行（/python/*.py）----
 #define PY_MAX_FILES 64
 static char pyFiles[PY_MAX_FILES][28];
 static int pyFileCount = 0, runSel = 0, runTop = 0;
@@ -359,7 +359,7 @@ static void scanPyFiles(void) {
     pyFileCount = 0;
     DIR dir;
     FILINFO fno;
-    if (f_opendir(&dir, "/xcas") != FR_OK) return;
+    if (f_opendir(&dir, "/python") != FR_OK) return;
     while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0]) {
         if (fno.fattrib & AM_DIR) continue;
         int n = strlen(fno.fname);
@@ -397,7 +397,7 @@ static void drawRunRow(int idx) {
 
 static void runPyFile(int idx) {
     char path[48];
-    snprintf(path, sizeof(path), "/xcas/%s", pyFiles[idx]);
+    snprintf(path, sizeof(path), "/python/%s", pyFiles[idx]);
     FIL f;
     if (f_open(&f, path, FA_READ) != FR_OK) {
         termPuts("\xb4\xf2\xbf\xaa\xca\xa7"); // 打开失败
@@ -424,10 +424,10 @@ static void runPyFile(int idx) {
     termNewline();
 }
 
-// 保存终端会话到 /xcas/session.txt
+// 保存终端会话到 /python/session.txt
 static void saveSession(void) {
     FIL f;
-    if (f_open(&f, "/xcas/session.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+    if (f_open(&f, "/python/session.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
         termPuts("\xb1\xa3\xb4\xe6\xca\xa7\xb0\xdc: session.txt");
         termNewline();
         return;
@@ -442,7 +442,7 @@ static void saveSession(void) {
         f_write(&f, "\r\n", 2, &bw);
     }
     f_close(&f);
-    termPuts("\xd2\xd1\xb1\xa3\xb4\xe6 /xcas/session.txt");
+    termPuts("\xd2\xd1\xb1\xa3\xb4\xe6 /python/session.txt");
     termNewline();
 }
 
@@ -662,16 +662,88 @@ static void draw() {
     uidisp->flush();
 }
 
+// ---- 符号面板局部刷新（避免方向键全屏重绘导致 console 闪现）----
+static void drawSymCell(int i) {
+    int col = i % 5, row = i / 5;
+    int x = 6 + col * 50, y = 42 + row * 24;
+    if (i == symSel) uidisp->draw_box(x - 4, y - 3, x + 42, y + 15, -1, 0);
+    uidisp->draw_printf(x, y, 12, (i == symSel) ? 255 : 0, (i == symSel) ? 0 : 255, "%s", symItems[symPage][i]);
+}
+
+static void drawSymRowBand(int row) { // 整行底带重绘并局部 flush（5 格）
+    int y0 = 42 + row * 24 - 4, y1 = 42 + row * 24 + 16;
+    uidisp->draw_box(0, y0, LCD_PIX_W - 1, y1, -1, 255);
+    for (int i = row * 5; i < row * 5 + 5; i++) drawSymCell(i);
+    uidisp->flushRect(0, y0, LCD_PIX_W - 1, y1);
+}
+
+static void drawSymFull(void) { // 打开/翻页：只重绘面板区域
+    uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
+    uidisp->draw_printf(2, 14, 16, 0, 255, "%s %d/%d", symTitles[symPage], symPage + 1, SYM_PAGES);
+    for (int i = 0; i < 10; i++) drawSymCell(i);
+    uidisp->flushRect(0, 13, LCD_PIX_W - 1, 109);
+}
+
 // ---- 主任务 ----
 static volatile int pyTaskAlive = 0; // 退出/重入互斥（P2-1）：任务存活期间禁止再次启动
 
-// B2 实验（2026-09-22）：GC 堆大小可通过 /xcas/pyheap.cfg 配置（单位 KB，16..512），
+// /python 目录准备：创建目录；首次把旧的 /xcas/py*.py、session.txt、pyheap.cfg 迁移过来（成功才删源）
+static int copyFileRaw(const char *src, const char *dst) {
+    FIL in, out;
+    if (f_open(&in, src, FA_READ) != FR_OK) return 0;
+    if (f_open(&out, dst, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) { f_close(&in); return 0; }
+    char *buf = (char *)malloc(1024);
+    if (!buf) { f_close(&in); f_close(&out); return 0; }
+    int ok = 1;
+    UINT br = 0;
+    while (1) {
+        FRESULT r = f_read(&in, buf, sizeof(buf), &br);
+        if (r != FR_OK) { ok = 0; break; }
+        if (br == 0) break;
+        UINT bw = 0;
+        if (f_write(&out, buf, br, &bw) != FR_OK || bw != br) { ok = 0; break; }
+    }
+    free(buf);
+    f_close(&in);
+    f_close(&out);
+    if (ok) f_unlink(src);
+    return ok;
+}
+
+static void ensurePyDir(void) {
+    f_mkdir("/python");
+    DIR dir;
+    FILINFO fno;
+    int have = 0;
+    if (f_opendir(&dir, "/python") == FR_OK) {
+        while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0]) {
+            if (!(fno.fattrib & AM_DIR)) { have = 1; break; }
+        }
+        f_closedir(&dir);
+    }
+    if (have) return;
+    if (f_opendir(&dir, "/xcas") != FR_OK) return;
+    while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0]) {
+        if (fno.fattrib & AM_DIR) continue;
+        int n = strlen(fno.fname);
+        int isPy = (n > 3 && fno.fname[n - 3] == '.' && (fno.fname[n - 2] | 0x20) == 'p' && (fno.fname[n - 1] | 0x20) == 'y');
+        int isCfg = (strcmp(fno.fname, "session.txt") == 0 || strcmp(fno.fname, "pyheap.cfg") == 0);
+        if (!isPy && !isCfg) continue;
+        char src[64], dst[64];
+        snprintf(src, sizeof(src), "/xcas/%.40s", fno.fname);
+        snprintf(dst, sizeof(dst), "/python/%.40s", fno.fname);
+        copyFileRaw(src, dst);
+    }
+    f_closedir(&dir);
+}
+
+// B2 实验（2026-09-22）：GC 堆大小可通过 /python/pyheap.cfg 配置（单位 KB，16..512），
 // 便于一次刷机对比不同堆大小的执行/换页行为；文件不存在则用默认自适应 96/64/32。
 extern uint32_t OnChipMemorySize;
 
 static size_t readHeapCfg(void) {
     FIL f;
-    if (f_open(&f, "/xcas/pyheap.cfg", FA_READ) != FR_OK) return 0;
+    if (f_open(&f, "/python/pyheap.cfg", FA_READ) != FR_OK) return 0;
     char buf[16] = {0};
     UINT br = 0;
     f_read(&f, buf, sizeof(buf) - 1, &br);
@@ -701,7 +773,8 @@ static void pyTask(void *_) {
         pyHeapSize = 0;
         termClearAll();
     }
-    if (!pyHeap) { // 自适应堆：优先片上，依次尝试（可被 /xcas/pyheap.cfg 覆盖）
+    ensurePyDir();
+    if (!pyHeap) { // 自适应堆：优先片上，依次尝试（可被 /python/pyheap.cfg 覆盖）
         size_t tries[4];
         int n = 0;
         if (cfg) tries[n++] = cfg;
@@ -756,6 +829,7 @@ static void pyTask(void *_) {
             } else if (key != (uint32_t)lastKey) {
                 lastKey = key;
                 if (uiMode == UI_SYMB) {
+                    int oldSel = symSel, oldPage = symPage;
                     if (key == KEY_F1 || key == KEY_ENTER) { feedStr(symItems[symPage][symSel]); uiMode = UI_REPL; } // 选择
                     else if (key == KEY_F2 || key == KEY_ON) uiMode = UI_REPL;                                        // 取消
                     else if (key == KEY_F3) { symPage = (symPage + SYM_PAGES - 1) % SYM_PAGES; symSel = 0; }                              // 上翻
@@ -764,7 +838,14 @@ static void pyTask(void *_) {
                     else if (key == KEY_DOWN) { if (symSel < 5) symSel += 5; }
                     else if (key == KEY_LEFT) { if ((symSel % 5) > 0) symSel--; }
                     else if (key == KEY_RIGHT) { if ((symSel % 5) < 4) symSel++; }
-                    termDirty = 1;
+                    if (uiMode != UI_SYMB) {
+                        termDirty = 1; // 选择/取消：回终端整屏重绘一次
+                    } else if (symPage != oldPage) {
+                        drawSymFull();
+                    } else if (symSel != oldSel) {
+                        drawSymRowBand(oldSel / 5);
+                        drawSymRowBand(symSel / 5);
+                    }
                 } else if (uiMode == UI_HELP) {
                     if (key == KEY_F5 || key == KEY_ON || key == KEY_ENTER) uiMode = UI_REPL;
                     else if (key == KEY_LEFT) helpPage = (helpPage + 4) % 5;
@@ -812,7 +893,7 @@ static void pyTask(void *_) {
                         }
                     } else if (key == KEY_ENTER) { runPyFile(runSel); uiMode = UI_REPL; termDirty = 1; }
                     else termDirty = 1;
-                } else if (key == KEY_F1) { uiMode = UI_SYMB; symSel = 0; termDirty = 1;
+                } else if (key == KEY_F1) { uiMode = UI_SYMB; symSel = 0; drawSymFull();
                 } else if (key == KEY_F4) {
                     scanPyFiles();
                     runSel = 0;

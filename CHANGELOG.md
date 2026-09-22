@@ -7,7 +7,10 @@
 ## [build 143] - 开发中
 
 ### 已完成
-- （待补充）
+- **原厂固件定向逆向**（`docs/hp-firmware-re-analysis.md`）：解包 firmware.sb（主镜像明文、引导段加密）；原厂 NAND 结构源码级答案（NCB/LDLB/DBBT 格式 + 块布局 0/4/8/12/16/19）；CP15 直方图揭示原版 cache lockdown + TTB/FCSE，解释 80 MHz 仍流畅；原版 PPL 为编译型、CAS 语法编译进固件但未开放
+- **坏块 RAM 状态缓存**（`dhara_nand_is_bad`，每块 2 bit；原厂 master BB 表思路）——真机验证通过：开机体感变快、KhiCAS 退出保存变快
+- **Python app**：符号面板改用局部刷新（方向键不再全屏重绘、消除 console 闪现）；文件根目录从 `/xcas/` 迁到 **`/python/`**（首次启动自动创建并迁移旧文件）
+- **B2 实验支持**：`/python/pyheap.cfg` 可配置 GC 堆大小（KB），每次进入应用重读并在变化时重建堆+解释器；启动显示堆大小与位置（onchip/swap）
 
 ## [build 142] - 2026-09-21 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-142))
 
