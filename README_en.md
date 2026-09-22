@@ -51,6 +51,10 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (latest only, see CHANGELOG.md)
 
+### build 144 (2026-09-22 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-144))
+- [x] **Python app input experience**: prompts (first line `>>> `, continuation lines `... `, shown immediately after ENT); `heap` info line moved between version info and `>>>`; input line visible after clear/reset; **Reset interpreter** reprints the startup info (version -> heap -> `>>>`)
+- [x] **Python app menu partial redraw**: File menu up/down and Help pages left/right redraw only the menu area (selection bar follows), no full-screen redraw, no console flash
+
 ### build 143 (2026-09-22 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-143))
 - [x] **Stock firmware reverse engineering** (research notes): unpacked firmware.sb; source-level stock NAND structures (NCB/LDLB/DBBT formats and block layout); CP15 histogram shows stock uses cache lockdown + TTB/FCSE; stock PPL is compiled, CAS grammar present but not exposed
 - [x] **Bad-block RAM cache** (stock master BB table idea) — faster boot, faster KhiCAS exit/save

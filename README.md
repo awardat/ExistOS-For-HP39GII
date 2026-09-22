@@ -50,6 +50,10 @@
 
 ## 目前工作进展（仅最新版本，历史见 CHANGELOG.md）
 
+### build 144（2026-09-22 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-144)）
+- [x] **Python app 输入体验**：输入行提示符（首行 `>>> `、续行 `... `，ENT 后立即出现）；`heap` 信息行移到版本信息之后、`>>>` 之前；清屏/复位后输入行可见；**复位解释器**重印启动信息（版本 → heap → `>>>`）
+- [x] **Python app 菜单局部重绘**：文件菜单 ↑↓ 与帮助页 ←→ 只重绘菜单区（黑底选择条跟随移动），不再整屏重绘 → console 不闪现
+
 ### build 143（2026-09-22 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-143)）
 - [x] **原厂固件定向逆向**（研究记录）：解包 firmware.sb；原厂 NAND 结构源码级答案（NCB/LDLB/DBBT 格式与块布局）；CP15 直方图揭示原版 cache lockdown + TTB/FCSE；原版 PPL 为编译型、CAS 语法编译进固件但未开放
 - [x] **坏块 RAM 状态缓存**（原厂 master BB 表思路）——开机体感变快、KhiCAS 退出保存变快

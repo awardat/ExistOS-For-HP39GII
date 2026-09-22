@@ -4,10 +4,15 @@
 
 ---
 
-## [build 144] - 开发中
+## [build 144] - 2026-09-22 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-144))
 
 ### 已完成
-- （待补充）
+- **Python app 输入体验修复**：
+  - 输入行带提示符——首行 `>>> `、ENT 之后的续行 `... `，且 ENT 后**立即出现**（原来新行空白，误以为没提示符）
+  - `heap` 信息行移到**版本信息之后、`>>>` 之前**（原先打在 `>>>` 同一行，会搞乱行状态、影响输入与 run）
+  - 清屏/复位后当前输入行**可见**（`termClearAll` 原先 `termLines=0`：输入行不在可见窗口，打字看不见、按 ENT 才出现 `...`）
+  - **复位解释器**改为清屏后重新打印启动信息（版本 → heap → `>>>`），与首次进入一致
+- **Python app 菜单局部重绘**：文件菜单 ↑↓ 只重绘菜单行并正确移动**黑底选择条**（重绘判断原先误放在按键 else-if 链内，功能动、UI 不动）；帮助页 ←→ 只重绘帮助区 → 不再整屏重绘、console 不闪现
 
 ## [build 143] - 2026-09-22 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-143))
 
