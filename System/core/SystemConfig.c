@@ -135,6 +135,10 @@ void config_load(void) {
     
 
     
+    { // 诊断（临时）：打印文件里 enable_mem_swap 附近的内容
+        char *ps = strstr(buffer, "enable_mem_swap");
+        printf("[CFG] load bytes=%u swap_str=%s\n", bytes_read, ps ? ps : "(none)");
+    }
     free(buffer);
 }
 
@@ -170,7 +174,8 @@ void config_save(void) {
     UINT bytes_written;
     res = f_write(&file, json_buffer, strlen(json_buffer), &bytes_written);
     f_close(&file);
-    printf("[CFG] save res=%d bytes=%u/%u\n", res, bytes_written, (unsigned)strlen(json_buffer));
+    printf("[CFG] save res=%d bytes=%u/%u swap=%d\n", res, bytes_written, (unsigned)strlen(json_buffer),
+           g_config.enable_mem_swap ? 1 : 0);
     
     // 如果写入失败，尝试删除可能损坏的文件
     if (res != FR_OK || bytes_written != strlen(json_buffer)) {
