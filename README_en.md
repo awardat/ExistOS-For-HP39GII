@@ -98,6 +98,16 @@ Requires:
 
 Then follow the [instructions](https://github.com/ExistOS-Team/ExistOS_Updater_v2#readme) to flash the firmware.
 
+### Migrating from the stock firmware / unbricking (no command line)
+
+The **HostLink mode** of ExistOS Updater works with **any** HP39GII, including devices still running the stock firmware or unable to boot:
+
+1. Remove the batteries (make sure the device is powered off)
+2. **Hold `ON/C`** and connect USB to the computer (enters the ROM-level USB mode)
+3. Choose HostLink mode in the Updater and flash `OSLoader.sb` and `ExistOS.sys`
+
+This is equivalent to the command-line `sbloader` + `edb` flow. If storage fails to mount on the first boot after flashing, press **`ON`+`F5`** in the OSLoader to enter the erase-data menu and clear the partitions (this deletes all user files on the device), then flash again.
+
 ### For Windows / Linux
 
 Requires:

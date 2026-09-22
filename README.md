@@ -97,6 +97,16 @@ OSLoader 的可用 RAM 为 512KB（含堆 34KB），而**每 1MB 虚拟机地址
 
 然后参考[此教程](https://github.com/ExistOS-Team/ExistOS_Updater_v2#readme)刷入固件。
 
+### 从原版系统迁移 / 救砖（无需命令行）
+
+ExistOS Updater 的 **HostLink 模式**适用于**任何** HP39GII——包括仍运行原厂系统的设备或无法开机的设备：
+
+1. 卸下电池（确保设备已断电）
+2. **按住 `ON/C` 不放**，将 USB 连接到电脑（进入 ROM 级 USB 模式）
+3. 在 Updater 中选择 HostLink 模式，刷入 `OSLoader.sb` 与 `ExistOS.sys`
+
+此方式与命令行的 `sbloader` + `edb` 流程等价。若刷入后首次启动出现存储挂载异常，可在 OSLoader 界面按 **`ON`+`F5`** 进入擦除数据菜单清空分区（会删除设备上的全部用户文件），再重新刷入。
+
 ### 通用方法
 
 您需要准备好：
