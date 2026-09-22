@@ -60,6 +60,7 @@ static int pendCur = 0; // 编辑光标（绝对偏移，仅在本行内移动�
 
 static int termCur();
 static void termPutc(char c);
+static void drawBar(void);
 static void termNewline();
 static void termPuts(const char *s);
 
@@ -575,8 +576,8 @@ static const char *helpText[5][6] = {
      "F1\xa3\xba\xb7\xfb\xba\xc5/\xba\xaf\xca\xfd\xc3\xe6\xb0\xe5\xa3\xa8""6 \xd2\xb3\xa3\xa9"},
     {"\xb0\xef\xd6\xfa 4/4 \xb9\xd8\xd3\xda", "MicroPython 1.29 \xb6\xc0\xc1\xa2\xd3\xa6\xd3\xc3", "\xcf\xd4\xca\xbe\xbf\xed\xb6\xc8 31 \xd7\xd6\xb7\xfb x 6 \xd0\xd0", "\xca\xe4\xb3\xf6\xb1\xa3\xc1\xf4\xd7\xee\xbd\xfc 96 \xd0\xd0", "\xbb\xe1\xbb\xb0\xb1\xe4\xc1\xbf\xd4\xda\xcd\xcb\xb3\xf6\xba\xf3\xb1\xa3\xc1\xf4", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7\xa3\xba""F6 \xce\xc4\xbc\xfe\xb2\xcb\xb5\xa5"},
 };
-static const char *fileItems[6] = {"\xb4\xf2\xbf\xaa\xb2\xa2\xd4\xcb\xd0\xd0", "\xb1\xa3\xb4\xe6\xbb\xe1\xbb\xb0", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
-static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "\xd4\xcb\xd0\xd0", "run", "\xce\xc4\xbc\xfe"};
+static const char *fileItems[6] = {"\xd4\xcb\xd0\xd0\xbd\xc5\xb1\xbe", "\xb1\xa3\xb4\xe6\xbb\xe1\xbb\xb0", "\xc7\xe5\xc6\xc1", "\xb8\xb4\xce\xbb\xbd\xe2\xca\xcd\xc6\xf7", "\xb9\xd8\xd3\xda", "\xcd\xcb\xb3\xf6"};
+static const char *barLabels[6] = {"\xb7\xfb\xba\xc5", "\xc7\xe5\xc6\xc1", "\xc8\xa1\xcf\xfb", "", "run", "\xce\xc4\xbc\xfe"};
 static const char *barLabelsSymb[6] = {"\xd1\xa1\xd4\xf1", "\xc8\xa1\xcf\xfb", "\xc9\xcf\xb7\xad", "\xcf\xc2\xb7\xad", "", ""};
 
 static void feedStr(const char *str) {
@@ -650,16 +651,20 @@ static void draw() {
             uidisp->draw_printf(6, y, 16, (i == fileSel) ? 255 : 0, (i == fileSel) ? 0 : 255, "%s", fileItems[i]);
         }
     }
-    // 底栏（6 段；符号面板内替换为 选择/取消/上翻/下翻）
+    drawBar();
+    uidisp->flush();
+}
+
+// 底栏（6 段；符号面板内替换为 选择/取消/上翻/下翻）
+static void drawBar(void) {
     const char **bar = (uiMode == UI_SYMB) ? barLabelsSymb : barLabels;
     uidisp->draw_box(0, 110, LCD_PIX_W - 1, LCD_PIX_H - 1, -1, 0);
     for (int i = 0; i < 6; i++) {
         if (!bar[i][0]) continue;
-        uint8_t barFg = (uiMode == i + 1) ? 0 : 255;
-        uint8_t barBg = (uiMode == i + 1) ? 255 : 0;
-        uidisp->draw_printf(i * 42 + 5, 111, 16, barFg, barBg, "%s", bar[i]);
+        int inv = (uiMode == UI_SYMB && i == 0); // 面板内高亮 F1 选择
+        uidisp->draw_printf(i * 42 + 5, 111, 16, inv ? 0 : 255, inv ? 255 : 0, "%s", bar[i]);
     }
-    uidisp->flush();
+    uidisp->flushRect(0, 110, LCD_PIX_W - 1, LCD_PIX_H - 1);
 }
 
 // ---- 符号面板局部刷新（避免方向键全屏重绘导致 console 闪现）----
@@ -677,11 +682,12 @@ static void drawSymRowBand(int row) { // 整行底带重绘并局部 flush（5 �
     uidisp->flushRect(0, y0, LCD_PIX_W - 1, y1);
 }
 
-static void drawSymFull(void) { // 打开/翻页：只重绘面板区域
+static void drawSymFull(void) { // 打开/翻页：只重绘面板区域 + 底栏
     uidisp->draw_box(0, 13, LCD_PIX_W - 1, 109, -1, 255);
     uidisp->draw_printf(2, 14, 16, 0, 255, "%s %d/%d", symTitles[symPage], symPage + 1, SYM_PAGES);
     for (int i = 0; i < 10; i++) drawSymCell(i);
     uidisp->flushRect(0, 13, LCD_PIX_W - 1, 109);
+    drawBar(); // 面板底栏（选择/取消/上翻/下翻）
 }
 
 // ---- 主任务 ----
@@ -894,17 +900,6 @@ static void pyTask(void *_) {
                     } else if (key == KEY_ENTER) { runPyFile(runSel); uiMode = UI_REPL; termDirty = 1; }
                     else termDirty = 1;
                 } else if (key == KEY_F1) { uiMode = UI_SYMB; symSel = 0; drawSymFull();
-                } else if (key == KEY_F4) {
-                    scanPyFiles();
-                    runSel = 0;
-                    runTop = 0;
-                    if (pyFileCount > 0) {
-                        uiMode = UI_RUN;
-                    } else { // 无脚本提示
-                        termPuts("\xc3\xbb\xd3\xd0\xd5\xd2\xb5\xbd .py \xbd\xc5\xb1\xbe"); // 没有找到 .py 脚本
-                        termNewline();
-                    }
-                    termDirty = 1;
                 } else if (key == KEY_F5) { runCell(); // F5 = run：执行本次输入的代码
                 } else if (key == KEY_F6) { uiMode = UI_FILE; fileSel = 0; termDirty = 1;
                 } else if (key == KEY_F2) { // 清屏
