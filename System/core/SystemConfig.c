@@ -33,15 +33,22 @@ static int find_json_value(const char* json, const char* key, char* value, int m
         value[len] = '\0';
         return 0;
     }
-    // 处理数字值
+    // 处理数字/布尔值：遇分隔符或空白（含换行/制表）结束
     else {
         char* value_end = value_start;
-        while (*value_end != '\0' && *value_end != ',' && *value_end != '}' && *value_end != ' ') value_end++;
+        while (*value_end != '\0' && *value_end != ',' && *value_end != '}' &&
+               *value_end != ' ' && *value_end != '\n' && *value_end != '\r' && *value_end != '\t') {
+            value_end++;
+        }
         
         int len = value_end - value_start;
         if (len >= max_len) len = max_len - 1;
         strncpy(value, value_start, len);
         value[len] = '\0';
+        // 兜底：去掉尾部空白
+        while (len > 0 && (value[len - 1] == ' ' || value[len - 1] == '\n' || value[len - 1] == '\r' || value[len - 1] == '\t')) {
+            value[--len] = '\0';
+        }
         return 0;
     }
 }
