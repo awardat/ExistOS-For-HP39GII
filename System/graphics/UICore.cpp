@@ -1393,6 +1393,13 @@ void UI_Task(void *) {
     if (config_get_enable_mem_swap()) {
         enableMemSwap(true);
     }
+    { // 诊断（临时）：配置持久化排查
+        FIL f;
+        int have = (f_open(&f, "/existos_config.json", FA_READ) == FR_OK);
+        if (have) f_close(&f);
+        printf("[CFG] boot file=%d enable_mem_swap=%d swap_size=%lu\n", have,
+               config_get_enable_mem_swap() ? 1 : 0, (unsigned long)ll_mem_swap_size());
+    }
 
     mainw->setFuncKeys(MAIN_WIN_FKEY_BAR);
     mainw->enableFuncKey(true);

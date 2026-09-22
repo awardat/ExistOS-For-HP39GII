@@ -170,6 +170,7 @@ void config_save(void) {
     UINT bytes_written;
     res = f_write(&file, json_buffer, strlen(json_buffer), &bytes_written);
     f_close(&file);
+    printf("[CFG] save res=%d bytes=%u/%u\n", res, bytes_written, (unsigned)strlen(json_buffer));
     
     // 如果写入失败，尝试删除可能损坏的文件
     if (res != FR_OK || bytes_written != strlen(json_buffer)) {

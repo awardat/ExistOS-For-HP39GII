@@ -688,8 +688,20 @@ static void pyTask(void *_) {
     uidisp->restoreBuffer();
     pyRunning = 1;
 
+    size_t cfg = readHeapCfg();
+    if (cfg && cfg != pyHeapSize) { // 配置变化：重建堆与解释器（否则堆在应用会话间复用，配置不生效）
+        if (pyInited) {
+            mpy_deinit();
+            pyInited = 0;
+        }
+        if (pyHeap) {
+            free(pyHeap);
+            pyHeap = NULL;
+        }
+        pyHeapSize = 0;
+        termClearAll();
+    }
     if (!pyHeap) { // 自适应堆：优先片上，依次尝试（可被 /xcas/pyheap.cfg 覆盖）
-        size_t cfg = readHeapCfg();
         size_t tries[4];
         int n = 0;
         if (cfg) tries[n++] = cfg;
