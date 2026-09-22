@@ -70,18 +70,21 @@ static int pendLineStart(void) { // 当前编辑行的起始偏移
     return i;
 }
 
-static void pendRenderLine(void) { // 重绘当前编辑行（长行显示光标附近的窗口）
+static void pendRenderLine(void) { // 重绘当前编辑行：首行提示 >>>，续行 ...，长行显示光标附近的窗口
     int ls = pendLineStart();
+    const char *pfx = (ls == 0) ? ">>> " : "... ";
+    const int pn = 4;
     int start = ls;
-    if (pendCur - start > TERM_COLS - 1) start = pendCur - (TERM_COLS - 1);
+    if (pendCur - start > TERM_COLS - 1 - pn) start = pendCur - (TERM_COLS - 1 - pn);
     char *l = term[termCur()];
     memset(l, 0, TERM_COLS + 1);
-    tCol = 0;
+    for (int i = 0; i < pn; i++) l[i] = pfx[i];
+    tCol = pn;
     for (int i = start; i < pendLen && pend[i] != '\n' && tCol < TERM_COLS; i++) {
         l[tCol++] = pend[i];
         l[tCol] = 0;
     }
-    tCol = pendCur - start;
+    tCol = pn + (pendCur - start);
     if (tCol > TERM_COLS) tCol = TERM_COLS;
     rowDirty = TERM_ROWS - 1;
 }
@@ -98,8 +101,12 @@ static void pendInsert(char c) {
     pend[pendCur++] = c;
     pendLen++;
     pend[pendLen] = 0;
-    if (c == '\n') termPutc('\n'); // 换行：回显并开新行
-    else pendRenderLine();           // 行内：重绘本行
+    if (c == '\n') {
+        termPutc('\n');   // 换行：回显并开新行
+        pendRenderLine();  // 新行立即带提示符（...）
+    } else {
+        pendRenderLine();  // 行内：重绘本行
+    }
 }
 
 static void pendNewline(void) { // ENT：换行并按 Python 缩进规则自动缩进
@@ -816,7 +823,18 @@ static void pyTask(void *_) {
     }
     if (!pyInited) {
         mpy_init(pyHeap, pyHeapSize);
-        mpy_repl_init();
+        mpy_repl_init(); // 打印版本信息，并在当前行留下 ">>> "
+        // 在版本信息与 >>> 之间插入一行 heap 信息（清掉 MP 的 ">>> "，打印 heap 行，再补 >>>）
+        termClearLineFrom(termCur(), 0);
+        tCol = 0;
+        {
+            char line[48];
+            int swap = ((uintptr_t)pyHeap >= (uintptr_t)(RAM_BASE + OnChipMemorySize));
+            snprintf(line, sizeof(line), "heap %uKB %s", (unsigned)(pyHeapSize / 1024), swap ? "swap" : "onchip");
+            termPuts(line);
+        }
+        termNewline();
+        termPuts(">>> ");
         pyInited = 1;
     }
     termDirty = 1;
