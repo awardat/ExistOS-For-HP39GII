@@ -924,11 +924,13 @@ static void pyTask(void *_) {
                         else if (fileSel == 4) { uiMode = UI_HELP; helpPage = 3; }                                                                                        // 关于 → 帮助
                         else { pyRunning = 0; }                                                                                                                           // 退出
                         termDirty = 1; // 菜单动作（切模式/输出）→ 整屏重绘一次
-                    } else if (fileSel != oldSel) {
+                    }
+                    // 注意：重绘判断要在按键 else-if 链之外（UP/DOWN 已匹配上面的分支）
+                    if (uiMode != UI_FILE) termDirty = 1;
+                    else if (fileSel != oldSel) {
                         drawFileRow(oldSel);
                         drawFileRow(fileSel);
                     }
-                    if (uiMode != UI_FILE) termDirty = 1;
                 } else if (uiMode == UI_RUN) {
                     if (key == KEY_F4 || key == KEY_ON) uiMode = UI_REPL;
                     else if (key == KEY_UP) {
