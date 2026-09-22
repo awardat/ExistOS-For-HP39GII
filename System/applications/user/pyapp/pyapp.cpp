@@ -768,11 +768,13 @@ static size_t readHeapCfg(void) {
     }
     char buf[16] = {0};
     UINT br = 0;
-    f_read(&f, buf, sizeof(buf) - 1, &br);
+    FRESULT rr = f_read(&f, buf, sizeof(buf) - 1, &br);
+    FSIZE_t fsz = f_size(&f);
     f_close(&f);
     buf[br] = 0;
     int kb = atoi(buf);
-    printf("[PY] heapcfg br=%u str='%s' kb=%d\n", br, buf, kb);
+    printf("[PY] heapcfg size=%lu rr=%d br=%u raw=%02X%02X%02X%02X str='%s' kb=%d\n",
+           (unsigned long)fsz, rr, br, (uint8_t)buf[0], (uint8_t)buf[1], (uint8_t)buf[2], (uint8_t)buf[3], buf, kb);
     if (kb < 16) return 0;
     if (kb > 512) kb = 512;
     return (size_t)kb * 1024;
