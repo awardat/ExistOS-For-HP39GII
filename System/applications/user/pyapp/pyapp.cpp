@@ -716,6 +716,14 @@ static int copyFileRaw(const char *src, const char *dst) {
     return ok;
 }
 
+static void migrateIf(const char *from, const char *to) { // 目标不存在且源存在时才迁移
+    FILINFO fno;
+    if (f_stat(to, &fno) == FR_OK) return;
+    if (f_stat(from, &fno) != FR_OK) return;
+    printf("[PY] migrate %.40s -> %.40s\n", from, to);
+    copyFileRaw(from, to);
+}
+
 static void ensurePyDir(void) {
     f_mkdir("/python");
     DIR dir;
@@ -727,14 +735,16 @@ static void ensurePyDir(void) {
         }
         f_closedir(&dir);
     }
-    if (have) return;
+    // 配置文件逐项迁移（不受目录是否已有文件影响）
+    migrateIf("/xcas/pyheap.cfg", "/python/pyheap.cfg");
+    migrateIf("/xcas/session.txt", "/python/session.txt");
+    if (have) return; // 目录已有文件则不再整批迁移 .py
     if (f_opendir(&dir, "/xcas") != FR_OK) return;
     while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0]) {
         if (fno.fattrib & AM_DIR) continue;
         int n = strlen(fno.fname);
         int isPy = (n > 3 && fno.fname[n - 3] == '.' && (fno.fname[n - 2] | 0x20) == 'p' && (fno.fname[n - 1] | 0x20) == 'y');
-        int isCfg = (strcmp(fno.fname, "session.txt") == 0 || strcmp(fno.fname, "pyheap.cfg") == 0);
-        if (!isPy && !isCfg) continue;
+        if (!isPy) continue;
         char src[64], dst[64];
         snprintf(src, sizeof(src), "/xcas/%.40s", fno.fname);
         snprintf(dst, sizeof(dst), "/python/%.40s", fno.fname);
@@ -749,13 +759,20 @@ extern uint32_t OnChipMemorySize;
 
 static size_t readHeapCfg(void) {
     FIL f;
-    if (f_open(&f, "/python/pyheap.cfg", FA_READ) != FR_OK) return 0;
+    FRESULT r = f_open(&f, "/python/pyheap.cfg", FA_READ);
+    printf("[PY] heapcfg /python res=%d\n", r);
+    if (r != FR_OK) {
+        FILINFO fno;
+        printf("[PY] heapcfg /xcas exists=%d\n", (f_stat("/xcas/pyheap.cfg", &fno) == FR_OK) ? 1 : 0);
+        return 0;
+    }
     char buf[16] = {0};
     UINT br = 0;
     f_read(&f, buf, sizeof(buf) - 1, &br);
     f_close(&f);
     buf[br] = 0;
     int kb = atoi(buf);
+    printf("[PY] heapcfg br=%u str='%s' kb=%d\n", br, buf, kb);
     if (kb < 16) return 0;
     if (kb > 512) kb = 512;
     return (size_t)kb * 1024;
@@ -793,6 +810,7 @@ static void pyTask(void *_) {
             pyHeap = malloc(tries[i]);
             if (pyHeap) { pyHeapSize = tries[i]; break; }
         }
+        printf("[PY] heap alloc size=%u ok=%d\n", (unsigned)(pyHeapSize / 1024), pyHeap ? 1 : 0);
     }
     if (!pyHeap) {
         uidisp->draw_box(0, 0, 255, 127, 255, 255);
