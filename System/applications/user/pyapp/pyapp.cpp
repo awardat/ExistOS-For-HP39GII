@@ -799,12 +799,12 @@ static void pyTask(void *_) {
         termClearAll();
     }
     ensurePyDir();
-    if (!pyHeap) { // 自适应堆：优先片上，依次尝试（可被 /python/pyheap.cfg 覆盖）
-        size_t tries[4];
+    if (!pyHeap) { // 自适应堆：从大到小尝试（开 MEM SWAP 时拿到大堆；未使用部分不占内存、不换页）
+        size_t tries[8];
         int n = 0;
         if (cfg) tries[n++] = cfg;
-        const size_t def[] = {96 * 1024, 64 * 1024, 32 * 1024};
-        for (int i = 0; i < 3 && n < 4; i++) {
+        const size_t def[] = {512 * 1024, 256 * 1024, 128 * 1024, 96 * 1024, 64 * 1024, 32 * 1024};
+        for (unsigned i = 0; i < sizeof(def) / sizeof(def[0]) && n < 7; i++) {
             if (def[i] == cfg) continue;
             tries[n++] = def[i];
         }
