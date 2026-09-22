@@ -665,14 +665,40 @@ static void draw() {
 // ---- 主任务 ----
 static volatile int pyTaskAlive = 0; // 退出/重入互斥（P2-1）：任务存活期间禁止再次启动
 
+// B2 实验（2026-09-22）：GC 堆大小可通过 /xcas/pyheap.cfg 配置（单位 KB，16..512），
+// 便于一次刷机对比不同堆大小的执行/换页行为；文件不存在则用默认自适应 96/64/32。
+extern uint32_t OnChipMemorySize;
+
+static size_t readHeapCfg(void) {
+    FIL f;
+    if (f_open(&f, "/xcas/pyheap.cfg", FA_READ) != FR_OK) return 0;
+    char buf[16] = {0};
+    UINT br = 0;
+    f_read(&f, buf, sizeof(buf) - 1, &br);
+    f_close(&f);
+    buf[br] = 0;
+    int kb = atoi(buf);
+    if (kb < 16) return 0;
+    if (kb > 512) kb = 512;
+    return (size_t)kb * 1024;
+}
+
 static void pyTask(void *_) {
     SystemUISuspend();
     uidisp->restoreBuffer();
     pyRunning = 1;
 
-    if (!pyHeap) { // 自适应堆：优先片上，依次尝试
-        static const size_t tries[] = {96 * 1024, 64 * 1024, 32 * 1024};
-        for (unsigned i = 0; i < sizeof(tries) / sizeof(tries[0]); i++) {
+    if (!pyHeap) { // 自适应堆：优先片上，依次尝试（可被 /xcas/pyheap.cfg 覆盖）
+        size_t cfg = readHeapCfg();
+        size_t tries[4];
+        int n = 0;
+        if (cfg) tries[n++] = cfg;
+        const size_t def[] = {96 * 1024, 64 * 1024, 32 * 1024};
+        for (int i = 0; i < 3 && n < 4; i++) {
+            if (def[i] == cfg) continue;
+            tries[n++] = def[i];
+        }
+        for (int i = 0; i < n; i++) {
             pyHeap = malloc(tries[i]);
             if (pyHeap) { pyHeapSize = tries[i]; break; }
         }
@@ -692,6 +718,14 @@ static void pyTask(void *_) {
         mpy_init(pyHeap, pyHeapSize);
         mpy_repl_init();
         pyInited = 1;
+    }
+    { // B2 实验：显示堆大小与位置（onchip/swap），便于对比换页影响
+        char line[48];
+        int swap = ((uintptr_t)pyHeap >= (uintptr_t)(RAM_BASE + OnChipMemorySize));
+        snprintf(line, sizeof(line), "heap %uKB @%08X %s", (unsigned)(pyHeapSize / 1024),
+                 (unsigned)(uintptr_t)pyHeap, swap ? "swap" : "onchip");
+        termPuts(line);
+        termNewline();
     }
     termDirty = 1;
     draw();
