@@ -4,7 +4,7 @@
 
 ---
 
-## [build 143] - 2026-09-22
+## [build 143] - 2026-09-22 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-143))
 
 ### 已完成
 - **原厂固件定向逆向**（`docs/hp-firmware-re-analysis.md`）：解包 firmware.sb（主镜像明文、引导段加密）；原厂 NAND 结构源码级答案（NCB/LDLB/DBBT 格式 + 块布局 0/4/8/12/16/19）；CP15 直方图揭示原版 cache lockdown + TTB/FCSE，解释 80 MHz 仍流畅；原版 PPL 为编译型、CAS 语法编译进固件但未开放

@@ -51,11 +51,11 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (latest only, see CHANGELOG.md)
 
-### build 142 (2026-09-21 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-142))
-- [x] **Python app cell execution model**: ENT inserts a newline (auto-indent), **F5 = run** executes the input; single-line expressions echo their value, indented blocks run as a unit; math keys (sin/cos/tan/log/x²/xʸ plus Shift asin/acos/atan/exp/sqrt/pow/abs), 6-page symbol panel
-- [x] **Removed media decoder code** (lvgl ffmpeg/gif/png/sjpg/bmp/rlottie)
-- [x] **MEM SWAP 6MB attempt reverted** (OSLoader RAM 512KB / 34KB heap hard constraint) + README flash layout section
-- [x] **DFU recovery fix** (writes both OSLoader and System, one-step recovery)
+### build 143 (2026-09-22 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-143))
+- [x] **Stock firmware reverse engineering** (research notes): unpacked firmware.sb; source-level stock NAND structures (NCB/LDLB/DBBT formats and block layout); CP15 histogram shows stock uses cache lockdown + TTB/FCSE; stock PPL is compiled, CAS grammar present but not exposed
+- [x] **Bad-block RAM cache** (stock master BB table idea) — faster boot, faster KhiCAS exit/save
+- [x] **Python app**: symbol panel partial refresh (no more full-screen redraw on arrows) with its own bottom bar; run entry moved to **F6 File -> Run script**; files moved to **/python** (auto-migrated on first start); GC heap tries large sizes first (512K, configurable 16-512K via `/python/pyheap.cfg`)
+- [x] **Config persistence fix**: JSON parser did not stop at newline, so MEM SWAP was always read back as false (saved fine, lost on reboot)
 
 ## Memory and MEM SWAP (important)
 

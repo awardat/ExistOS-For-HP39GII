@@ -50,11 +50,11 @@
 
 ## 目前工作进展（仅最新版本，历史见 CHANGELOG.md）
 
-### build 142（2026-09-21 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-142)）
-- [x] **Python app 单元格执行模型**：ENT 只换行（自动缩进）、**F5=run** 执行输入内容；单行表达式回显结果值、缩进块整体执行；数学键直通（sin/cos/tan/log/x²/xʸ + Shift 反三角/exp/sqrt/pow/abs）、符号面板 6 页
-- [x] **移除媒体解码代码**（lvgl ffmpeg/gif/png/sjpg/bmp/rlottie）
-- [x] **MEM SWAP 6MB 尝试已回滚**（OSLoader RAM 512KB/堆 34KB 硬约束）+ README 记录存储空间分布
-- [x] **DFU 恢复流程修复**（同时写入 OSLoader 与 System，恢复一步到位）
+### build 143（2026-09-22 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-143)）
+- [x] **原厂固件定向逆向**（研究记录）：解包 firmware.sb；原厂 NAND 结构源码级答案（NCB/LDLB/DBBT 格式与块布局）；CP15 直方图揭示原版 cache lockdown + TTB/FCSE；原版 PPL 为编译型、CAS 语法编译进固件但未开放
+- [x] **坏块 RAM 状态缓存**（原厂 master BB 表思路）——开机体感变快、KhiCAS 退出保存变快
+- [x] **Python app**：符号面板局部刷新（方向键不再全屏重绘）、专属底栏（选择/取消/上翻/下翻）；运行入口移入 **F6 文件 → 运行脚本**；文件目录迁到 **/python**（首次启动自动迁移）；GC 堆默认从大到小尝试（512K 起，`/python/pyheap.cfg` 可指定 16–512K）
+- [x] **修复配置持久化**：JSON 解析遇换行不停止导致 MEM SWAP 重启丢失（保存正常、读取恒 false）
 
 ## 内存与 MEM SWAP（重要）
 
