@@ -39,20 +39,41 @@ static int _log2(int x) // log2(x)
 }
 
 uint32_t meta;
+
+// 坏块状态缓存（2026-09-22）：每块 2 bit（0=未知 1=好块 2=坏块），
+// 避免 dhara 扫描/GC 时反复读 NAND 元数据（原厂在 RAM 里维护 master BB 表，思路一致）。
+#define BB_BLOCK_MAX 1024
+static uint8_t g_bb_state[(BB_BLOCK_MAX + 3) / 4];
+
+static inline int bb_state_get(dhara_block_t b) {
+    return (b < BB_BLOCK_MAX) ? ((g_bb_state[b >> 2] >> ((b & 3) * 2)) & 3) : 0;
+}
+
+static inline void bb_state_set(dhara_block_t b, int v) {
+    if (b < BB_BLOCK_MAX) {
+        g_bb_state[b >> 2] = (g_bb_state[b >> 2] & ~(3 << ((b & 3) * 2))) | (v << ((b & 3) * 2));
+    }
+}
+
 int dhara_nand_is_bad(const struct dhara_nand *n, dhara_block_t b) {
+    int st = bb_state_get(b);
+    if (st) {
+        return st == 2; // 1=好块，2=坏块，0=未知（需读元数据）
+    }
     uint32_t ret;
     ret = MTD_ReadPhyPageMeta((DATA_START_BLOCK + b) * pMtdinfo->PagesPerBlock, 4, (uint8_t *)&meta);
-    // printf("TEST BAD\n");
     if ((ret == -1) || (meta == BAD_BLOCK)) {
-
         printf("Found BAD Block:%lu\n", DATA_START_BLOCK + b);
+        bb_state_set(b, 2);
         return 1;
     }
+    bb_state_set(b, 1);
     return 0;
 }
 
 void dhara_nand_mark_bad(const struct dhara_nand *n, dhara_block_t b) {
     meta = BAD_BLOCK;
+    bb_state_set(b, 2);
     printf("MARK BAD BLOCK\n");
     uint8_t *tempbuf = pvPortMalloc(2048);
     uint8_t *tempmeta = pvPortMalloc(19);
