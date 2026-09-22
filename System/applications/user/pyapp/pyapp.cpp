@@ -720,7 +720,6 @@ static void migrateIf(const char *from, const char *to) { // 目标不存在且�
     FILINFO fno;
     if (f_stat(to, &fno) == FR_OK) return;
     if (f_stat(from, &fno) != FR_OK) return;
-    printf("[PY] migrate %.40s -> %.40s\n", from, to);
     copyFileRaw(from, to);
 }
 
@@ -759,22 +758,13 @@ extern uint32_t OnChipMemorySize;
 
 static size_t readHeapCfg(void) {
     FIL f;
-    FRESULT r = f_open(&f, "/python/pyheap.cfg", FA_READ);
-    printf("[PY] heapcfg /python res=%d\n", r);
-    if (r != FR_OK) {
-        FILINFO fno;
-        printf("[PY] heapcfg /xcas exists=%d\n", (f_stat("/xcas/pyheap.cfg", &fno) == FR_OK) ? 1 : 0);
-        return 0;
-    }
+    if (f_open(&f, "/python/pyheap.cfg", FA_READ) != FR_OK) return 0;
     char buf[16] = {0};
     UINT br = 0;
-    FRESULT rr = f_read(&f, buf, sizeof(buf) - 1, &br);
-    FSIZE_t fsz = f_size(&f);
+    f_read(&f, buf, sizeof(buf) - 1, &br);
     f_close(&f);
     buf[br] = 0;
     int kb = atoi(buf);
-    printf("[PY] heapcfg size=%lu rr=%d br=%u raw=%02X%02X%02X%02X str='%s' kb=%d\n",
-           (unsigned long)fsz, rr, br, (uint8_t)buf[0], (uint8_t)buf[1], (uint8_t)buf[2], (uint8_t)buf[3], buf, kb);
     if (kb < 16) return 0;
     if (kb > 512) kb = 512;
     return (size_t)kb * 1024;
@@ -812,7 +802,6 @@ static void pyTask(void *_) {
             pyHeap = malloc(tries[i]);
             if (pyHeap) { pyHeapSize = tries[i]; break; }
         }
-        printf("[PY] heap alloc size=%u ok=%d\n", (unsigned)(pyHeapSize / 1024), pyHeap ? 1 : 0);
     }
     if (!pyHeap) {
         uidisp->draw_box(0, 0, 255, 127, 255, 255);
@@ -829,14 +818,6 @@ static void pyTask(void *_) {
         mpy_init(pyHeap, pyHeapSize);
         mpy_repl_init();
         pyInited = 1;
-    }
-    { // B2 实验：显示堆大小与位置（onchip/swap），便于对比换页影响
-        char line[48];
-        int swap = ((uintptr_t)pyHeap >= (uintptr_t)(RAM_BASE + OnChipMemorySize));
-        snprintf(line, sizeof(line), "heap %uKB @%08X %s", (unsigned)(pyHeapSize / 1024),
-                 (unsigned)(uintptr_t)pyHeap, swap ? "swap" : "onchip");
-        termPuts(line);
-        termNewline();
     }
     termDirty = 1;
     draw();
