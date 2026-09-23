@@ -141,8 +141,9 @@ void StartKhiCAS() {
 // 加速档门控：1=仅限外接电源（5V）。当前置 0 做实验——验证 v2 根因修复
 // （加速档空闲不再切 DCDC 轻载，消除"480MHz CPU + 轻载 DCDC"塌陷窗口）。
 #define TIER_REQUIRE_5V 0
-// 开机宽限（方案 D/P2）：开机后前 20 秒强制标准档，避开 boot 阶段电流峰值（FS 挂载 + 换页 + 密集唤醒）。
-#define TIER_BOOT_GRACE_MS 20000
+// 开机宽限（方案 D/P2）：开机后前 N 秒强制标准档，避开 boot 阶段电流峰值。
+// 当前置 0（测试 v2 根因修复：开机直接加速的最严苛场景）。
+#define TIER_BOOT_GRACE_MS 0
 
 bool tier_require_5v(void) { return TIER_REQUIRE_5V != 0; }
 
