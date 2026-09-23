@@ -7,8 +7,8 @@
 ## [build 145] - 开发中
 
 ### 已完成
-- **修复电池供电下加速档（480MHz）挂死**：根因是 DCDC 瞬态能力不足（电池/1.6V 台电源均挂、端压正常、USB 5V 正常；且开机冷启动 480MHz 正常，只有 240→480 实时跳变挂）→ OSLoader 在**加速档忙态启用 DOUBLE_FETS**（手册大电流/瞬态用），实测电池下加速档恢复正常（速度/电流符合预期）
-- 电源档位改为 `apply_power_tier()` 单点应用（main_thread + UI 循环，带状态缓存）；充电中仍强制标准档
+- **电池供电下加速档（480MHz）问题定位与兜底**：实测本机电池/1.6V 台电源下 **240→480 跳变必卡死**（电池端 1.56V 正常、USB 5V 正常、开机冷启动 480MHz 正常）；试过 DOUBLE_FETS（动态与静态）均无效 → 判定为设备供电通路无法承受该跳变。**加速档仅限 USB（5V）**：`apply_power_tier()` 单点应用（main_thread + UI 循环，带状态缓存），无 5V 时强制标准档，设置页显示实际档位并提示 `[需外接电源]`；充电中同样强制标准档。电池供电请用标准档（性能约为加速档一半）
+- 撤掉 DOUBLE_FETS 实验代码（结论：无效）
 - **修复 Python 大堆挤占**：退出 Python 时释放解释器与 GC 堆（512KB 常驻会挤占 KhiCAS → `!!Out of Memory!!`）；代价是会话变量不再跨进入保留（手册已更新）
 
 ## [build 144] - 2026-09-22 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-144))

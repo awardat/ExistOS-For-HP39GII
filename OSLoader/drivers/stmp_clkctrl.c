@@ -81,7 +81,7 @@ void slowDownEnable(int mode)
     // 忙态恢复（与 exitSlowDown 一致）
     HW_POWER_MINPWR.B.EN_DC_PFM = 0;
     HW_POWER_MINPWR.B.DC_HALFCLK = 0;
-    // DOUBLE_FETS 改为开机静态设置（见 stmp_power.c），此处不再随档位改动 DCDC 配置
+    // 2026-09-23 实验结论：DOUBLE_FETS（静态/动态）均无法解决电池下 240→480 跳变卡死，已撤；档位切换不再改 DCDC 配置
     if(g_slowdown_enable == 2)
     {
         setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
