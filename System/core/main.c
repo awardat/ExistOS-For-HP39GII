@@ -138,6 +138,9 @@ void StartKhiCAS() {
     xTaskCreate(khicasTask, "KhiCAS", KhiCAS_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, (NULL));
 }
 
+// 临时开关（2026-09-23）：测试 DOUBLE_FETS 时置 0 放开加速档，测试完恢复 1
+#define TIER_REQUIRE_5V 0
+
 // 是否接有外接电源（VDD5V ≥ 3.5V；ll_get_charge_status bit19-31 = VDD5V mV）
 bool has_external_5v(void) {
     extern uint32_t ll_get_charge_status(void);
@@ -151,7 +154,11 @@ void apply_power_tier(void) {
     extern char config_get_power_save(void);
     extern bool config_get_enable_charge(void);
     static int last = -1;
-    bool wantBoost = (config_get_power_save() == 'B') && !config_get_enable_charge() && has_external_5v();
+    bool wantBoost = (config_get_power_save() == 'B') && !config_get_enable_charge()
+#if TIER_REQUIRE_5V
+                     && has_external_5v()
+#endif
+        ;
     int t = wantBoost ? 3 : 1;
     if (t != last) {
         ll_cpu_slowdown_enable(t);
