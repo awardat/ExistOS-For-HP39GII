@@ -51,6 +51,11 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (latest only, see CHANGELOG.md)
 
+### build 145 (2026-09-23 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-145))
+- [x] **Battery boost-mode investigation and fallback**: four fix paths (DOUBLE_FETS / boost idle without downclock / DCDC timing) all failed on hardware -> the device's power path is degraded (260mA battery boost worked in the build 135 era); **boost mode now requires external power (5V)**, battery forces Standard and the settings page shows `[need 5V]`
+- [x] **Fixed Python heap starving KhiCAS**: release the interpreter and GC heap on exit (the resident 512KB caused `!!Out of Memory!!`)
+- [x] Robustness: `GET_CHARGE_STATUS` reads VDD5V live (PING sessions suspend vBatteryMon, freezing the cache) + 20s boot grace
+
 ### build 144 (2026-09-22 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-144))
 - [x] **Python app input experience**: prompts (first line `>>> `, continuation lines `... `, shown immediately after ENT); `heap` info line moved between version info and `>>>`; input line visible after clear/reset; **Reset interpreter** reprints the startup info (version -> heap -> `>>>`)
 - [x] **Python app menu partial redraw**: File menu up/down and Help pages left/right redraw only the menu area (selection bar follows), no full-screen redraw, no console flash

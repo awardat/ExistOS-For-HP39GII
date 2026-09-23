@@ -50,6 +50,11 @@
 
 ## 目前工作进展（仅最新版本，历史见 CHANGELOG.md）
 
+### build 145（2026-09-23 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-145)）
+- [x] **电池供电加速档问题定位与兜底**：四条修复路径（DOUBLE_FETS / 加速档空闲不降频 / DCDC 时序）实测均无效 → 判定本机供电通路硬件退化（build 135 时代电池加速 260mA 正常）；**加速档仅限外接电源（5V）**，无 5V 时强制标准档并在设置页提示 `[需外接电源]`（电池供电请用标准档）
+- [x] **修复 Python 大堆挤占 KhiCAS**：退出 Python 时释放解释器与 GC 堆（原先 512KB 常驻导致 `!!Out of Memory!!`）
+- [x] 稳健性：`GET_CHARGE_STATUS` 实时读 VDD5V（PING 会话挂起 vBatteryMon 的缓存冻结漏洞）+ 开机宽限 20 秒
+
 ### build 144（2026-09-22 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-144)）
 - [x] **Python app 输入体验**：输入行提示符（首行 `>>> `、续行 `... `，ENT 后立即出现）；`heap` 信息行移到版本信息之后、`>>>` 之前；清屏/复位后输入行可见；**复位解释器**重印启动信息（版本 → heap → `>>>`）
 - [x] **Python app 菜单局部重绘**：文件菜单 ↑↓ 与帮助页 ←→ 只重绘菜单区（黑底选择条跟随移动），不再整屏重绘 → console 不闪现

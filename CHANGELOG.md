@@ -4,7 +4,7 @@
 
 ---
 
-## [build 145] - 开发中
+## [build 145] - 2026-09-23 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-145))
 
 ### 已完成
 - **电池供电下加速档（480MHz）问题定位与兜底**：实测本机电池/1.6V 台电源下 **240→480 跳变必卡死**（电池端 1.56V 正常、USB 5V 正常、开机冷启动 480MHz 正常）；试过 DOUBLE_FETS（动态与静态）均无效 → 判定为设备供电通路无法承受该跳变。**加速档仅限 USB（5V）**：`apply_power_tier()` 单点应用（main_thread + UI 循环，带状态缓存），无 5V 时强制标准档，设置页显示实际档位并提示 `[需外接电源]`；充电中同样强制标准档。电池供电请用标准档（性能约为加速档一半）
