@@ -46,7 +46,6 @@ void enterSlowDown()
     // 轻载省电（手册 29.2.2.2）：PFM 脉冲跳 + DC 开关半频 750kHz
     HW_POWER_MINPWR.B.EN_DC_PFM = 1;
     HW_POWER_MINPWR.B.DC_HALFCLK = 1;
-    HW_POWER_MINPWR.B.DOUBLE_FETS = 0; // 低频/轻载恢复普通 FET 配置
     if(g_slowdown_enable == 1)
     {
         setCPUDivider(CPU_DIVIDE_STD_IDLE);
@@ -62,8 +61,6 @@ void exitSlowDown()
     // 恢复满载 DC-DC（忙态）
     HW_POWER_MINPWR.B.EN_DC_PFM = 0;
     HW_POWER_MINPWR.B.DC_HALFCLK = 0;
-    // 480MHz 忙态：加倍功率 FET（手册：大电流/瞬态响应用）——弱供电下 240→480 跳变会拉塌核心轨
-    HW_POWER_MINPWR.B.DOUBLE_FETS = (g_slowdown_enable == 3) ? 1 : 0;
     if(g_slowdown_enable == 1)
     {
         setCPUDivider(CPU_DIVIDE_STD_BUSY);
@@ -84,7 +81,8 @@ void slowDownEnable(int mode)
     // 忙态恢复（与 exitSlowDown 一致）
     HW_POWER_MINPWR.B.EN_DC_PFM = 0;
     HW_POWER_MINPWR.B.DC_HALFCLK = 0;
-    HW_POWER_MINPWR.B.DOUBLE_FETS = (mode == 3) ? 1 : 0; // 加速档加倍 FET（瞬态/大电流）
+    // 加倍功率 FET（手册：大电流/瞬态响应用）——只在档位切换时设置，空闲/唤醒路径不再改动（频繁改 DCDC 配置会引入不稳定）
+    HW_POWER_MINPWR.B.DOUBLE_FETS = (mode == 3) ? 1 : 0;
     if(g_slowdown_enable == 2)
     {
         setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
