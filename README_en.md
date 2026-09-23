@@ -166,6 +166,26 @@ Some symbolic operations take seconds to tens of seconds on the HP39GII. This is
 - Tip: switch to **boost mode** (Shift+Symb config menu -> speed) for roughly 2x speedup
 - Compared with the old snapshot (~1.4/1.5), the giac 2.0.0 solver is more complete (multiple roots, inequalities, RUR systems) at some speed cost
 
+## Why it *feels* slower than the stock firmware (but is actually faster)
+
+**The feel comes from per-action latency, not from computation speed.**
+
+| | Stock firmware | ExistOS |
+|---|---|---|
+| Program storage | Executes in place from internal flash (XIP), fully resident | The HP39GII has **no internal program flash** - it boots from NAND, so OSLoader runs the system through **demand-paged** virtual memory + FTL |
+| First access to uncached code/data | No such cost | Must fetch a page from NAND (microseconds to milliseconds - the main source of the difference) |
+| Key handling path | Single-task tight loop, sub-millisecond | Multi-tasking OS, UI polls every ~10-30ms, may also trigger page faults |
+
+So the "slow" feeling shows up on the **first action after boot / after entering an app / after long idle** (cold cache) and when switching apps frequently; sustained work and long computations are faster:
+
+| 8x8 Queens (same algorithm) | Stock PPL (compiled) | ExistOS Python app |
+|---|---|---|
+| Time | ~1.5 s @ 80MHz | **1.22 s @ 240MHz / 0.70 s @ 480MHz** |
+
+- CPU clock is 3-6x the stock (240/480MHz vs 80MHz), and the stock firmware does **not expose the CAS** (its grammar is compiled in but not available in the UI)
+- The stock feels fast because it is bare metal with everything resident: no paging, no multitasking, no OS - its single-key latency is inherently lower
+- In short: **our throughput is faster; the bare-metal machine has lower first-action latency** - not the same thing
+
 ## Compiling and Installing
 
 ### Prerequisites
