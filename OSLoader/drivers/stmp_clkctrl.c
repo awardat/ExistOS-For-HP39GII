@@ -81,8 +81,7 @@ void slowDownEnable(int mode)
     // 忙态恢复（与 exitSlowDown 一致）
     HW_POWER_MINPWR.B.EN_DC_PFM = 0;
     HW_POWER_MINPWR.B.DC_HALFCLK = 0;
-    // 加倍功率 FET（手册：大电流/瞬态响应用）——只在档位切换时设置，空闲/唤醒路径不再改动（频繁改 DCDC 配置会引入不稳定）
-    HW_POWER_MINPWR.B.DOUBLE_FETS = (mode == 3) ? 1 : 0;
+    // DOUBLE_FETS 改为开机静态设置（见 stmp_power.c），此处不再随档位改动 DCDC 配置
     if(g_slowdown_enable == 2)
     {
         setCPUDivider(CPU_DIVIDE_SAVE_BUSY);

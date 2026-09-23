@@ -145,7 +145,9 @@ void portPowerInit()
     BF_SET(POWER_STS, AVALID);
     BF_SET(POWER_STS, VBUSVALID);*/
     
-    //HW_POWER_MINPWR.B.DOUBLE_FETS = 1;
+    // 静态加倍功率 FET（2026-09-23 测试）：手册用于大电流/瞬态响应。
+    // 原先在档位切换时动态改此位，疑为 240→480 跳变卡死元凶 → 改为开机设置一次、运行期不动。
+    HW_POWER_MINPWR.B.DOUBLE_FETS = 1;
     //HW_POWER_MINPWR.B.HALF_FETS = 1;
 
 /*
