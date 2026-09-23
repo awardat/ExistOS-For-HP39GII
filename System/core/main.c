@@ -163,7 +163,9 @@ void apply_power_tier(void) {
     static int last = -1;
     bool wantBoost = (config_get_power_save() == 'B') && !config_get_enable_charge();
     if (TIER_REQUIRE_5V && !has_external_5v()) wantBoost = false;      // 无 5V 禁加速（兜底）
+#if TIER_BOOT_GRACE_MS > 0
     if (xTaskGetTickCount() < pdMS_TO_TICKS(TIER_BOOT_GRACE_MS)) wantBoost = false; // 开机宽限
+#endif
     int t = wantBoost ? 3 : 1;
     if (t != last) {
         ll_cpu_slowdown_enable(t);
