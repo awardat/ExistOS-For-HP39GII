@@ -9,6 +9,8 @@
 ### 已完成
 - **电池供电下加速档（480MHz）问题定位与兜底**：实测本机电池/1.6V 台电源下 **240→480 跳变必卡死**（电池端 1.56V 正常、USB 5V 正常、开机冷启动 480MHz 正常）；试过 DOUBLE_FETS（动态与静态）均无效 → 判定为设备供电通路无法承受该跳变。**加速档仅限 USB（5V）**：`apply_power_tier()` 单点应用（main_thread + UI 循环，带状态缓存），无 5V 时强制标准档，设置页显示实际档位并提示 `[需外接电源]`；充电中同样强制标准档。电池供电请用标准档（性能约为加速档一半）
 - 撤掉 DOUBLE_FETS 实验代码（结论：无效）
+- 按 `docs/power-boost-boot-hang-plan.md` 试过 P3「加速档空闲不降频」（方案 A，消除 240↔480 跳变）——实测**仍卡**（开机卡、手动切换也卡）→ 已回退。**结论修正**：本机供电通路已无法在电池下承载 480MHz 负载（build 135 时代 260mA 正常，现 ~118mA 即挂）→ 硬件退化，无软件修复空间
+- 保留两项稳健性修复：**P1** `GET_CHARGE_STATUS` 实时读 VDD5V（PING 挂起 vBatteryMon 时缓存冻结漏洞）；**P2** 开机宽限 20 秒
 - **修复 Python 大堆挤占**：退出 Python 时释放解释器与 GC 堆（512KB 常驻会挤占 KhiCAS → `!!Out of Memory!!`）；代价是会话变量不再跨进入保留（手册已更新）
 
 ## [build 144] - 2026-09-22 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-144))

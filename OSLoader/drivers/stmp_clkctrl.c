@@ -51,10 +51,11 @@ void enterSlowDown()
         setCPUDivider(CPU_DIVIDE_STD_IDLE);
     }else if(g_slowdown_enable == 2){
         setCPUDivider(CPU_DIVIDE_SAVE_IDLE);
+    }else if(g_slowdown_enable == 3){
+        setCPUDivider(CPU_DIVIDE_BOOST_IDLE);
     }
-    // 加速档（3）：空闲**不降频**（idle=busy=div1=480MHz）——2026-09-23 方案 A：
-    // 240↔480 的往复跳变（每个空闲→唤醒周期一次）是电池供电卡死的致命事件，消除跳变而非规避。
-    // 空闲省电只保留 WFI + DCDC 轻载位（PFM/halfclk）。
+    // 2026-09-23 方案 A（加速档空闲不降频）实测**无效**：电池下切换/开机仍卡死，且常驻 480 抬高电流。
+    // 结论：本机供电通路无法在电池下承载 480MHz 负载（曾可：build 135 时代 260mA 正常）→ 硬件退化。
 }
 
 void exitSlowDown()

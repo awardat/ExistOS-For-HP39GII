@@ -138,8 +138,9 @@ void StartKhiCAS() {
     xTaskCreate(khicasTask, "KhiCAS", KhiCAS_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, (NULL));
 }
 
-// 测试开关（2026-09-23）：验证方案 A（加速档空闲不降频）时置 0 放开加速档；验证通过后按结论定稿。
-#define TIER_REQUIRE_5V 0
+// 加速档门控（2026-09-23 定稿）：本机电池供电无法承载 480MHz（方案 A/B/DOUBLE_FETS 均实测无效，属硬件退化）
+// → 加速档仅限外接电源（5V）。如需重新验证电池加速，把此宏置 0 做实验。
+#define TIER_REQUIRE_5V 1
 // 开机宽限（方案 D/P2）：开机后前 20 秒强制标准档，避开 boot 阶段电流峰值（FS 挂载 + 换页 + 密集唤醒）。
 #define TIER_BOOT_GRACE_MS 20000
 
