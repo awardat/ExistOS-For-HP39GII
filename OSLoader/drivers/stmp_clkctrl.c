@@ -51,9 +51,10 @@ void enterSlowDown()
         setCPUDivider(CPU_DIVIDE_STD_IDLE);
     }else if(g_slowdown_enable == 2){
         setCPUDivider(CPU_DIVIDE_SAVE_IDLE);
-    }else if(g_slowdown_enable == 3){
-        setCPUDivider(CPU_DIVIDE_BOOST_IDLE);
     }
+    // 加速档（3）：空闲**不降频**（idle=busy=div1=480MHz）——2026-09-23 方案 A：
+    // 240↔480 的往复跳变（每个空闲→唤醒周期一次）是电池供电卡死的致命事件，消除跳变而非规避。
+    // 空闲省电只保留 WFI + DCDC 轻载位（PFM/halfclk）。
 }
 
 void exitSlowDown()

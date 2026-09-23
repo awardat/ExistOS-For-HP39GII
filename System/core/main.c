@@ -138,7 +138,14 @@ void StartKhiCAS() {
     xTaskCreate(khicasTask, "KhiCAS", KhiCAS_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, (NULL));
 }
 
-// 是否接有外接电源（VDD5V ≥ 3.5V；ll_get_charge_status bit19-31 = VDD5V mV）
+// 测试开关（2026-09-23）：验证方案 A（加速档空闲不降频）时置 0 放开加速档；验证通过后按结论定稿。
+#define TIER_REQUIRE_5V 0
+// 开机宽限（方案 D/P2）：开机后前 20 秒强制标准档，避开 boot 阶段电流峰值（FS 挂载 + 换页 + 密集唤醒）。
+#define TIER_BOOT_GRACE_MS 20000
+
+bool tier_require_5v(void) { return TIER_REQUIRE_5V != 0; }
+
+// 是否接有外接电源（VDD5V ≥ 3.5V；ll_get_charge_status bit19-31 = VDD5V mV，OSLoader 侧已实时读取）
 bool has_external_5v(void) {
     extern uint32_t ll_get_charge_status(void);
     return (((ll_get_charge_status() >> 19) & 0x1FFF) >= 3500);
@@ -152,7 +159,9 @@ void apply_power_tier(void) {
     extern char config_get_power_save(void);
     extern bool config_get_enable_charge(void);
     static int last = -1;
-    bool wantBoost = (config_get_power_save() == 'B') && !config_get_enable_charge() && has_external_5v();
+    bool wantBoost = (config_get_power_save() == 'B') && !config_get_enable_charge();
+    if (TIER_REQUIRE_5V && !has_external_5v()) wantBoost = false;      // 无 5V 禁加速（兜底）
+    if (xTaskGetTickCount() < pdMS_TO_TICKS(TIER_BOOT_GRACE_MS)) wantBoost = false; // 开机宽限
     int t = wantBoost ? 3 : 1;
     if (t != last) {
         ll_cpu_slowdown_enable(t);

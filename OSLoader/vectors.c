@@ -135,6 +135,9 @@ void volatile arm_do_swi(uint32_t SWINum, uint32_t *pRegFram) {
         }
 
         case LL_FAST_SWI_GET_CHARGE_STATUS:
+            // P1（2026-09-23）：VDD5V 改为实时读取——g_vdd5vMv 仅由 vBatteryMon 刷新，
+            // 而 PING/串口会话会挂起该任务导致缓存冻结（电池下可能误判"有 5V"而误进加速档）。
+            g_vdd5vMv = (uint32_t)(portLRADCConvCh(5, 5) * 0.45 * 4);
             // 2026-09-04：原返回软件开关 g_chargeEnable——电池满后 DCDC 已关（电流 0）仍显"充电中"误导；
             // 改为硬件实际状态：开关开 且 充电电源(DCDC)开 且 充电电路未关
             // 2026-09-09 诊断扩展：bit0=充电状态；bit8-13=BATTCHRG_I；bit16=USE_EXTERN_R；bit19-31=VDD5V(mV)

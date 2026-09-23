@@ -26,6 +26,7 @@
 extern "C" void enableMemSwap(bool enable);
 extern "C" void apply_power_tier(void);
 extern "C" bool has_external_5v(void);
+extern "C" bool tier_require_5v(void);
 
 #include "ExistOSlogo.h"
 
@@ -242,7 +243,7 @@ void pageUpdate() {
                 // 充电中/无外接电源强制标准档（见 case 0 充电开关 + apply_power_tier）：标签按实际运行档显示
                 char ps = config_get_power_save();
                 bool wantBoost = !config_get_enable_charge() && ps == 'B';
-                bool boost = wantBoost && has_external_5v();
+                bool boost = wantBoost && (!tier_require_5v() || has_external_5v());
                 const char *psn;
                 const char *hint = "";
                 if (config_get_language()) {
