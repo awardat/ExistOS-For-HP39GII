@@ -1067,6 +1067,17 @@ static void pyTask(void *_) {
     ll_disp_set_indicator(0, -1);
     uidisp->draw_box(0, 0, 255, 127, 255, 255);
     uidisp->flush();
+    // 退出时释放 GC 堆与解释器（2026-09-23）：大堆常驻会挤占 KhiCAS 等大堆应用（!!Out of Memory!!）。
+    // 代价：会话变量不再跨进入保留（下次进入是全新解释器）。
+    if (pyInited) {
+        mpy_deinit();
+        pyInited = 0;
+    }
+    if (pyHeap) {
+        free(pyHeap);
+        pyHeap = NULL;
+        pyHeapSize = 0;
+    }
     pyTaskAlive = 0; // 先释放守卫，再恢复 UI / 删除任务（防止退出瞬间重入）
     SystemUIResume();
     vTaskDelete(NULL);

@@ -138,27 +138,14 @@ void StartKhiCAS() {
     xTaskCreate(khicasTask, "KhiCAS", KhiCAS_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, (NULL));
 }
 
-// 临时开关（2026-09-23）：测试 DOUBLE_FETS 时置 0 放开加速档，测试完恢复 1
-#define TIER_REQUIRE_5V 0
-
-// 是否接有外接电源（VDD5V ≥ 3.5V；ll_get_charge_status bit19-31 = VDD5V mV）
-bool has_external_5v(void) {
-    extern uint32_t ll_get_charge_status(void);
-    return (((ll_get_charge_status() >> 19) & 0x1FFF) >= 3500);
-}
-
-// 电源档位单点应用（2026-09-22 兜底）：无 5V（电池供电）时不启用加速档——
-// 480MHz 核心负载在电池模式 DCDC 下会挂死（实测：电池/1.6V 台电源均挂，USB 5V 正常）。
-// 充电中同样强制标准档（沿用既有语义）。带状态缓存，可被 UI 循环高频调用。
+// 电源档位单点应用：加速档 = 配置 'B' 且未启用充电（充电中强制标准档）。
+// 2026-09-22/23：电池供电下 480MHz 曾挂死，根因是 DCDC 瞬态不足 → 已在 OSLoader 用
+// 加速档忙态 DOUBLE_FETS 修复（实测电池/1.6V 台电源下加速档恢复正常）。带状态缓存，可高频调用。
 void apply_power_tier(void) {
     extern char config_get_power_save(void);
     extern bool config_get_enable_charge(void);
     static int last = -1;
-    bool wantBoost = (config_get_power_save() == 'B') && !config_get_enable_charge()
-#if TIER_REQUIRE_5V
-                     && has_external_5v()
-#endif
-        ;
+    bool wantBoost = (config_get_power_save() == 'B') && !config_get_enable_charge();
     int t = wantBoost ? 3 : 1;
     if (t != last) {
         ll_cpu_slowdown_enable(t);
