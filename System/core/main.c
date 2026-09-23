@@ -138,6 +138,27 @@ void StartKhiCAS() {
     xTaskCreate(khicasTask, "KhiCAS", KhiCAS_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, (NULL));
 }
 
+// 是否接有外接电源（VDD5V ≥ 3.5V；ll_get_charge_status bit19-31 = VDD5V mV）
+bool has_external_5v(void) {
+    extern uint32_t ll_get_charge_status(void);
+    return (((ll_get_charge_status() >> 19) & 0x1FFF) >= 3500);
+}
+
+// 电源档位单点应用（2026-09-22 兜底）：无 5V（电池供电）时不启用加速档——
+// 480MHz 核心负载在电池模式 DCDC 下会挂死（实测：电池/1.6V 台电源均挂，USB 5V 正常）。
+// 充电中同样强制标准档（沿用既有语义）。带状态缓存，可被 UI 循环高频调用。
+void apply_power_tier(void) {
+    extern char config_get_power_save(void);
+    extern bool config_get_enable_charge(void);
+    static int last = -1;
+    bool wantBoost = (config_get_power_save() == 'B') && !config_get_enable_charge() && has_external_5v();
+    int t = wantBoost ? 3 : 1;
+    if (t != last) {
+        ll_cpu_slowdown_enable(t);
+        last = t;
+    }
+}
+
 void main_thread() {
 
     // printf("R13:%08x\n", get_stack());
@@ -150,11 +171,7 @@ void main_thread() {
     crash_log_init();
 
     // 应用电源档位（main_thread 单点）：' '=标准(240/120), 'B'=加速(480/240)；旧 'S'/'L'（省电档）按标准档（2026-09-03 两档制）
-    {
-        extern char config_get_power_save(void);
-        char ps = config_get_power_save();
-        ll_cpu_slowdown_enable(ps == 'B' ? 3 : 1);
-    }
+    apply_power_tier();
 
     // 充电固定镍氢（2026-09-04：锂电直插实测失败——AAA 外围电路短路，
     // 配置默认 'L' 实际走了锂电路径（ALKALINE 关 + STOP_ILIMIT 停充），

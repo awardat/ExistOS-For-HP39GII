@@ -24,6 +24,8 @@
 
 // ����enableMemSwap����
 extern "C" void enableMemSwap(bool enable);
+extern "C" void apply_power_tier(void);
+extern "C" bool has_external_5v(void);
 
 #include "ExistOSlogo.h"
 
@@ -237,16 +239,20 @@ void pageUpdate() {
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s", UI_TIME, timeStr);
 
             {
-                // 充电中强制标准档（见 case 0 充电开关）：标签按实际运行档显示
+                // 充电中/无外接电源强制标准档（见 case 0 充电开关 + apply_power_tier）：标签按实际运行档显示
                 char ps = config_get_power_save();
-                bool boost = !config_get_enable_charge() && ps == 'B';
+                bool wantBoost = !config_get_enable_charge() && ps == 'B';
+                bool boost = wantBoost && has_external_5v();
                 const char *psn;
+                const char *hint = "";
                 if (config_get_language()) {
                     psn = boost ? "\xbc\xd3\xcb\xd9" : "\xb1\xea\xd7\xbc";
+                    if (wantBoost && !boost) hint = " [\xd0\xe8\xcd\xe2\xbd\xd3\xb5\xe7\xd4\xb4]"; // [需外接电源]
                 } else {
                     psn = boost ? "Boost" : "Standard";
+                    if (wantBoost && !boost) hint = " [need 5V]";
                 }
-                uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)", UI_Power_Save_Mode, psn);
+                uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "%s: %s (1)%s", UI_Power_Save_Mode, psn, hint);
             }
             uidisp->draw_printf(DISPX, DISPY + 16 * line++, 16, 0, 255, "[%c]%s (2)  %s:%s", config_get_enable_charge() ? 'X' : ' ', UI_Enable_Charge, UI_Charge_Mode, UI_NiMH); // 电池类型固定镍氢（2026-09-04 锂电直插失败，选择已隐藏）
         } else if (page3Subpage == 1) {
@@ -1009,11 +1015,10 @@ void keyMsg(uint32_t key, int state) {
                     // 2026-09-03：两档制（标准/加速）——实测省电与标准电流差距小（40-50 vs 50-60mA），省电档去除（旧 'S'/'L' 配置按标准档处理）
                     if (config_get_power_save() == 'B') {
                         config_set_power_save(' ');
-                        ll_cpu_slowdown_enable(1);
                     } else {
                         config_set_power_save('B');
-                        ll_cpu_slowdown_enable(3);
                     }
+                    apply_power_tier(); // 无 5V 时自动保持标准档（兜底）
                     drawPage(curPage); // 完整重绘配置页，确保档位文本立即更新
                     break;
 
@@ -1052,12 +1057,11 @@ void keyMsg(uint32_t key, int state) {
                     if (config_get_enable_charge()) {
                         config_set_enable_charge(false);
                         ll_charge_enable(false);
-                        ll_cpu_slowdown_enable(config_get_power_save() == 'B' ? 3 : 1); // 恢复档位
                     } else {
                         config_set_enable_charge(true);
                         ll_charge_enable(true);
-                        ll_cpu_slowdown_enable(1); // 充电中强制标准档（不显示低功耗；2026-09-03 去除原 'L' 联动）
                     }
+                    apply_power_tier(); // 充电中强制标准档；无 5V 同样强制标准（兜底）
                     break;
                 case 1: {
                     UI_SetLang(UI_LANG_CN);
@@ -1496,6 +1500,7 @@ void UI_keyScanner(void *_) {
             UIForceRefresh = false;
             config_save();
         }
+        apply_power_tier(); // 兜底：拔掉 USB 后立即回落标准档（内部带状态缓存，无变化时不写寄存器）
         if (cnt % 333 == 0) { // 3000→10000ms（2026-09-09）：时钟仅到分钟——3s 白刷；页面信息（时钟/设置页）刷新再降频
             pageUpdate();
         }
