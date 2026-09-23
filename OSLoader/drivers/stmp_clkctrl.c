@@ -43,15 +43,6 @@ void setSlowDownMinCpuFrac(uint8_t frac)
 
 void enterSlowDown()
 {
-    if(g_slowdown_enable == 3)
-    {
-        // 加速档（2026-09-23 v2 根因定位）：**DCDC 保持满载，不切 PFM/半频**。
-        // 原顺序"先切 DCDC 轻载、再降 CPU"存在确定窗口：CPU 仍 480 而 DCDC 已轻载 → VDDD 塌陷；
-        // 每次进入空闲都会出现，开机阶段空闲/唤醒密集 → 必死（方案 A 只去掉降频、保留轻载切换，反而更糟）。
-        // 这里只降 CPU 分频（480→240），DCDC 配置不动；唤醒时也无需恢复。
-        setCPUDivider(CPU_DIVIDE_BOOST_IDLE);
-        return;
-    }
     // 轻载省电（手册 29.2.2.2）：PFM 脉冲跳 + DC 开关半频 750kHz
     HW_POWER_MINPWR.B.EN_DC_PFM = 1;
     HW_POWER_MINPWR.B.DC_HALFCLK = 1;
@@ -60,17 +51,16 @@ void enterSlowDown()
         setCPUDivider(CPU_DIVIDE_STD_IDLE);
     }else if(g_slowdown_enable == 2){
         setCPUDivider(CPU_DIVIDE_SAVE_IDLE);
+    }else if(g_slowdown_enable == 3){
+        setCPUDivider(CPU_DIVIDE_BOOST_IDLE);
     }
+    // 2026-09-23 实验记录：方案 A（boost 空闲不降频）与 v2（boost 空闲不切 DCDC 轻载）均实测无效——
+    // 电池供电下 480MHz 仍必卡死；最终结论：本机供电通路无法承载电池 480MHz（build 135 时代 260mA 正常）。
+    // 定稿兜底：加速档仅限外接电源（System 侧 apply_power_tier + TIER_REQUIRE_5V）。
 }
 
 void exitSlowDown()
 {
-    if(g_slowdown_enable == 3)
-    {
-        // 加速档：DCDC 全程满载（enter 未切轻载），只恢复 CPU 分频
-        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
-        return;
-    }
     // 恢复满载 DC-DC（忙态）
     HW_POWER_MINPWR.B.EN_DC_PFM = 0;
     HW_POWER_MINPWR.B.DC_HALFCLK = 0;
@@ -79,6 +69,8 @@ void exitSlowDown()
         setCPUDivider(CPU_DIVIDE_STD_BUSY);
     }else if(g_slowdown_enable == 2){
         setCPUDivider(CPU_DIVIDE_SAVE_BUSY);
+    }else if(g_slowdown_enable == 3){
+        setCPUDivider(CPU_DIVIDE_BOOST_BUSY);
     }else{
         setCPUDivider(CPU_DIVIDE_STD_BUSY);
     }
