@@ -4,6 +4,11 @@
 
 ---
 
+## [build 146] - 开发中
+
+### 已完成
+- （待补充）
+
 ## [build 145] - 2026-09-23 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-145))
 
 ### 已完成
