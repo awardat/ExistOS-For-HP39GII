@@ -63,6 +63,8 @@ print(caseval("bench_ms"))
 |------|------|
 | `py01_basics.py` | 语言基础：算术/字符串/列表/循环/条件/函数/字典 + 计时 + 本地导入 |
 | `py02_module.py` | 供 py01 测试 `import` 的小模块（放同目录） |
+| `py05_plot.py` | 绘图演示：曲线 / 散点 / 固定坐标（用内置 `graph` 模块，等价于 KhiCAS 例 5） |
+| `graph.py` | 内置绘图模块源码（应用首次进入自动安装到 `/python/graph.py`，可自行修改；改这里只是留档） |
 | `py07_nqueens.py` | N-Queens 8x8 基准（92 解 / 2057 节点 + 计时） |
 
 **运行方式**：把文件复制到设备 `/python/` → Python app 内按 **F4（运行）** 选择文件，或 **F6 文件 → 打开并运行**。

@@ -19,6 +19,7 @@
     #include "filesystem/littlefs/lfs.h"
 #endif
 #include "../../graphics/UICore.h"
+extern "C" const char *graph_py_source; // 内置绘图模块源码（graph_py.c，由 samples/graph.py 生成）
 #include "../../drivers/keyboard_gii39.h"
 
 extern UI_Display *uidisp;
@@ -766,6 +767,18 @@ static void migrateIf(const char *from, const char *to) { // 目标不存在且�
 
 static void ensurePyDir(void) {
     f_mkdir("/python");
+    // 内置绘图模块 graph.py（首次安装；已存在则不覆盖，用户可自行修改）
+    {
+        FILINFO fi;
+        if (f_stat("/python/graph.py", &fi) != FR_OK) {
+            FIL f;
+            if (f_open(&f, "/python/graph.py", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+                UINT bw = 0;
+                f_write(&f, graph_py_source, (UINT)strlen(graph_py_source), &bw);
+                f_close(&f);
+            }
+        }
+    }
     DIR dir;
     FILINFO fno;
     int have = 0;
@@ -1082,6 +1095,46 @@ static void pyTask(void *_) {
     SystemUIResume();
     vTaskDelete(NULL);
 }
+
+// ---- lcd 桥钩子（MicroPython lcd 模块 -> 系统显示）2026-09-23 ----
+// 由 Libs/src/micropython/ports/eoslib/mpy_lcd.c 的弱符号调用；仅在 Python app 任务内有效。
+extern "C" void mpy_lcd_blit1(const uint8_t *buf, int w, int h, int x, int y) {
+    if (!uidisp) return;
+    uidisp->draw_1bpp(buf, w, h, x, y);
+}
+
+extern "C" void mpy_lcd_text(int x, int y, const char *s, int size) {
+    if (!uidisp) return;
+    if (size != 12 && size != 16) size = 16;
+    uidisp->draw_printf((uint32_t)x, (uint32_t)y, (uint8_t)size, 0, -1, "%s", s);
+    int y1 = y + size - 1;
+    if (y1 > LCD_PIX_H - 1) y1 = LCD_PIX_H - 1;
+    if (y >= 0 && y1 >= y) uidisp->flushRect(0, (uint32_t)y, LCD_PIX_W - 1, (uint32_t)y1);
+}
+
+extern "C" void mpy_lcd_clear(int color) {
+    if (!uidisp) return;
+    uidisp->draw_box(0, 0, LCD_PIX_W - 1, LCD_PIX_H - 1, -1, color);
+    uidisp->flush();
+}
+
+extern "C" int mpy_lcd_wait_key(void) {
+    // 阻塞等待 ON / F5（图形查看结束）；期间终端不重绘，返回后整屏重绘一次。
+    while (pyRunning) {
+        uint32_t keys = ll_vm_check_key();
+        if ((keys >> 16) != 0) {
+            uint32_t key = keys & 0xFFFF;
+            if (key == KEY_ON || key == KEY_F5) break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+    termDirty = 1;
+    rowDirty = -1;
+    return 0;
+}
+
+extern "C" int mpy_lcd_width(void) { return LCD_PIX_W; }
+extern "C" int mpy_lcd_height(void) { return LCD_PIX_H; }
 
 extern "C" void StartPython() {
     if (pyTaskAlive) return; // 已有实例（退出窗口期内）→ 忽略重复启动

@@ -7,7 +7,11 @@
 ## [build 146] - 开发中
 
 ### 已完成
-- （待补充）
+- **Python app 绘图**（M1-M3）：
+  - 开启 MicroPython `framebuf`（帧缓冲绘图：line/rect/fill/ellipse/poly/text/blit；MONO_HLSB）
+  - 新增 `lcd` 桥模块（`blit/text/clear/width/height/wait_key`）+ 系统侧弱符号钩子与 `UI_Display::draw_1bpp`（1bpp 帧缓冲直写显示缓冲 + 局部刷新）
+  - 新增 `graph` 绘图模块（`clf/plot/scatter/axis/title/show`，**自动绘制坐标轴与刻度**；callable 或序列两种画法）——随应用首次进入安装到 `/python/graph.py`，纯 ASCII 可读可改
+  - 样本 `samples/py05_plot.py`（曲线/散点/固定坐标，等价 KhiCAS 例 5）；手册新增 §6.6 绘图、模块表补 framebuf/lcd/graph；samples/README 同步
 
 ## [build 145] - 2026-09-23 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-145))
 

@@ -172,6 +172,9 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 | `gc` | `collect/mem_free/mem_alloc/enable/disable` |
 | `micropython` | `mem_info/qstr_info/opt_level`、`ringio` |
 | `errno` | 常用 errno 常量 |
+| `framebuf` | 帧缓冲绘图（`FrameBuffer` + `pixel/line/rect/fill/ellipse/poly/text/blit/scroll`；单色用 `MONO_HLSB`） |
+| `lcd` | 屏幕桥（本机扩展）：`blit(fb[,x,y])` / `text(x,y,s[,size])` / `clear([color])` / `width()` / `height()` / `wait_key()` |
+| `graph` | 绘图模块（见 §6.6；首次进入应用时自动安装到 `/python/graph.py`） |
 
 ### 6.4 文件与导入
 
@@ -179,13 +182,42 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 - `import 模块名`：查找 `/python/模块名.py`（子目录按 `/python/子目录/模块名.py` 解析）
 - 示例见 §7
 
+### 6.6 绘图（graph / framebuf / lcd）
+
+**`graph`**——应用首次进入时自动安装 `/python/graph.py`（可直接查看/修改）：
+
+```python
+import graph
+graph.clf()                          # 清空当前图形
+graph.plot(lambda t: t*t, -2, 2)     # 函数曲线（自动定标）
+graph.scatter([0,1,2,3], [0,1,4,9])  # 散点
+graph.axis(0, 6.5, -1.2, 1.2)        # 固定坐标范围（取消自动定标）
+graph.title("y = x^2")               # 标题（ASCII）
+graph.show()                         # 全屏显示；按 ON 或 F5 返回终端
+```
+
+- 显示时**自动绘制坐标轴与刻度**（刻度取整 1/2/5×10ⁿ）
+- `show()` 会阻塞直到按 **ON/F5**，返回后终端自动整屏重绘
+- 源码为纯 ASCII：MicroPython 按 UTF-8 读源码、屏幕字库按 GBK——中文标签请用字节串，如 `lcd.text(0, 0, b'\xd6\xd0\xce\xc4')`
+
+**底层绘图**（`framebuf` + `lcd`，屏幕 256×127 单色）：
+
+```python
+import framebuf, lcd
+fb = framebuf.FrameBuffer(bytearray(256*128//8), 256, 128, framebuf.MONO_HLSB)
+fb.fill(0); fb.line(0, 0, 255, 127, 1); fb.rect(10, 10, 60, 30, 1)
+lcd.blit(fb)          # 推到屏幕（含刷新）
+lcd.text(4, 4, "hi")  # 文字（size 12 或 16；16 支持中文）
+lcd.wait_key()        # 等待 ON/F5
+```
+
 ### 6.5 不支持 / 有限制
 
 | 项目 | 说明 |
 |------|------|
 | `async/await`、`_thread`、`asyncio` | 未编译（无多线程硬件支撑） |
 | `socket` / `network` / `ssl` / `bluetooth` / `machine`(GPIO/I2C/SPI) | 未编译（无硬件） |
-| `json` / `re` / `hashlib` / `binascii` / `deflate` / `uctypes` / `framebuf` | 未编译（可后续按需开启，见下） |
+| `json` / `re` / `hashlib` / `binascii` / `deflate` / `uctypes` | 未编译（可后续按需开启，见下） |
 | `input()` | 未接入 stdin 通道（读取会报错）；`select` 虽已编译但无可用对象 |
 | 负步长切片 | `s[::-1]` 报 `NotImplementedError`（用循环或 `reversed`） |
 | 多继承 | 不支持（单继承） |

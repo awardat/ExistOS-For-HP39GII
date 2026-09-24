@@ -117,6 +117,30 @@ public:
     draw_fin:
         this->drawf(&this->disp_buf[y0 * this->disp_w], 0, y0, this->disp_w - 1, y1);
     }
+    // 1bpp MONO_HLSB 帧缓冲 → 显示缓冲（bit=1 画 fg，bit=0 画 bg）；随即将该区域刷新到屏幕。
+    // 2026-09-23：Python app 绘图（lcd.blit）与后续图形功能用。
+    void draw_1bpp(const uint8_t *src, int w, int h, int x0, int y0, uint8_t fg = 0, uint8_t bg = 255) {
+        if (!this->disp_buf || !src || w <= 0 || h <= 0) return;
+        int stride = (w + 7) / 8;
+        for (int r = 0; r < h; r++) {
+            int y = y0 + r;
+            if (y < 0 || y >= this->disp_h) continue;
+            const uint8_t *srow = src + (size_t)r * stride;
+            for (int c = 0; c < w; c++) {
+                int x = x0 + c;
+                if (x < 0 || x >= this->disp_w) continue;
+                this->disp_buf[x + y * this->disp_w] = (srow[c >> 3] & (0x80 >> (c & 7))) ? fg : bg;
+            }
+        }
+        int cx0 = x0 < 0 ? 0 : x0;
+        int cy0 = y0 < 0 ? 0 : y0;
+        int cx1 = x0 + w - 1;
+        int cy1 = y0 + h - 1;
+        if (cx1 >= this->disp_w) cx1 = this->disp_w - 1;
+        if (cy1 >= this->disp_h) cy1 = this->disp_h - 1;
+        if (cx1 >= cx0 && cy1 >= cy0) this->flushRect(cx0, cy0, cx1, cy1);
+    }
+
     void draw_box(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1, int16_t borderColor, int16_t fillColor) {
         if (fillColor != -1) {
             for (uint32_t y = y0; y <= y1; y++) {

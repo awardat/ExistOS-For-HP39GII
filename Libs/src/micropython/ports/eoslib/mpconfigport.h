@@ -40,7 +40,7 @@
 #define MICROPY_PY_HASHLIB (0)
 #define MICROPY_PY_UCTYPES (0)
 #define MICROPY_PY_JSON (0)
-#define MICROPY_PY_FRAMEBUF (0)
+#define MICROPY_PY_FRAMEBUF (1) // 2026-09-23：Python app 绘图（line/rect/ellipse/poly/text/blit，MONO_HLSB 与 LCD 一致）
 
 // sys 模块基础内容（无 VFS：关闭 stdio 文件对象，REPL 直接走 mp_hal_stdout）
 #define MICROPY_PY_SYS_STDFILES (0)
