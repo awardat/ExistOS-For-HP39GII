@@ -1,4 +1,4 @@
-# graph.py v2026-09-24a - a minimal plotting module for the ExistOS Python app (2026-09-24)
+# graph.py v2026-09-24b - a minimal plotting module for the ExistOS Python app (2026-09-24)
 #
 # ASCII-only source (MicroPython reads UTF-8; the LCD font is GBK-indexed).
 # API:
@@ -44,6 +44,7 @@ class _Graph(object):
         self.ys = []
         self.mode = 0        # 0 = line, 1 = scatter
         self._title = ""
+        self._labels = []
 
     # ---------- figure state ----------
     def clf(self):
@@ -52,6 +53,7 @@ class _Graph(object):
         self.auto = True
         self.mode = 0
         self._title = ""
+        self._labels = []
 
     def axis(self, xmin, xmax, ymin, ymax):
         if xmax > xmin and ymax > ymin:
@@ -165,6 +167,7 @@ class _Graph(object):
 
     def _axes(self):
         fb = self.fb
+        self._labels = []
         x0y = self._my(0.0) if self.ymin < 0 < self.ymax else self.py0 + self.ph - 1
         y0x = self._mx(0.0) if self.xmin < 0 < self.xmax else self.px0
         if x0y < self.py0:
@@ -181,7 +184,7 @@ class _Graph(object):
                 continue
             fb.line(px, x0y - 2, px, x0y + 2, 1)
             s = self._fmt(t)
-            lcd.text(px - 4 * len(s), x0y - 12, s, 12)
+            self._labels.append((px - 4 * len(s), x0y - 12, s, 12))
         # y ticks
         ty = self._nice(self.ymin, self.ymax, 4)
         for t in ty:
@@ -193,7 +196,7 @@ class _Graph(object):
             lx = y0x + 3
             if lx + 6 * len(s) > self.w - 1:
                 lx = y0x - 3 - 6 * len(s)
-            lcd.text(lx, py - 12, s, 12)
+            self._labels.append((lx, py - 12, s, 12))
 
     def _series(self):
         fb = self.fb
@@ -218,14 +221,32 @@ class _Graph(object):
                 fb.line(x1, y1, x2, y2, 1)
                 i += 1
 
+    def _overlay(self):
+        # 文字必须在 lcd.blit 之后画：blit 会整屏覆盖（1bpp 帧缓冲没有文字层）
+        for it in self._labels:
+            x = it[0]
+            y = it[1]
+            s = it[2]
+            size = it[3]
+            if x < 0:
+                x = 0
+            if y < 0:
+                y = 0
+            if x + 6 * len(s) > self.w - 1:
+                x = self.w - 1 - 6 * len(s)
+            if y > self.h - size:
+                y = self.h - size
+            lcd.text(x, y, s, size)
+        lcd.text(4, 1, self._title, 12)
+        lcd.text(4, self.h - _BAR, "ON: back", 12)
+
     def show(self):
         self._bounds()
         self._frame()
         self._axes()
         self._series()
-        lcd.text(4, 1, self._title, 12)
-        lcd.text(4, self.h - _BAR, "ON: back", 12)
         lcd.blit(self.fb)
+        self._overlay()
         lcd.wait_key()
         # after returning, the terminal is redrawn by the app on the next loop
 
