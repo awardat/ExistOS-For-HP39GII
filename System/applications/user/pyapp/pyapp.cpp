@@ -19,7 +19,8 @@
     #include "filesystem/littlefs/lfs.h"
 #endif
 #include "../../graphics/UICore.h"
-extern "C" const char *graph_py_source; // 内置绘图模块源码（graph_py.c，由 samples/graph.py 生成）
+extern "C" const char *graph_py_source;  // 内置绘图模块源码（graph_py.c，由 samples/graph.py 生成）
+extern "C" const char *graph_py_version; // 其版本标记（用于判断是否需要更新设备上的 /python/graph.py）
 #include "../../drivers/keyboard_gii39.h"
 
 extern UI_Display *uidisp;
@@ -770,7 +771,6 @@ static void ensurePyDir(void) {
     // 内置绘图模块 graph.py：缺失或版本标记不符时安装/更新。
     // 版本标记（graph.py vYYYY-MM-DDx）在文件头部——用户改动只要保留该行就不会被覆盖。
     {
-        extern "C" const char *graph_py_version;
         char head[96] = {0};
         bool need = true;
         FIL f;
