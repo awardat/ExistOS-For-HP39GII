@@ -767,16 +767,23 @@ static void migrateIf(const char *from, const char *to) { // 目标不存在且�
 
 static void ensurePyDir(void) {
     f_mkdir("/python");
-    // 内置绘图模块 graph.py（首次安装；已存在则不覆盖，用户可自行修改）
+    // 内置绘图模块 graph.py：缺失或版本标记不符时安装/更新。
+    // 版本标记（graph.py vYYYY-MM-DDx）在文件头部——用户改动只要保留该行就不会被覆盖。
     {
-        FILINFO fi;
-        if (f_stat("/python/graph.py", &fi) != FR_OK) {
-            FIL f;
-            if (f_open(&f, "/python/graph.py", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
-                UINT bw = 0;
-                f_write(&f, graph_py_source, (UINT)strlen(graph_py_source), &bw);
-                f_close(&f);
-            }
+        extern "C" const char *graph_py_version;
+        char head[96] = {0};
+        bool need = true;
+        FIL f;
+        if (f_open(&f, "/python/graph.py", FA_READ) == FR_OK) {
+            UINT br = 0;
+            f_read(&f, head, sizeof(head) - 1, &br);
+            f_close(&f);
+            if (strstr(head, graph_py_version)) need = false;
+        }
+        if (need && f_open(&f, "/python/graph.py", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+            UINT bw = 0;
+            f_write(&f, graph_py_source, (UINT)strlen(graph_py_source), &bw);
+            f_close(&f);
         }
     }
     DIR dir;

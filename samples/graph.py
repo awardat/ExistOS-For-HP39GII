@@ -1,4 +1,4 @@
-# graph.py - a minimal plotting module for the ExistOS Python app (2026-09-23)
+# graph.py v2026-09-24a - a minimal plotting module for the ExistOS Python app (2026-09-24)
 #
 # ASCII-only source (MicroPython reads UTF-8; the LCD font is GBK-indexed).
 # API:
@@ -43,7 +43,7 @@ class _Graph(object):
         self.xs = []
         self.ys = []
         self.mode = 0        # 0 = line, 1 = scatter
-        self.title = ""
+        self._title = ""
 
     # ---------- figure state ----------
     def clf(self):
@@ -51,7 +51,7 @@ class _Graph(object):
         self.ys = []
         self.auto = True
         self.mode = 0
-        self.title = ""
+        self._title = ""
 
     def axis(self, xmin, xmax, ymin, ymax):
         if xmax > xmin and ymax > ymin:
@@ -62,7 +62,7 @@ class _Graph(object):
             self.auto = False
 
     def title(self, s):
-        self.title = s
+        self._title = s
 
     # ---------- data ----------
     def plot(self, a, b=None, c=None, d=None):
@@ -223,7 +223,7 @@ class _Graph(object):
         self._frame()
         self._axes()
         self._series()
-        lcd.text(4, 1, self.title, 12)
+        lcd.text(4, 1, self._title, 12)
         lcd.text(4, self.h - _BAR, "ON: back", 12)
         lcd.blit(self.fb)
         lcd.wait_key()

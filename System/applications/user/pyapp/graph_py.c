@@ -1,9 +1,8 @@
-// 由 samples/graph.py 自动生成（勿手改；重新生成：
-//   python3 -c "import pathlib;s=pathlib.Path('samples/graph.py').read_text();
-//   print(chr(10).join('"'+l.replace(chr(92),chr(92)*2).replace(chr(34),chr(92)+chr(34))+'\\n"' for l in s.split(chr(10))))"
+// 由 samples/graph.py 自动生成（勿手改；重新生成见 samples/README.md）
 
+const char *graph_py_version = "graph.py v2026-09-24a";
 const char *graph_py_source =
-    "# graph.py - a minimal plotting module for the ExistOS Python app (2026-09-23)\n"
+    "# graph.py v2026-09-24a - a minimal plotting module for the ExistOS Python app (2026-09-24)\n"
     "#\n"
     "# ASCII-only source (MicroPython reads UTF-8; the LCD font is GBK-indexed).\n"
     "# API:\n"
@@ -48,7 +47,7 @@ const char *graph_py_source =
     "        self.xs = []\n"
     "        self.ys = []\n"
     "        self.mode = 0        # 0 = line, 1 = scatter\n"
-    "        self.title = \"\"\n"
+    "        self._title = \"\"\n"
     "\n"
     "    # ---------- figure state ----------\n"
     "    def clf(self):\n"
@@ -56,7 +55,7 @@ const char *graph_py_source =
     "        self.ys = []\n"
     "        self.auto = True\n"
     "        self.mode = 0\n"
-    "        self.title = \"\"\n"
+    "        self._title = \"\"\n"
     "\n"
     "    def axis(self, xmin, xmax, ymin, ymax):\n"
     "        if xmax > xmin and ymax > ymin:\n"
@@ -67,7 +66,7 @@ const char *graph_py_source =
     "            self.auto = False\n"
     "\n"
     "    def title(self, s):\n"
-    "        self.title = s\n"
+    "        self._title = s\n"
     "\n"
     "    # ---------- data ----------\n"
     "    def plot(self, a, b=None, c=None, d=None):\n"
@@ -228,7 +227,7 @@ const char *graph_py_source =
     "        self._frame()\n"
     "        self._axes()\n"
     "        self._series()\n"
-    "        lcd.text(4, 1, self.title, 12)\n"
+    "        lcd.text(4, 1, self._title, 12)\n"
     "        lcd.text(4, self.h - _BAR, \"ON: back\", 12)\n"
     "        lcd.blit(self.fb)\n"
     "        lcd.wait_key()\n"
