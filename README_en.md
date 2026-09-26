@@ -51,6 +51,11 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 
 ## Current Development Status (latest only, see CHANGELOG.md)
 
+### build 146 (2026-09-24 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-146))
+- [x] **Python app plotting**: enabled MicroPython `framebuf` + new `lcd` bridge module (framebuffer straight to the screen) + `graph` module (`clf/plot/scatter/axis/title/show`, **axes with ticks** drawn automatically; `show()` returns on ON/F5)
+- [x] `graph.py` is auto-installed into `/python/` (version-tagged, readable/editable; keep the tag line to avoid being overwritten)
+- [x] Sample `samples/py05_plot.py` (line/scatter/fixed axis, counterpart of KhiCAS sample 5); manual section 6.6
+
 ### build 145 (2026-09-23 released, [Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-145))
 - [x] **Battery boost-mode investigation and fallback**: four fix paths (DOUBLE_FETS / boost idle without downclock / DCDC timing) all failed on hardware -> the device's power path is degraded (260mA battery boost worked in the build 135 era); **boost mode now requires external power (5V)**, battery forces Standard and the settings page shows `[need 5V]`
 - [x] **Fixed Python heap starving KhiCAS**: release the interpreter and GC heap on exit (the resident 512KB caused `!!Out of Memory!!`)

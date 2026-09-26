@@ -4,7 +4,7 @@
 
 ---
 
-## [build 146] - 开发中
+## [build 146] - 2026-09-24 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-146))
 
 ### 已完成
 - **Python app 绘图**（M1-M3）：
@@ -12,6 +12,8 @@
   - 新增 `lcd` 桥模块（`blit/text/clear/width/height/wait_key`）+ 系统侧弱符号钩子与 `UI_Display::draw_1bpp`（1bpp 帧缓冲直写显示缓冲 + 局部刷新）
   - 新增 `graph` 绘图模块（`clf/plot/scatter/axis/title/show`，**自动绘制坐标轴与刻度**；callable 或序列两种画法）——随应用首次进入安装到 `/python/graph.py`，纯 ASCII 可读可改
   - 样本 `samples/py05_plot.py`（曲线/散点/固定坐标，等价 KhiCAS 例 5）；手册新增 §6.6 绘图、模块表补 framebuf/lcd/graph；samples/README 同步
+  - 修复 `graph.title()` 被实例属性遮蔽（`'str' object isn't callable`）；`graph.show()` 绘制顺序改为**先 blit 线条、再叠加文字**（原顺序刻度数字会被整屏 blit 覆盖 → 闪现即消失）
+  - `graph.py` 带版本标记（v2026-09-24b），应用启动时按标记自动安装/更新（用户保留标记行则不被覆盖）
 
 ## [build 145] - 2026-09-23 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-145))
 

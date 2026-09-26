@@ -50,6 +50,11 @@
 
 ## 目前工作进展（仅最新版本，历史见 CHANGELOG.md）
 
+### build 146（2026-09-24 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-146)）
+- [x] **Python app 绘图**：开启 MicroPython `framebuf` + 新增 `lcd` 桥模块（帧缓冲直写屏幕）+ `graph` 绘图模块（`clf/plot/scatter/axis/title/show`，自动绘制**坐标轴与刻度**；`show()` 按 ON/F5 返回）
+- [x] `graph.py` 随应用自动安装到 `/python/`（带版本标记，可读可改；用户保留标记行则不覆盖）
+- [x] 样本 `samples/py05_plot.py`（曲线/散点/固定坐标，等价 KhiCAS 例 5）；手册新增 §6.6 绘图
+
 ### build 145（2026-09-23 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-145)）
 - [x] **电池供电加速档问题定位与兜底**：四条修复路径（DOUBLE_FETS / 加速档空闲不降频 / DCDC 时序）实测均无效 → 判定本机供电通路硬件退化（build 135 时代电池加速 260mA 正常）；**加速档仅限外接电源（5V）**，无 5V 时强制标准档并在设置页提示 `[需外接电源]`（电池供电请用标准档）
 - [x] **修复 Python 大堆挤占 KhiCAS**：退出 Python 时释放解释器与 GC 堆（原先 512KB 常驻导致 `!!Out of Memory!!`）
