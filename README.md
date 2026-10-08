@@ -32,9 +32,9 @@
 | [目前工作进展](#目前工作进展) | | |
 | | **[安装教程](#仅安装)** | |
 | 适用 Win10/11 | [使用 ExistOS Updater 安装](#windows-下使用-existos-updater-刷入) | (推荐新手使用) |
-| Win/Linux 通用 | [使用 OS_Loader 和 EDB 安装](#通用方法) | |
+| Win/Linux 通用 | [手动安装](docs/manual-install.md) | |
 | | **[使用教程](#固件基本使用)** | |
-| [初始化](#初次使用) | [系统快捷键](#系统快捷键) | [访问内部存储](#内部存储的访问) |
+| [系统快捷键](#系统快捷键) | [访问内部存储](#内部存储的访问) | |
 | **[RPN39 RPN 计算器](#rpn39-计算器)** | [用户手册（功能/用法/示例）](#rpn39-用户手册) | [键位](#键位映射) |
 | **[KhiCAS 用户手册](docs/KhiCAS-manual.md)** | [按键与菜单](docs/KhiCAS-manual.md) | [内置函数参考](docs/KhiCAS-functions.md) |
 | **[如何卸载并刷回原生系统](#系统卸载并刷回原生系统)** | **[本项目贡献者](#贡献者)** | **[开源许可证](#许可协议)** |
@@ -43,7 +43,7 @@
 | :---: | :---: | :---: |
 | [目前工作进展](#目前工作进展) | | |
 | | **[编译与安装教程](#编译和安装)** | |
-| [准备环境](#准备环境) | [编译系统](#编译系统) | [固件安装](#固件安装) |
+| [准备环境](#准备环境) | [编译系统](#编译系统) | [手动安装](docs/manual-install.md) |
 | | **贡献代码** | |
 | 文档 (待补) | [代码提交规范](#代码提交规范) |
 | **[如何卸载并刷回原生系统](#系统卸载并刷回原生系统)** | **[本项目贡献者](#贡献者)** | **[开源许可证](#许可协议)** |
@@ -107,6 +107,8 @@ OSLoader 的可用 RAM 为 512KB（含堆 34KB），而**每 1MB 虚拟机地址
 
 ### Windows 下使用 ExistOS Updater 刷入
 
+已经安装过ExistOS的计算器使用本流程更新系统。
+
 您需要准备好：
 
 - 固件：从[此处](https://github.com/awardat/ExistOS-For-HP39GII/releases)（本仓库）下载
@@ -114,7 +116,13 @@ OSLoader 的可用 RAM 为 512KB（含堆 34KB），而**每 1MB 虚拟机地址
 - 刷机工具：从[此处](https://github.com/ExistOS-Team/ExistOS_Updater_v2/releases)下载
   - 仅支持 Windows 10，Windows 11
 
-然后参考[此教程](https://github.com/ExistOS-Team/ExistOS_Updater_v2#readme)刷入固件。
+1. 将计算器连接到电脑
+
+2. 运行刷机工具ExistOS Updater，此时可见顶部状态栏显示[EDB mode]
+
+3. 选择下载好的 `OSLoader.sb` 与 `ExistOS.sys`文件，点击`Update OSLoader & System`，等待计算器两次重启后完成刷新
+
+   ![ExistOS Updater - EDB mode](Image/ExistOS_Updater_EDB.png)
 
 ### 从原版系统迁移 / 救砖（无需命令行）
 
@@ -122,46 +130,16 @@ ExistOS Updater 的 **HostLink 模式**适用于**任何** HP39GII——包括�
 
 1. 卸下电池（确保设备已断电）
 2. **按住 `ON/C` 不放**，将 USB 连接到电脑（进入 ROM 级 USB 模式）
-3. 在 Updater 中选择 HostLink 模式，刷入 `OSLoader.sb` 与 `ExistOS.sys`
+3. 运行刷机工具ExistOS Updater，此时可见顶部状态栏显示[HostLink mode]
+4. 选择下载好的 `OSLoader.sb` 与 `ExistOS.sys`文件，点击`Update OSLoader & System`，等待计算器两次重启后完成刷新
 
 此方式与命令行的 `sbloader` + `edb` 流程等价。若刷入后首次启动出现存储挂载异常，可在 OSLoader 界面按 **`ON`+`F5`** 进入擦除数据菜单清空分区（会删除设备上的全部用户文件），再重新刷入。
 
-### 通用方法
+![ExistOS Updater - HostLink mode](Image/ExistOS_Updater_HostLink.png)
 
-您需要准备好：
+### 手动安装
 
-- 固件：从[此处](https://github.com/awardat/ExistOS-For-HP39GII/releases)（本仓库）下载
-  - 请下载 `OSLoader.sb` 和 `ExistOS.sys`
-- sb_loader：用于将 OSLoader 载入计算器 RAM，若您的 HP39gii 上没有安装 ExistOS 则需要使用。
-  - Windows 用户请从[此处](../../raw/main/tools/sbtools_win/sb_loader.exe)下载二进制文件；
-  - Linux 用户请从[此处](../../archive/refs/heads/main.zip)下载压缩包并解压，进入 `tools/sbtools/` 目录，用 `make` 编译（无需安装）。
-    - 可能需要安装crypto++依赖库才能编译成功，参考[此处](#准备环境)
-    - 您会得到 `sb_loader` 可执行文件。
-- EDB（Exist Debug Bridge）：用于刷写固件。
-  - Windows 用户请从[此处](../../raw/main/tools/edb.exe)下载二进制文件；
-  - Linux 用户请从[此处](https://github.com/ExistOS-Team/edb-unix/archive/refs/heads/master.zip)下载压缩包并解压，使用如下命令编译：
-    - `mkdir build`
-    - `cmake -B build`
-    - `cmake --build build`
-    - 您会得到 `edb` 可执行文件。
-
-请将上述文件置于同一文件夹下，以便操作。
-
-若您的 HP39gii 上没有安装 ExistOS，请先：
-1. 卸下计算器的所有电池
-2. 按住 `ON/C` 并连接 USB 到电脑
-3. 运行 `sbloader OSLoader.sb`
-  - 计算器将会启动 ExistOS 引导程序，然后将提示找不到系统（如下图），请不要断开计算器电源（USB），继续下面的步骤。
-  - ![OSL Boot](Image/1.png)
-
-当计算器上已有安装 ExistOS 时：
-1. 连接 USB 到电脑
-2. 运行 `edb -r -f OSLoader.sb 1408 b`
-  - 计算器将重新启动，此步骤会刷入 `OSLoader` 引导程序
-3. 运行 `edb -r -f ExistOS.sys 1984`
-  - 计算器将重新启动，此步骤会刷入 `ExistOS` 主系统
-4. 享受 ExistOS 吧
-  - 如果遇到问题，或者有意参与本项目，您可以加入 QQ 群（942419621）。
+Windows / Linux 命令行安装（OS_Loader + EDB）步骤见：**[手动安装](docs/manual-install.md)**。
 
 ## 键位映射
 
@@ -342,68 +320,9 @@ cd build
 
 ### 固件安装
 
-#### OSLoader（RAM）
-
-注意：HP39GII 的相关驱动程序请自行安装。
-
-提示：已安装 ExistOS 的计算器不需要执行此步骤，除非，刷坏了……
-
-OSLoader 是引导程序，用于加载 ExistOS 并提供底层 API 和虚拟内存相关功能，使用下面的命令刷入 OSLoader（需要计算器处在刷写模式）。
-
-要刷写 OSLoader，需要先将计算器完全断电（卸下所有电池），按住 `ON/C` 键不放，之后插入 USB 数据线。
-
-Windows 系统下可以查看设备管理器是否出现一个名为 “USB 输入设备” 且 ID 为 066F:3770 的 USB HID 设备
-
-![USBID](Image/0.png)
-
-|系统|安装|
-|----|----|
-|Windows|`ninja sb_flash`|
-|Linux|`make sb_flash`|
-
-#### OSLoader
-
-|系统|安装|
-|----|----|
-|Windows|`ninja edb_flash_loader`|
-|Linux|`make edb_flash_loader`|
-
-刷入 OSLoader 后计算器会自动重启，此时已刷入新的 OSLoader。
-
-#### ExistOS
-
-|系统|安装|
-|----|----|
-|Windows|`ninja edb_flash_sys`|
-|Linux|`make edb_flash_sys`|
-
-刷入 ExistOS 后计算器会自动重启，此时已刷入新的系统并可以使用。
+编译产物的刷写步骤见：**[手动安装](docs/manual-install.md)**。
 
 ## 固件基本使用
-
-### 初次使用
-
-系统编译和安装完成后，第一次开机将会见到如下系统界面，提示将 Flash 的数据区格式化为 FAT16 格式的文件系统，`ENTER` 点击 OK 开始格式化，大约耗时半分钟。
-
-![Sys1](Image/2.png)
-
-出现以下界面后表示 Flash 数据区已经格式化完毕，点击 OK 进入系统主界面。
-
-![Sys1](Image/3.png)
-
-目前系统预置应用为 KhiCAS，用于进行代数计算、绘图、编程等数学功能，[←][→][↑][↓]键选择，[ENTER]键确定，F1~F3 切换选项卡。
-
-![Sys1](Image/4.png)
-
-Files 选项卡为当前文件浏览器，可以浏览目录、打开 jpg 格式图片、播放 mjpeg 编码 avi 格式视频，目前暂未实现其它文件管理功能。
-
-![Sys1](Image/4-1.png)
-
-Status 选项卡用于显示当前系统状态，以及相关的参数设定。
-
-![Sys1](Image/5.png)
-
-![Sys1](Image/5-1.png)
 
 ### 系统快捷键
 
@@ -540,7 +459,7 @@ Flash 全盘擦除方法：在刷入 OS Loader 后或 Exist OS 系统运行时�
 
    7.3
 
-   ​ (a) 一般 for 循环的循环变量定义在 for 循环中：
+    (a) 一般 for 循环的循环变量定义在 for 循环中：
 
    ```c
        for (int i = 0; i < l; i++) {
@@ -548,7 +467,7 @@ Flash 全盘擦除方法：在刷入 OS Loader 后或 Exist OS 系统运行时�
        }
    ```
 
-   ​ (b) 外部使用循环变量的情况，也应在此处赋初值：
+    (b) 外部使用循环变量的情况，也应在此处赋初值：
 
    ```c
        int i;
@@ -558,7 +477,7 @@ Flash 全盘擦除方法：在刷入 OS Loader 后或 Exist OS 系统运行时�
        return i;
    ```
 
-   ​ (c) 非必要不得将 for 循环此三处中任意一处空出：`for ( ; ; )`，否则请使用 while 循环。
+    (c) 非必要不得将 for 循环此三处中任意一处空出：`for ( ; ; )`，否则请使用 while 循环。
 
    7.4 禁止在需要判断语句的地方进行赋值操作，如 `if (a = 1)，(a = 1) ? a : 0` 等。
 

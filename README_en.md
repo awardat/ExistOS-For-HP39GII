@@ -34,9 +34,9 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 | [Current Development Status](#current-developping-status) | | |
 | | **[Install Guide](#only-installing)** | |
 | For Windows 10/11 | [ExistOS Updater](#for-windows-10--11-existos-updater) | Automated tools for beginers |
-| Win/Linux | [OS Loader & EDB](#for-windows--linux) | |
+| Win/Linux | [Manual install](docs/manual-install.md) | |
 | | **[Usage](#basic-usage-of-the-firmware)** | |
-| [Setup](#booting-for-the-first-time) | [Shortcuts](#shortcuts) | [Accessing Internal Storage](#accessing-internal-storage) |
+| [Shortcuts](#shortcuts) | [Accessing Internal Storage](#accessing-internal-storage) | |
 | **[KhiCAS user manual](docs/KhiCAS-manual.md)** | [Keys and menus](docs/KhiCAS-manual.md) | [Function reference](docs/KhiCAS-functions.md) |
 | **[Uninstalling and Flashing Back](#uninstalling-existos-and-flashing-back-to-the-hp-firmware)** | **[Contributors](#contributors)** | **[License](#license)** |
 
@@ -44,7 +44,7 @@ Refer to the [Install Guide](#only-installing) for installing procedures.
 | :---: | :---: | :---: |
 | [Current Development Status](#current-developping-status) | | |
 | | **[Comiling and Installing](#compiling-and-installing)** | |
-| [Prerequisites](#prerequisites) | [Compiling ExistOS](#compiling-existos) | [Flash firmware](#installing) |
+| [Prerequisites](#prerequisites) | [Compiling ExistOS](#compiling-existos) | [Manual install](docs/manual-install.md) |
 | | **Code contribution** | |
 | Documents (To do) | [Code submission standard](#code-submission-standard) |
 | **[Uninstalling and Flashing Back](#uninstalling-existos-and-flashing-back-to-the-hp-firmware)** | **[Contributors](#contributors)** | **[License](#license)** |
@@ -110,7 +110,13 @@ Requires:
 - ExistOS Updater: Download from [here](https://github.com/ExistOS-Team/ExistOS_Updater_v2/releases).
   - Only supports Windows 10 / 11.
 
-Then follow the [instructions](https://github.com/ExistOS-Team/ExistOS_Updater_v2#readme) to flash the firmware.
+Use this flow to update a calculator that already has ExistOS installed.
+
+1. Connect the calculator to the computer
+2. Run ExistOS Updater; the top status bar shows [EDB mode]
+3. Select `OSLoader.sb` and `ExistOS.sys`, click `Update OSLoader & System`, and wait for the calculator to reboot twice
+
+   ![ExistOS Updater - EDB mode](Image/ExistOS_Updater_EDB.png)
 
 ### Migrating from the stock firmware / unbricking (no command line)
 
@@ -118,48 +124,16 @@ The **HostLink mode** of ExistOS Updater works with **any** HP39GII, including d
 
 1. Remove the batteries (make sure the device is powered off)
 2. **Hold `ON/C`** and connect USB to the computer (enters the ROM-level USB mode)
-3. Choose HostLink mode in the Updater and flash `OSLoader.sb` and `ExistOS.sys`
+3. Run ExistOS Updater; the top status bar shows [HostLink mode]
+4. Select `OSLoader.sb` and `ExistOS.sys`, click `Update OSLoader & System`, and wait for the calculator to reboot twice
 
 This is equivalent to the command-line `sbloader` + `edb` flow. If storage fails to mount on the first boot after flashing, press **`ON`+`F5`** in the OSLoader to enter the erase-data menu and clear the partitions (this deletes all user files on the device), then flash again.
 
-### For Windows / Linux
+![ExistOS Updater - HostLink mode](Image/ExistOS_Updater_HostLink.png)
 
-Requires:
+### Manual install
 
-- Firmware: Download from [here](https://github.com/awardat/ExistOS-For-HP39GII/releases) (this repository).
-  - Download `OSLoader.sb` and `ExistOS.sys`.
-- sb_loader: Used to send OSLoader to the RAM of your calculator if you haven't installed it before.
-  - Windows: Download binary file from [here](../../raw/main/tools/sbtools_win/sb_loader.exe).
-  - Linux: Download zip file from [here](../../archive/refs/heads/main.zip) and extract it. Then run the following commands:
-    - Install `crypto++` library. Following the "Install dependencies" section [here](#Prerequisites)
-    - `cd tools/sbtools/`
-    - `make`
-    - Then you will get the executable file `sb_loader`
-- EDB (ExistOS Debug Brige): Used to flash firmwares.
-  - Windows: Download binary file from [here](../../raw/main/tools/edb.exe).
-  - Linux: Download zip file from [here](https://github.com/ExistOS-Team/edb-unix/archive/refs/heads/master.zip) and extract it. Then run the following commands:
-    - `mkdir build`
-    - `cmake -B build`
-    - `cmake --build build`
-    - Then you will get the executable file `edb`
-
-Put the mentioned files to a directory.
-
-If you haven't installed ExistOS on your calculator, please go through this to-do list first:
-1. Remove all batteries from your calculator.
-2. Hold `ON/C` key and connect your calculator to computer via USB cable.
-3. Run command `sbloader OSLoader.sb`
-  - Normally your calculator will boot into the OSLoader, and then a message will show up on the screen. There is no need to unplug the USB cable now. Just continue to do the following steps.
-  - ![OSL Boot](Image/1.png)
-
-If ExistOS has already been installed on your device:
-1. Connect your calculator to computer via USB cable.
-2. Run command `edb -r -f OSLoader.sb 1408 b` to flash the OSLoader.
-  - Your calculator will reboot automatically.
-3. Run command `edb -r -f ExistOS.sys 1984` to flash the System.
-  - Your calculatr will reboot automatically.
-1. Enjoy ExistOS!
-  - If you are in trouble with the installation or anything else, open an issue or join our Discord server to seek for help.
+The command-line install (OS_Loader + EDB) and post-build flashing steps: **[manual install (Chinese)](docs/manual-install.md)**.
 
 ## Note on KhiCAS Computation Speed
 
@@ -307,85 +281,9 @@ Compiling:
 
 ### Installing
 
-#### OSLoader in RAM (temporarily)
-
-Note: Please install drivers for HP39GII on your own.
-
-You can skip this step if the OSLoader has been installed on your device (unless it's bricked.)
-
-OSLoader boots ExistOS and provides low-level APIs and virtual memory service. Run commands below to load the OSLoader temporarily.
-
-Before flashing, power off your calculator completely by removing the batteries, and then plug in USB cable while holding down the `ON/C` key. Then your calculator will enter the flashing mode.
-
-An HID device named "USB Input Device" with the ID of 066F:3770 will show up in the Device Manager under Windows.
-
-![USBID](Image/0.png)
-
-|System|Install|
-|---|---|
-|Windows|`ninja sb_flash`|
-|Linux|`make sb_flash`|
-
-#### OSLoader
-
-|System|Install|
-|----|----|
-|Windows|`ninja edb_flash_loader`|
-|Linux|`make edb_flash_loader`|
-
-This will flash OSLoader to the calculator.
-
-Your calculator will reboot automatically.
-
-#### ExistOS
-
-|System|Install|
-|----|----|
-|Windows|`ninja edb_flash_sys`|
-|Linux|`make edb_flash_sys`|
-
-This will install ExistOS on your calculator.
-
-Your calculator will reboot automatically.
-
-## KhiCAS Calculator
-
-KhiCAS user manual (startup / keys / menus / scripts / Python compat mode / FAQ): [docs/KhiCAS-manual.md](./docs/KhiCAS-manual.md).
-
-KhiCAS built-in function reference (355 commands in 22 categories with purpose/parameters/examples, Chinese): [docs/KhiCAS-functions.md](./docs/KhiCAS-functions.md).
-
-## Python App
-
-Built-in standalone **MicroPython 1.29** app (4th icon on the apps page): full Python language (classes/generators/exceptions/comprehensions), script runner (`/xcas/pyNN_*.py`), file I/O, Chinese menus and help.
-
-- **User manual** (startup / key tables / menus / syntax differences / samples / benchmarks / FAQ): [docs/Python-app-manual.md](./docs/Python-app-manual.md)
-- **Samples**: `samples/py01_basics.py`, `samples/py07_nqueens.py` (N-Queens 8x8: 1221 ms standard / 703 ms boost)
+The post-build flashing steps: **[manual install (Chinese)](docs/manual-install.md)**.
 
 ## Basic Usage of the Firmware
-
-### Booting for the first time
-
-During the first boot after the installation you will see the following dialog, prompting you to format the data section of the flash as FAT16. Press `ENTER` to confirm the operation, which usually takes around 30 seconds.
-
-![Sys1](Image/2.png)
-
-This screen indicates a successful formatting attempt. Select OK to enter the main menu.
-
-![Sys1](Image/3.png)
-
-This system only comes with a KhiCAS application for now. Press `←` `→` `↑` `↓` to navigate and `ENTER` to confirm.
-
-![Sys1](Image/4.png)
-
-The Files tab is the file explorer that is capable of viewing jpg pictures, playing mjpeg encoded avi videos and executing .exp ExistOS applications. No other file managing functions are implemented now.
-
-![Sys1](Image/4-1.png)
-
-The Status tab shows system status and related settings.
-
-![Sys1](Image/5.png)
-
-![Sys1](Image/5-1.png)
 
 ### Shortcuts
 
