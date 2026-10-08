@@ -65,7 +65,15 @@ print(caseval("bench_ms"))
 | `py02_module.py` | 供 py01 测试 `import` 的小模块（放同目录） |
 | `py05_plot.py` | 绘图演示：曲线 / 散点 / 固定坐标（用内置 `graph` 模块，等价于 KhiCAS 例 5） |
 | `graph.py` | 内置绘图模块源码（应用首次进入自动安装到 `/python/graph.py`，可自行修改；改这里只是留档） |
+| `py06_plot3d.py` | 3D 绘图演示：函数曲面 / 马鞍面 / 螺旋线（用内置 `graph3d` 模块，可旋转/俯仰） |
+| `graph3d.py` | 内置 3D 绘图模块源码（自动安装到 `/python/graph3d.py`） |
 | `py07_nqueens.py` | N-Queens 8x8 基准（92 解 / 2057 节点 + 计时） |
+
+内置模块（`graph.py`/`graph3d.py`）重新生成方式：
+```bash
+python3 tools/py2c.py samples/graph3d.py graph3d_py > System/applications/user/pyapp/graph3d_py.c
+```
+（`graph.py` 同理；版本标记在脚本首行，应用按标记安装/更新，用户保留该行则不被覆盖。）
 
 **运行方式**：把文件复制到设备 `/python/` → Python app 内按 **F4（运行）** 选择文件，或 **F6 文件 → 打开并运行**。
 

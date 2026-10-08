@@ -173,8 +173,9 @@ HP39GII 首页应用页第 4 个图标 **Python** 是一个**真正的 MicroPyth
 | `micropython` | `mem_info/qstr_info/opt_level`、`ringio` |
 | `errno` | 常用 errno 常量 |
 | `framebuf` | 帧缓冲绘图（`FrameBuffer` + `pixel/line/rect/fill/ellipse/poly/text/blit/scroll`；单色用 `MONO_HLSB`） |
-| `lcd` | 屏幕桥（本机扩展）：`blit(fb[,x,y])` / `text(x,y,s[,size])` / `clear([color])` / `width()` / `height()` / `wait_key()` |
-| `graph` | 绘图模块（见 §6.6；首次进入应用时自动安装到 `/python/graph.py`） |
+| `lcd` | 屏幕桥（本机扩展）：`blit(fb[,x,y])` / `text(x,y,s[,size])` / `clear([color])` / `width()` / `height()` / `wait_key()` / `wait_nav()` |
+| `graph` | 2D 绘图模块（见 §6.6；首次进入应用时自动安装到 `/python/graph.py`） |
+| `graph3d` | 3D 绘图模块（见 §6.7；自动安装到 `/python/graph3d.py`） |
 
 ### 6.4 文件与导入
 
@@ -209,7 +210,28 @@ fb.fill(0); fb.line(0, 0, 255, 127, 1); fb.rect(10, 10, 60, 30, 1)
 lcd.blit(fb)          # 推到屏幕（含刷新）
 lcd.text(4, 4, "hi")  # 文字（size 12 或 16；16 支持中文）
 lcd.wait_key()        # 等待 ON/F5
+lcd.wait_nav()        # 等待导航键：0=ON/F5、1=左、2=右、3=上、4=下、-1=其它
 ```
+
+### 6.7 3D 绘图（graph3d）
+
+**`graph3d`**——随应用自动安装到 `/python/graph3d.py`（单色屏幕，线框渲染）：
+
+```python
+import graph3d, math
+graph3d.clf()
+graph3d.title("z = sin(x)*cos(y)")
+graph3d.surface(lambda x, y: math.sin(x)*math.cos(y), -3, 3, -3, 3, 14)
+graph3d.plot(xs, ys, zs)     # 3D 折线（参数曲线）
+graph3d.view(45, 30)         # 方位角/俯仰角（度），默认 45/30
+graph3d.show()               # ←→ 旋转 15°，↑↓ 俯仰 10°，ON/F5 返回
+```
+
+- `surface(f, x0, x1, y0, y1, n=14)`：函数曲面网格（`n` 限 4–30，越大越细也越慢）
+- `plot(xs, ys, zs)`：三维折线；`view(az, el)`、`title(s)`、`clf()`
+- 自动定标（三轴等比例、不拉伸），自动绘制 x/y/z 轴与轴标
+- 显示时左上为标题、右上为当前 `az/el` 角度、底部为按键提示
+- 示例脚本：`samples/py06_plot3d.py`（曲面 / 马鞍面 / 螺旋线）
 
 ### 6.5 不支持 / 有限制
 

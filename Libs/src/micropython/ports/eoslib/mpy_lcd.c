@@ -10,6 +10,8 @@
 //   lcd.blit(fb)          # 推到屏幕（含刷新）
 //   lcd.text(4, 4, "hi")  # 文字（走系统字库，支持中文）
 //   lcd.wait_key()        # 阻塞直到按 ON/F5（用完回到终端）
+//   lcd.wait_nav()        # 等待导航键，返回 0=ON/F5、1=左、2=右、3=上、4=下、-1=其它
+//                         # （用于 3D 视角旋转等交互；等待期间松开按键才算一次）
 #include <string.h>
 
 #include "py/obj.h"
@@ -37,6 +39,7 @@ __attribute__((weak)) void mpy_lcd_text(int x, int y, const char *s, int size) {
 }
 __attribute__((weak)) void mpy_lcd_clear(int color) { (void)color; }
 __attribute__((weak)) int mpy_lcd_wait_key(void) { return -1; }
+__attribute__((weak)) int mpy_lcd_wait_nav(void) { return 0; }
 __attribute__((weak)) int mpy_lcd_width(void) { return 256; }
 __attribute__((weak)) int mpy_lcd_height(void) { return 127; }
 
@@ -92,6 +95,12 @@ static mp_obj_t lcd_wait_key(void) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(lcd_wait_key_obj, lcd_wait_key);
 
+static mp_obj_t lcd_wait_nav(void) {
+    int k = mpy_lcd_wait_nav();
+    return mp_obj_new_int(k);
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(lcd_wait_nav_obj, lcd_wait_nav);
+
 static const mp_rom_map_elem_t lcd_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_lcd) },
     { MP_ROM_QSTR(MP_QSTR_width), MP_ROM_PTR(&lcd_width_obj) },
@@ -100,6 +109,7 @@ static const mp_rom_map_elem_t lcd_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&lcd_text_obj) },
     { MP_ROM_QSTR(MP_QSTR_blit), MP_ROM_PTR(&lcd_blit_obj) },
     { MP_ROM_QSTR(MP_QSTR_wait_key), MP_ROM_PTR(&lcd_wait_key_obj) },
+    { MP_ROM_QSTR(MP_QSTR_wait_nav), MP_ROM_PTR(&lcd_wait_nav_obj) },
 };
 static MP_DEFINE_CONST_DICT(lcd_module_globals, lcd_module_globals_table);
 

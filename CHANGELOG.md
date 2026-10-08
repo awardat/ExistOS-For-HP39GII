@@ -7,7 +7,16 @@
 ## [build 147] - 开发中
 
 ### 已完成
-- （待补充）
+- **Python app 3D 绘图（graph3d）**：
+  - 新增 `graph3d` 模块（自动安装到 `/python/graph3d.py`，纯 ASCII）：`clf/surface/plot/view/title/show`
+  - `surface(f, x0, x1, y0, y1, n)` 函数曲面线框网格（n 限 4–30）；`plot(xs,ys,zs)` 三维折线
+  - **交互旋转**：`show()` 内 ←→ 旋转 15°、↑↓ 俯仰 10°、ON/F5 返回；左上标题、右上 az/el、底部键位提示
+  - 自动定标（三轴等比例）+ x/y/z 轴与轴标；1bpp 线框渲染
+  - `lcd` 模块新增 `wait_nav()`（0=ON/F5、1=左、2=右、3=上、4=下、-1=其它；松键才算一次，防长按连发）
+  - 新增 `tools/py2c.py`（samples/*.py → 内置模块 C 字符串，graph.py/graph3d.py 通用）
+  - 样本 `samples/py06_plot3d.py`（曲面/马鞍面/螺旋线）；手册新增 §6.7、模块表补 graph3d/wait_nav；samples/README 同步
+- **KhiCAS 手册**：新增 §11.1「3D 绘图」（`plotfunc`/`quadric`/几何体命令与 Xcas 语法要求）；FAQ 增加"命令名拼错会原样输出（如 `poltfunc`）"提示；F3/PLOT 菜单补 `plotfunc(`
+
 
 ## [build 146] - 2026-09-24 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-146))
 

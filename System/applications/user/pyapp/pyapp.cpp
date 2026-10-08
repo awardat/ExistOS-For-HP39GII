@@ -21,6 +21,8 @@
 #include "../../graphics/UICore.h"
 extern "C" const char *graph_py_source;  // 内置绘图模块源码（graph_py.c，由 samples/graph.py 生成）
 extern "C" const char *graph_py_version; // 其版本标记（用于判断是否需要更新设备上的 /python/graph.py）
+extern "C" const char *graph3d_py_source;  // 内置 3D 绘图模块源码（graph3d_py.c，由 samples/graph3d.py 生成）
+extern "C" const char *graph3d_py_version; // 其版本标记
 #include "../../drivers/keyboard_gii39.h"
 
 extern UI_Display *uidisp;
@@ -766,26 +768,29 @@ static void migrateIf(const char *from, const char *to) { // 目标不存在且�
     copyFileRaw(from, to);
 }
 
+static void installPyModule(const char *path, const char *version, const char *source) {
+    // 内置模块：缺失或版本标记不符时安装/更新。
+    // 版本标记（如 graph.py vYYYY-MM-DD）在文件头部——用户改动只要保留该行就不会被覆盖。
+    char head[96] = {0};
+    bool need = true;
+    FIL f;
+    if (f_open(&f, path, FA_READ) == FR_OK) {
+        UINT br = 0;
+        f_read(&f, head, sizeof(head) - 1, &br);
+        f_close(&f);
+        if (strstr(head, version)) need = false;
+    }
+    if (need && f_open(&f, path, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
+        UINT bw = 0;
+        f_write(&f, source, (UINT)strlen(source), &bw);
+        f_close(&f);
+    }
+}
+
 static void ensurePyDir(void) {
     f_mkdir("/python");
-    // 内置绘图模块 graph.py：缺失或版本标记不符时安装/更新。
-    // 版本标记（graph.py vYYYY-MM-DDx）在文件头部——用户改动只要保留该行就不会被覆盖。
-    {
-        char head[96] = {0};
-        bool need = true;
-        FIL f;
-        if (f_open(&f, "/python/graph.py", FA_READ) == FR_OK) {
-            UINT br = 0;
-            f_read(&f, head, sizeof(head) - 1, &br);
-            f_close(&f);
-            if (strstr(head, graph_py_version)) need = false;
-        }
-        if (need && f_open(&f, "/python/graph.py", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) {
-            UINT bw = 0;
-            f_write(&f, graph_py_source, (UINT)strlen(graph_py_source), &bw);
-            f_close(&f);
-        }
-    }
+    installPyModule("/python/graph.py", graph_py_version, graph_py_source);
+    installPyModule("/python/graph3d.py", graph3d_py_version, graph3d_py_source);
     DIR dir;
     FILINFO fno;
     int have = 0;
@@ -1138,6 +1143,35 @@ extern "C" int mpy_lcd_wait_key(void) {
     termDirty = 1;
     rowDirty = -1;
     return 0;
+}
+
+extern "C" int mpy_lcd_wait_nav(void) {
+    // 3D 视角交互等待：0=退出(ON/F5)、1=左、2=右、3=上、4=下、-1=其它键。
+    // 按键松开后才算一次，避免长按连发导致连续重绘。
+    int r = -1;
+    while (pyRunning) {
+        uint32_t keys = ll_vm_check_key();
+        if ((keys >> 16) != 0) {
+            uint32_t key = keys & 0xFFFF;
+            if (key == KEY_ON || key == KEY_F5) r = 0;
+            else if (key == KEY_LEFT) r = 1;
+            else if (key == KEY_RIGHT) r = 2;
+            else if (key == KEY_UP) r = 3;
+            else if (key == KEY_DOWN) r = 4;
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+    while (pyRunning) { // 等松开
+        uint32_t keys = ll_vm_check_key();
+        if ((keys >> 16) == 0) break;
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+    if (r == 0) { // 退出时标记终端重绘；旋转时由 Python 侧重绘图形
+        termDirty = 1;
+        rowDirty = -1;
+    }
+    return r;
 }
 
 extern "C" int mpy_lcd_width(void) { return LCD_PIX_W; }
