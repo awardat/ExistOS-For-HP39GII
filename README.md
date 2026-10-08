@@ -50,6 +50,12 @@
 
 ## 目前工作进展（仅最新版本，历史见 CHANGELOG.md）
 
+### build 147（2026-10-08 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-147)）
+- [x] **Python app 3D 绘图**：新增 `graph3d` 模块（`surface/plot/view/title/show`，线框渲染、三轴等比例、自动轴标）——随应用自动安装到 `/python/graph3d.py`；`show()` 内 **←→ 旋转、↑↓ 俯仰、ON/F5 返回**
+- [x] `lcd` 模块新增 `wait_nav()` 导航键等待；样本 `samples/py06_plot3d.py`（曲面/马鞍面/螺旋线）；手册新增 §6.7
+- [x] KhiCAS 手册新增「3D 绘图」章节（`plotfunc`/`quadric`/几何体）与 FAQ（命令拼错不报错、原样输出）
+- [x] README 安装章节拆分：命令行安装与编译产物刷写移入 `docs/manual-install.md`；Updater 流程补图文步骤
+
 ### build 146（2026-09-24 已发布，[Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-146)）
 - [x] **Python app 绘图**：开启 MicroPython `framebuf` + 新增 `lcd` 桥模块（帧缓冲直写屏幕）+ `graph` 绘图模块（`clf/plot/scatter/axis/title/show`，自动绘制**坐标轴与刻度**；`show()` 按 ON/F5 返回）
 - [x] `graph.py` 随应用自动安装到 `/python/`（带版本标记，可读可改；用户保留标记行则不覆盖）

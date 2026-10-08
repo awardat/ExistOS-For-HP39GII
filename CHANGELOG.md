@@ -4,7 +4,7 @@
 
 ---
 
-## [build 147] - 开发中
+## [build 147] - 2026-10-08 (已发布，[GitHub Release](https://github.com/awardat/ExistOS-For-HP39GII/releases/tag/build-147))
 
 ### 已完成
 - **Python app 3D 绘图（graph3d）**：
@@ -15,6 +15,7 @@
   - `lcd` 模块新增 `wait_nav()`（0=ON/F5、1=左、2=右、3=上、4=下、-1=其它；松键才算一次，防长按连发）
   - 新增 `tools/py2c.py`（samples/*.py → 内置模块 C 字符串，graph.py/graph3d.py 通用）
   - 样本 `samples/py06_plot3d.py`（曲面/马鞍面/螺旋线）；手册新增 §6.7、模块表补 graph3d/wait_nav；samples/README 同步
+- **文档**：README 安装章节拆分——命令行安装（OS_Loader + EDB）与编译产物刷写移入 `docs/manual-install.md`，原处保留「手动安装」链接；ExistOS Updater 两个流程补图文步骤（EDB/HostLink 截图）
 - **KhiCAS 手册**：新增 §11.1「3D 绘图」（`plotfunc`/`quadric`/几何体命令与 Xcas 语法要求）；FAQ 增加"命令名拼错会原样输出（如 `poltfunc`）"提示；F3/PLOT 菜单补 `plotfunc(`
 
 
